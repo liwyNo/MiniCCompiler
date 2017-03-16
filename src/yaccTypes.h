@@ -47,7 +47,7 @@ typedef struct {
 typedef union __IdStructure_t {
     SymbolList_t record;
     PtrStructure_t pointer; // this is used for both pointer and array
-    FPtrStructure_t fpointer;
+    FPtrStructure_t fpointer; /* function pointer */
     EnumTable_t enumerate;
 } IdStructure_t; /* detailed structure of identifer type */
 
@@ -58,9 +58,11 @@ typedef struct __Identifer_t {
     int size; /* size of identifer */
 } Identifer_t;
 
+typedef Identifer_t Typename_t; // Typename_t is used for typedef statements
+
 typedef struct __GotoList_t {
-    int lineNum;
-    struct __GotoList_t *next;
+    int lineNum; /* line number in output */
+    struct __GotoList_t *next; /* pointer to next GotoList */
 } GotoList_t;
 
 #endif
