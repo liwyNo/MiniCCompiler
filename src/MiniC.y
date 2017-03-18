@@ -53,11 +53,6 @@ postfix_expression
 	| postfix_expression DEC_OP
 	;
 
-argument_expression_list
-	: assignment_expression
-	| argument_expression_list ',' assignment_expression
-	;
-
 unary_expression
 	: postfix_expression
 	| INC_OP unary_expression
@@ -163,6 +158,11 @@ assignment_operator
 	| OR_ASSIGN
 	;
 
+argument_expression_list
+	: assignment_expression
+	| argument_expression_list ',' assignment_expression
+	;
+
 expression
 	: assignment_expression
 	| expression ',' assignment_expression
@@ -237,10 +237,9 @@ struct_or_union_specifier
 	| struct_or_union IDENTIFIER
 	;
 
-enum_specifier
-	: ENUM '{' enumerator_list '}'
-	| ENUM IDENTIFIER '{' enumerator_list '}'
-	| ENUM IDENTIFIER
+enumerator
+	: IDENTIFIER
+	| IDENTIFIER '=' conditional_expression
 	;
 
 enumerator_list
@@ -248,9 +247,10 @@ enumerator_list
 	| enumerator_list ',' enumerator
 	;
 
-enumerator
-	: IDENTIFIER
-	| IDENTIFIER '=' conditional_expression
+enum_specifier
+	: ENUM '{' enumerator_list '}'
+	| ENUM IDENTIFIER '{' enumerator_list '}'
+	| ENUM IDENTIFIER
 	;
 
 identifier_list
@@ -417,4 +417,3 @@ translation_unit
 	;
 
 %%
-
