@@ -2,8 +2,8 @@
 原生变量 T1 T2 T3 ...
 中间变量 t1 t2 t3 ...
 函数参数 p1 p2 p3 ...
-函数 f0 f1 f2 f3 ... (f0是main函数)
-标号 l1 l2 l3 ...
+函数 f0 f1 f2 f3 ... (f0是main函数)      gen_func(int num)
+标号 l1 l2 l3 ...                     gen_label(int num)
 
 变量类型：
 integer : int1 int2 int4 int8
@@ -11,8 +11,8 @@ float : float4 float8
 pointer : ptr
 
 声明变量：
-var <type> [length] <name>
-gvar <type> [length] <name>
+var <type> [length] <name>  gen_var(char *type,char *name, int length=-1)
+gvar <type> [length] <name> gen_gval(char *type,char *name, int length=-1)
 当<type>是ptr，且该变量作为数组或struct/union时，需要指定[length]=sizeof(<name>)
 其他情况不用指定[length]
 
@@ -23,21 +23,23 @@ gvar <type> [length] <name>
 
 赋值语句：
 除了类型转换语句，其他赋值语句等号两边类型必须匹配
-t1 = t1 <op> t2
-t1 = <op> t2
-t1 = <type> t2 (类型转换)
-t1 = t2
-t1 [ t2 ] = t3
-* t1 = t2
-t1 = t2 [ t3 ]
+t1 = t1 <op> t2             gen_op2(char *name1, char *name2, char *name3, char *op)
+t1 = <op> t2                gen_op1(char *name1,char *name2, char *op)
+t1 = <type> t2 (类型转换)    gen_cast(char *name1, char* name2, char *type)
+t1 = t2                     gen_cpy(char *name1, char *name2)
+t1 [ t2 ] = t3              gen_arr_cpy(char *name1, char *name2, char *name3)
+* t1 = t2                   gen_pnt_cpy(char *name1, char *name2)
+t1 = t2 [ t3 ]              gen_cpy_arr(char *name1, char *name2, char *name3)
 
 跳转语句：
-goto l1
-if t1 <relop> T2 goto l2
+goto l1                     void gen_goto(int num), int gen_b_goto
+if t1 <relop> T2 goto l2    void gen_if_goto(char *name1, char* name2, char *op, int num)
+                            int gen_if_b_goto(char *name1, char* name2, char *op)
+
 
 函数调用：
-param t1
+param t1                    void gen_param(char *name)
 param t2
-call f1, 2
+call f1, 2                  void gen_call(int num, int pnum)
 
 struct/union 访问方式类似数组，保存头指针和offset
