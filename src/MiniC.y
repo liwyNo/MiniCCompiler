@@ -1,6 +1,10 @@
 %{
 
+#include <cstdio>
 #include "yaccTypes.h"
+
+extern int yylex (void);
+void yyerror(const char *s);
 
 %}
 
@@ -484,3 +488,8 @@ declaration_list:
 	;
 
 %%
+
+void yyerror(const char *s)
+{
+    puts(s);
+}

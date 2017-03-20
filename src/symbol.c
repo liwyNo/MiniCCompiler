@@ -1,43 +1,38 @@
-#include "yaccTypes.h"
-#include "MiniC.tab.h"
+#include "symbol.h"
+#include "MiniC.tab.hpp"
 #include <string.h>
 #include <stdlib.h>
 
 SymbolStack_t *symbolStack = NULL;
 
-void FreePtrStructure(PtrStructure_t *p)
-{
-    FreeIdStructure(p->base_structure, p->base_type);
-}
-
 void FreeFPtrStructure(FPtrStructure_t *p)
 {
-    for (size_t i = 0; i <= p->argNum; ++i)
-        FreeIdStructure(p->structure[i], p->type[i]);
-    free(p->structure);
     free(p->type);
+}
+
+void FreeTypename(Typename_t *p)
+{
+    if (p->name)
+        free(p->name);
+    FreeIdStructure(p->structure, p->type);
 }
 
 void FreeIdStructure(IdStructure_t *p, int type)
 {
-    if (p == NULL)
-        return;
     switch (type) {
-    case idt_pointer:
-        FreePtrStructure(&p->pointer);
+    case idt_union:
+    case idt_struct:
+        FreeSymbolList(p->record);
         break;
     case idt_fpointer:
         FreeFPtrStructure(&p->fpointer);
         break;
     }
-    free(p);
 }
 
 void FreeIdentifier(Identifier_t *p)
 {
-    if (p->name)
-        free(p->name);
-    FreeIdStructure(p->structure, p->type);
+    free(p->name);
 }
 
 void FreeSymbolList(SymbolList_t *p)
@@ -56,7 +51,7 @@ void FreeTypeList(TypeList_t *p)
     while (p) {
         TypeList_t *t = p;
         p = p->next;
-        FreeIdentifier(t->type);
+        FreeTypename(t->type);
         free(t);
     }
 }
@@ -111,7 +106,7 @@ void *LookupSymbol(const char *name, int *symbol_type)
                 return j->id;
             }
         for (TypeList_t *j = i->typeList; j; j = j->next)
-            if (strcmp(j->type->name, name) == 0) {
+            if (j->type->name && strcmp(j->type->name, name) == 0) {
                 *symbol_type = TYPE_NAME;
                 return j->type;
             }

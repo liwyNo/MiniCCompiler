@@ -1,0 +1,7 @@
+find_package(FLEX REQUIRED)
+find_package(BISON REQUIRED)
+BISON_TARGET(MiniCParser MiniC.y ${CMAKE_CURRENT_BINARY_DIR}/MiniC.tab.cpp)
+FLEX_TARGET(MiniCLexer MiniC.l ${CMAKE_CURRENT_BINARY_DIR}/MiniC.yy.cpp)
+ADD_FLEX_BISON_DEPENDENCY(MiniCLexer MiniCParser)
+include_directories(${CMAKE_CURRENT_BINARY_DIR})
+ADD_EXECUTABLE(parser ${BISON_MiniCParser_OUTPUT_SOURCE} ${FLEX_MiniCLexer_OUTPUTS} symbol.c)

@@ -1,5 +1,5 @@
-#ifndef YACCTYPES_H
-#define YACCTYPES_H
+#ifndef SYMBOL_H
+#define SYMBOL_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -21,6 +21,8 @@ typedef enum {
 
 struct __Identifier_t;
 union __IdStructure_t;
+struct __Typename_t;
+typedef const struct __Typename_t *const_Typename_ptr; /* pointer to Typename_t in a symbol stack */
 
 typedef struct __SymbolList_t {
     struct __Identifier_t *id; /* identifer */
@@ -29,17 +31,15 @@ typedef struct __SymbolList_t {
 } SymbolList_t;
 
 typedef struct {
-    IdType_t base_type;
-    union __IdStructure_t *base_structure;
+    const_Typename_ptr base_type; /* type of pointer base */
     size_t length; /* only used for array, otherwise set to SIZE_MAX */
 } PtrStructure_t;
 
 typedef struct {
     size_t argNum; /* number of arguments */
-    /* the following two pointer are arrays with length argNum+1 ,
+    /* the following pointer is arrays with length argNum+1 ,
        index 0 is used specially for return type */
-    IdType_t *type;
-    union __IdStructure_t **structure;
+    const_Typename_ptr *type;
 } FPtrStructure_t;
 
 typedef struct __EnumTable_t {
@@ -54,20 +54,23 @@ typedef struct __EnumList_t {
 } EnumList_t; /* list of EnumTable_t */
 
 typedef union __IdStructure_t {
-    const SymbolList_t *record;
+    SymbolList_t *record;
     PtrStructure_t pointer; // this is used for both pointer and array
     FPtrStructure_t fpointer; /* function pointer */
     const EnumTable_t *enumerate;
 } IdStructure_t; /* detailed structure of identifer type */
 
+typedef struct __Typename_t {
+    IdType_t type; 
+    char *name; /* name of type */
+    IdStructure_t *structure; /* detailed type information */
+} Typename_t;
+
 typedef struct __Identifier_t {
     char *name; /* name of identifer */
-    IdType_t type; /* type of identifer */
-    IdStructure_t *structure; /* detailed type of identifer */
+    const_Typename_ptr type; /* type of identifer */
     int size; /* size of identifer */
 } Identifier_t;
-
-typedef Identifier_t Typename_t; // Typename_t is used for typedef statements
 
 typedef struct __TypeList_t {
     Typename_t *type; /* typename in this node */
@@ -88,8 +91,8 @@ typedef struct __GotoList_t {
 
 extern SymbolStack_t *symbolStack;
 
-void FreePtrStructure(PtrStructure_t *);
 void FreeFPtrStructure(FPtrStructure_t *);
+void FreeTypename(Typename_t *);
 void FreeIdStructure(IdStructure_t *, int type);
 void FreeIdentifier(Identifier_t *);
 void FreeSymbolList(SymbolList_t *);
