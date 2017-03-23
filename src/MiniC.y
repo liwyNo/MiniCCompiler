@@ -1,18 +1,33 @@
 %{
 
 #include <cstdio>
-#include "yaccTypes.h"
+#include "symbol.h"
 
 extern int yylex (void);
 void yyerror(const char *s);
 
 %}
 
+%code requires {
+#include "yaccType.h"
+}
+
 %union {
     char *vstr;
     char vchar;
     int vint;
     double vdouble;
+    void *vptr;
+    type_qualifier_s_t type_qualifier_s;
+    storage_class_specifier_s_t storage_class_specifier_s;
+    type_specifier_s_t type_specifier_s;
+    struct_or_union_s_t struct_or_union_s;
+    struct_or_union_specifier_s_t struct_or_union_specifier_s;
+    specifier_qualifier_list_s_t specifier_qualifier_list_s;
+    declaration_specifiers_s_t declaration_specifiers_s;
+    init_declarator_list_i_t initializer_list_i;
+    init_declarator_i_t init_declarator_i;
+    enum_specifier_s_t enum_specifier_s;
 }
 
 %token <vstr> IDENTIFIER
@@ -24,12 +39,21 @@ void yyerror(const char *s);
 %token SIZEOF
 %token PTR_OP INC_OP DEC_OP LEFT_OP RIGHT_OP LE_OP GE_OP EQ_OP NE_OP
 %token AND_OP OR_OP MUL_ASSIGN DIV_ASSIGN MOD_ASSIGN ADD_ASSIGN SUB_ASSIGN LEFT_ASSIGN RIGHT_ASSIGN AND_ASSIGN XOR_ASSIGN OR_ASSIGN
-%token <vstr> TYPE_NAME
+%token <vptr> TYPE_NAME
 %token TYPEDEF
 %token STATIC
 %token CHAR SHORT INT LONG SIGNED UNSIGNED FLOAT DOUBLE CONST VOID
 %token STRUCT UNION ENUM
 %token CASE DEFAULT IF ELSE SWITCH WHILE DO FOR GOTO CONTINUE BREAK RETURN
+
+%type <type_qualifier_s> type_qualifier
+%type <storage_class_specifier_s> storage_class_specifier
+%type <type_specifier_s> type_specifier
+%type <struct_or_union_s> struct_or_union
+%type <struct_or_union_specifier_s> struct_or_union_specifier
+%type <specifier_qualifier_list_s> specifier_qualifier_list
+%type <declaration_specifiers_s> declaration_specifiers
+%type <enum_specifier_s> enum_specifier
 
 %nonassoc IFX
 %nonassoc ELSE
@@ -191,9 +215,28 @@ constant_expression:
 	  conditional_expression
 	;
 
-declaration:
-	  declaration_specifiers ';'
-	| declaration_specifiers init_declarator_list ';'
+storage_class_specifier:
+	  TYPEDEF   {$$.hasTYPEDEF = 1; $$.hasSTATIC = 0;}
+	| STATIC    {$$.hasTYPEDEF = 0; $$.hasSTATIC = 1;}
+	;
+
+type_qualifier:
+	  CONST {$$.hasCONST = 1;}
+	;
+
+type_specifier:
+	  VOID                      {$$.type = (const_Typename_ptr)LookupSymbol("void", NULL);$$.sign=-1;}
+	| CHAR                      {$$.type = (const_Typename_ptr)LookupSymbol("char", NULL);$$.sign=-1;}
+	| SHORT                     {$$.type = (const_Typename_ptr)LookupSymbol("short", NULL);$$.sign=-1;}
+	| INT                       {$$.type = (const_Typename_ptr)LookupSymbol("int", NULL);$$.sign=-1;}
+	| LONG                      {$$.type = (const_Typename_ptr)LookupSymbol("long", NULL);$$.sign=-1;}
+	| FLOAT                     {$$.type = (const_Typename_ptr)LookupSymbol("float", NULL);$$.sign=-1;}
+	| DOUBLE                    {$$.type = (const_Typename_ptr)LookupSymbol("double", NULL);$$.sign=-1;}
+	| SIGNED                    {$$.type = (const_Typename_ptr)LookupSymbol("int", NULL);$$.sign=1;}
+	| UNSIGNED                  {$$.type = (const_Typename_ptr)LookupSymbol("char", NULL);$$.sign=0;}
+	| struct_or_union_specifier {$$.type = $1;$$.sign=-1;}
+	| enum_specifier            {$$.type = $1;$$.sign=-1;}
+	| TYPE_NAME                 {$$.type = (const_Typename_ptr)$1;$$.sign=-1;}
 	;
 
 declaration_specifiers:
@@ -205,55 +248,30 @@ declaration_specifiers:
 	| type_qualifier
 	;
 
-init_declarator_list:
-	  init_declarator
-	| init_declarator_list ',' init_declarator
-	;
-
 init_declarator:
 	  declarator '=' initializer
 	| declarator
 	;
 
-storage_class_specifier:
-	  TYPEDEF
-	| STATIC
+init_declarator_list:
+	  init_declarator
+	| init_declarator_list ',' init_declarator
 	;
 
-type_specifier:
-	  VOID
-	| CHAR
-	| SHORT
-	| INT
-	| LONG
-	| FLOAT
-	| DOUBLE
-	| SIGNED
-	| UNSIGNED
-	| struct_or_union_specifier
-	| enum_specifier
-	| TYPE_NAME
+declaration:
+	  declaration_specifiers ';'
+	| declaration_specifiers init_declarator_list ';'
+	;
+
+struct_or_union:
+	  STRUCT    {$$.hasSTRUCT=1;$$.hasUNION=0;}
+	| UNION     {$$.hasSTRUCT=0;$$.hasUNION=1;}
 	;
 
 struct_or_union_specifier:
 	  struct_or_union '{' struct_declaration_list '}'
 	| struct_or_union IDENTIFIER '{' struct_declaration_list '}'
 	| struct_or_union IDENTIFIER
-	;
-
-struct_or_union:
-	  STRUCT
-	| UNION
-	;
-
-struct_declaration_list:
-	  struct_declaration
-	| struct_declaration_list struct_declaration
-	;
-
-struct_declaration:
-	  specifier_qualifier_list ';'
-	| specifier_qualifier_list struct_declarator_list ';'
 	;
 
 specifier_qualifier_list:
@@ -263,15 +281,19 @@ specifier_qualifier_list:
 	| type_qualifier
 	;
 
-struct_declarator_list:
-	  struct_declarator
-	| struct_declarator_list ',' struct_declarator
+struct_declaration:
+	  specifier_qualifier_list ';'
+	| specifier_qualifier_list struct_declarator_list ';'
 	;
 
-struct_declarator:
-	  ':' constant_expression
-	| declarator ':' constant_expression
-	| declarator
+struct_declaration_list:
+	  struct_declaration
+	| struct_declaration_list struct_declaration
+	;
+
+struct_declarator_list:
+	  declarator
+	| struct_declarator_list ',' declarator
 	;
 
 enum_specifier:
@@ -292,26 +314,10 @@ enumerator:
 	| enumeration_constant
 	;
 
-type_qualifier:
-	  CONST
-	;
-
-declarator:
-	  pointer direct_declarator
-	| direct_declarator
-	;
-
 direct_declarator:
 	  IDENTIFIER
 	| '(' declarator ')'
 	| direct_declarator '[' ']'
-	| direct_declarator '[' '*' ']'
-	| direct_declarator '[' STATIC type_qualifier_list assignment_expression ']'
-	| direct_declarator '[' STATIC assignment_expression ']'
-	| direct_declarator '[' type_qualifier_list '*' ']'
-	| direct_declarator '[' type_qualifier_list STATIC assignment_expression ']'
-	| direct_declarator '[' type_qualifier_list assignment_expression ']'
-	| direct_declarator '[' type_qualifier_list ']'
 	| direct_declarator '[' assignment_expression ']'
 	| direct_declarator '(' parameter_list ')'
 	| direct_declarator '(' ')'
@@ -319,17 +325,16 @@ direct_declarator:
 	;
 
 pointer:
-	  '*' type_qualifier_list pointer
-	| '*' type_qualifier_list
+	  '*' type_qualifier pointer
+	| '*' type_qualifier
 	| '*' pointer
 	| '*'
 	;
 
-type_qualifier_list:
-	  type_qualifier
-	| type_qualifier_list type_qualifier
+declarator:
+	  pointer direct_declarator
+	| direct_declarator
 	;
-
 
 parameter_list:
 	  parameter_declaration
@@ -361,25 +366,18 @@ abstract_declarator:
 direct_abstract_declarator:
 	  '(' abstract_declarator ')'
 	| '[' ']'
-	| '[' '*' ']'
-	| '[' STATIC type_qualifier_list assignment_expression ']'
-	| '[' STATIC assignment_expression ']'
-	| '[' type_qualifier_list STATIC assignment_expression ']'
-	| '[' type_qualifier_list assignment_expression ']'
-	| '[' type_qualifier_list ']'
 	| '[' assignment_expression ']'
 	| direct_abstract_declarator '[' ']'
-	| direct_abstract_declarator '[' '*' ']'
-	| direct_abstract_declarator '[' STATIC type_qualifier_list assignment_expression ']'
-	| direct_abstract_declarator '[' STATIC assignment_expression ']'
-	| direct_abstract_declarator '[' type_qualifier_list assignment_expression ']'
-	| direct_abstract_declarator '[' type_qualifier_list STATIC assignment_expression ']'
-	| direct_abstract_declarator '[' type_qualifier_list ']'
 	| direct_abstract_declarator '[' assignment_expression ']'
 	| '(' ')'
 	| '(' parameter_list ')'
 	| direct_abstract_declarator '(' ')'
 	| direct_abstract_declarator '(' parameter_list ')'
+	;
+
+designator: /* not supported */
+	  '[' constant_expression ']'
+	| '.' IDENTIFIER
 	;
 
 initializer:
@@ -389,24 +387,10 @@ initializer:
 	;
 
 initializer_list:
-	  designation initializer
+	  designator initializer    {yyerror("designator is not supported yet");}
 	| initializer
-	| initializer_list ',' designation initializer
+	| initializer_list ',' designator initializer
 	| initializer_list ',' initializer
-	;
-
-designation:
-	  designator_list '='
-	;
-
-designator_list:
-	  designator
-	| designator_list designator
-	;
-
-designator:
-	  '[' constant_expression ']'
-	| '.' IDENTIFIER
 	;
 
 statement:
@@ -424,9 +408,9 @@ labeled_statement:
 	| DEFAULT ':' statement
 	;
 
-compound_statement:
-	  '{' '}'
-	| '{'  block_item_list '}'
+block_item:
+	  declaration
+	| statement
 	;
 
 block_item_list:
@@ -434,9 +418,9 @@ block_item_list:
 	| block_item_list block_item
 	;
 
-block_item:
-	  declaration
-	| statement
+compound_statement:
+	  '{' '}'
+	| '{'  block_item_list '}'
 	;
 
 expression_statement:
@@ -468,25 +452,24 @@ jump_statement:
 	;
 
 translation_unit:
-	  external_declaration
-	| translation_unit external_declaration
+	  external_declaration                  {}
+	| translation_unit external_declaration {}
 	;
 
 external_declaration:
-	  function_definition
-	| declaration
+	  function_definition   {}
+	| declaration           {}
 	;
 
 function_definition:
-	  declaration_specifiers declarator declaration_list compound_statement
+	  declaration_specifiers declarator declaration_list compound_statement {yyerror("not support this type of function definition");}
 	| declaration_specifiers declarator compound_statement
 	;
 
-declaration_list:
+declaration_list: /* this is not supported */
 	  declaration
 	| declaration_list declaration
 	;
-
 %%
 
 void yyerror(const char *s)

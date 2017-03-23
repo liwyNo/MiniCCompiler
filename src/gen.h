@@ -1,15 +1,15 @@
 #ifndef GEN_H
 #define GEN_H
-#include <cstdio>
-#include <cstring>
 extern int now_byte;
 void set_output(const char *s);
 
-int count_byte(int x);
+//int count_byte(int x);
 
 void gen_func(int num);
 
 void gen_label(int num);
+
+void gen_const(const char *type, const char *name, const void *value);
 
 void gen_var(const char *type, const char *name, int length = -1);
 
@@ -40,5 +40,9 @@ int gen_if_b_goto(const char *name1, const char *name2, const char *op); //留�
 void gen_param(const char *name);
 
 void gen_call(int num, int pnum);
+
+void gen_cpy_call(const char *name, int num, int pnum);
+
+void gen_return(const char *name); // name是NULL时表示没有返回值
 
 #endif

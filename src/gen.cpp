@@ -1,11 +1,14 @@
 #include "gen.h"
+#include <cstdio>
+#include <cstring>
+
 int now_byte = 0;
 FILE *file_p;
 void set_output(const char *s)
 {
     file_p = fopen(s, "wb");
 }
-
+/*
 int count_byte(int x)
 {
     int cnt = 0;
@@ -16,7 +19,7 @@ int count_byte(int x)
     }
     return cnt;
 }
-
+*/
 void gen_func(int num)
 {
     now_byte += fprintf(file_p,  "f%d:\n", num);
@@ -27,6 +30,11 @@ void gen_label(int num)
 {
     now_byte += fprintf(file_p,  "l%d\n", num);
     //now_byte += 3 + count_byte(num);
+}
+
+void gen_const(const char *type, const char *name, const void *value)
+{
+#warning "this function has not been implemented"
 }
 
 void gen_var(const char *type, const char *name, int length)
@@ -122,4 +130,17 @@ void gen_param(const char *name)
 void gen_call(int num, int pnum)
 {
     now_byte += fprintf(file_p,  "call f%d %d\n", num, pnum);
+}
+
+void gen_cpy_call(const char *name, int num, int pnum)
+{
+    now_byte += fprintf(file_p,  "%s = call f%d %d\n", name, num, pnum);
+}
+
+void gen_return(const char *name)
+{
+    if (name)
+        now_byte += fprintf(file_p, "return %s\n", name);
+    else
+        now_byte += fprintf(file_p, "return\n");
 }

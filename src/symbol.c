@@ -1,6 +1,7 @@
 #include "symbol.h"
 #include "MiniC.tab.hpp"
 #include <string.h>
+#include <stdio.h>
 #include <stdlib.h>
 
 SymbolStack_t *symbolStack = NULL;
@@ -33,6 +34,8 @@ void FreeIdStructure(IdStructure_t *p, int type)
 void FreeIdentifier(Identifier_t *p)
 {
     free(p->name);
+    if (p->TACname)
+        free(p->TACname);
 }
 
 void FreeSymbolList(SymbolList_t *p)
@@ -102,22 +105,26 @@ void *LookupSymbol(const char *name, int *symbol_type)
     for (SymbolStack_t *i = symbolStack; i; i = i->next) {
         for (SymbolList_t *j = i->idList; j; j = j->next)
             if (strcmp(j->id->name, name) == 0) {
-                *symbol_type = IDENTIFIER;
+                if (symbol_type)
+                    *symbol_type = IDENTIFIER;
                 return j->id;
             }
         for (TypeList_t *j = i->typeList; j; j = j->next)
             if (j->type->name && strcmp(j->type->name, name) == 0) {
-                *symbol_type = TYPE_NAME;
+                if (symbol_type)
+                    *symbol_type = TYPE_NAME;
                 return j->type;
             }
         for (EnumList_t *j = i->enumList; j; j = j->next)
             for (EnumTable_t *k = j->table; k; k = k->next)
                 if (strcmp(k->name, name) == 0) {
-                    *symbol_type = ENUM_CONSTANT;
+                    if (symbol_type)
+                        *symbol_type = ENUM_CONSTANT;
                     return &k->value;
                 }
     }
-    *symbol_type = 0;
+    if (symbol_type)
+        *symbol_type = 0;
     return NULL;
 }
 
@@ -133,6 +140,14 @@ void AddIdentifier(Identifier_t *id, SymbolList_t **slst)
 void StackAddIdentifier(Identifier_t *id)
 {
     AddIdentifier(id, &symbolStack->idList);
+}
+
+void StackAddStaticIdentifier(Identifier_t *id)
+{
+    SymbolStack_t *p = symbolStack;
+    while (p->next)
+        p = p->next;
+    AddIdentifier(id, &p->idList);
 }
 
 void AddTypename(Typename_t *tp, TypeList_t **tpl)
@@ -159,4 +174,119 @@ void AddEnumTable(EnumTable_t *et, EnumList_t **el)
 void StackAddEnumTable(EnumTable_t *et)
 {
     AddEnumTable(et, &symbolStack->enumList);
+}
+
+void __AddStandardType()
+{
+    Typename_t *p;
+    p = malloc(sizeof(Typename_t));
+    p->type = idt_char;
+    p->name = strdup("char");
+    p->structure = NULL;
+    StackAddTypename(p);
+    p = malloc(sizeof(Typename_t));
+    p->type = idt_short;
+    p->name = strdup("short");
+    p->structure = NULL;
+    StackAddTypename(p);
+    p = malloc(sizeof(Typename_t));
+    p->type = idt_int;
+    p->name = strdup("int");
+    p->structure = NULL;
+    StackAddTypename(p);
+    p = malloc(sizeof(Typename_t));
+    p->type = idt_long;
+    p->name = strdup("long");
+    p->structure = NULL;
+    StackAddTypename(p);
+    p = malloc(sizeof(Typename_t));
+    p->type = idt_uchar;
+    p->name = strdup("uchar");
+    p->structure = NULL;
+    StackAddTypename(p);
+    p = malloc(sizeof(Typename_t));
+    p->type = idt_ushort;
+    p->name = strdup("ushort");
+    p->structure = NULL;
+    StackAddTypename(p);
+    p = malloc(sizeof(Typename_t));
+    p->type = idt_uint;
+    p->name = strdup("uint");
+    p->structure = NULL;
+    StackAddTypename(p);
+    p = malloc(sizeof(Typename_t));
+    p->type = idt_ulong;
+    p->name = strdup("ulong");
+    p->structure = NULL;
+    StackAddTypename(p);
+    p = malloc(sizeof(Typename_t));
+    p->type = idt_float;
+    p->name = strdup("float");
+    p->structure = NULL;
+    StackAddTypename(p);
+    p = malloc(sizeof(Typename_t));
+    p->type = idt_double;
+    p->name = strdup("double");
+    p->structure = NULL;
+    StackAddTypename(p);
+    p = malloc(sizeof(Typename_t));
+    p->type = idt_void;
+    p->name = strdup("void");
+    p->structure = NULL;
+    StackAddTypename(p);
+}
+
+void InitSymbolStack()
+{
+    PushSymbolStack();
+    __AddStandardType();
+}
+
+VarCounter_t varCounter;
+
+int CreateConstant()
+{
+    return varCounter.num_c++;
+}
+
+int CreateTempVar()
+{
+    return varCounter.num_t++;
+}
+
+int CreateNativeVar(Identifier_t *id)
+{
+    char tmp[10];
+    sprintf(tmp, "T%d", varCounter.num_T);
+    id->TACname = strdup(tmp);
+    StackAddIdentifier(id);
+    return varCounter.num_T++;
+}
+
+int CreateLable()
+{
+    return varCounter.num_l++;
+}
+
+int CreateFunc(Identifier_t *id)
+{
+    char tmp[10];
+    sprintf(tmp, "f%d", varCounter.num_f);
+    id->TACname = strdup(tmp);
+    StackAddIdentifier(id);
+    return varCounter.num_f++;
+}
+
+int CreateParam(Identifier_t *id)
+{
+    char tmp[10];
+    sprintf(tmp, "p%d", varCounter.num_p);
+    id->TACname = strdup(tmp);
+    StackAddIdentifier(id);
+    return varCounter.num_p++;
+}
+
+void CounterLeaveFunc()
+{
+    varCounter.num_p = 0;
 }

@@ -9,25 +9,45 @@ E   ([Ee][+-]?{D}+)
 P   ([Pp][+-]?{D}+)
 FS  (f|F|l|L)
 IS  (((u|U)(l|L|ll|LL)?)|((l|L|ll|LL)(u|U)?))
-CP  (u|U|L)
-SP  (u8|u|U|L)
 ES  (\\(['"\?\\abfnrtv]|[0-7]{1,3}|x[a-fA-F0-9]+))
 WS  [ \t\v\n\f]
 
+%s INSTRING
+
 %{
 #include <cstdio>
+#include <cstring>
+#include <string>
 #include "MiniC.tab.hpp"
+#include "symbol.h"
 
 extern void yyerror(const char *);  /* prints grammar violation message */
 
-//extern int sym_type(const char *);  /* returns type from symbol table */
-//#define sym_type(identifier) IDENTIFIER /* with no symbol table, fake it */
+std::string strbuf;
 
 void comment(void);
 int check_type(void);
+
 %}
 
 %%
+
+<INSTRING>\\a   {strbuf += '\a';}
+<INSTRING>\\b   {strbuf += '\b';}
+<INSTRING>\\f   {strbuf += '\f';}
+<INSTRING>\\n   {strbuf += '\n';}
+<INSTRING>\\t   {strbuf += '\t';}
+<INSTRING>\\v   {strbuf += '\v';}
+<INSTRING>\\\\   {strbuf += '\\';}
+<INSTRING>\\'   {strbuf += '\'';}
+<INSTRING>\\\"   {strbuf += '\"';}
+<INSTRING>\\?   {strbuf += '\?';}
+<INSTRING>\\{O}+   {char c; sscanf(yytext, "\\%hho", &c); strbuf += c;}
+<INSTRING>\\x{H}+   {char c; sscanf(yytext, "\\x%hhx", &c); strbuf += c;}
+<INSTRING>[^\\\n"]*   {strbuf += yytext;}
+<INSTRING>\"{WS}*\" {}
+<INSTRING>\"    {yylval.vstr = strdup(strbuf.c_str()); BEGIN 0; return STR_CONSTANT;}
+
 "/*"                                    { comment(); }
 "//".*                                    { /* consume //-comment */ }
 
@@ -62,19 +82,31 @@ int check_type(void);
 
 {L}{A}*					{ return check_type(); }
 
-{HP}{H}+{IS}?				{ return INT_CONSTANT; }
-{NZ}{D}*{IS}?				{ return INT_CONSTANT; }
-"0"{O}*{IS}?				{ return INT_CONSTANT; }
-{CP}?"'"([^'\\\n]|{ES})+"'"		{ return CHAR_CONSTANT; }
+{HP}{H}+{IS}?				{ sscanf(yytext, "%x", &yylval.vint); return INT_CONSTANT; }
+{NZ}{D}*{IS}?				{ sscanf(yytext, "%o", &yylval.vint); return INT_CONSTANT; }
+"0"{O}*{IS}?				{ sscanf(yytext, "%d", &yylval.vint); return INT_CONSTANT; }
+'\\a'		{ yylval.vchar = '\a'; return CHAR_CONSTANT; }
+'\\b'		{ yylval.vchar = '\b'; return CHAR_CONSTANT; }
+'\\f'		{ yylval.vchar = '\f'; return CHAR_CONSTANT; }
+'\\n'		{ yylval.vchar = '\n'; return CHAR_CONSTANT; }
+'\\t'		{ yylval.vchar = '\t'; return CHAR_CONSTANT; }
+'\\v'		{ yylval.vchar = '\v'; return CHAR_CONSTANT; }
+'\\\\'	    { yylval.vchar = '\\'; return CHAR_CONSTANT; }
+'\\''		{ yylval.vchar = '\''; return CHAR_CONSTANT; }
+'\\\"'		{ yylval.vchar = '\"'; return CHAR_CONSTANT; }
+'\\?'		{ yylval.vchar = '\?'; return CHAR_CONSTANT; }
+'\\{O}+'    { sscanf(yytext, "'\\%hho'", &yylval.vchar); return CHAR_CONSTANT; }
+'\\x{H}+'    { sscanf(yytext, "'\\x%hhx'", &yylval.vchar); return CHAR_CONSTANT; }
+'[^\\\n']'   { yylval.vchar = yytext[1]; return CHAR_CONSTANT; }
 
-{D}+{E}{FS}?				{ return DOUBLE_CONSTANT; }
-{D}*"."{D}+{E}?{FS}?			{ return DOUBLE_CONSTANT; }
-{D}+"."{E}?{FS}?			{ return DOUBLE_CONSTANT; }
-{HP}{H}+{P}{FS}?			{ return DOUBLE_CONSTANT; }
-{HP}{H}*"."{H}+{P}{FS}?			{ return DOUBLE_CONSTANT; }
-{HP}{H}+"."{P}{FS}?			{ return DOUBLE_CONSTANT; }
+{D}+{E}{FS}?				{ sscanf(yytext, "%lf", &yylval.vdouble); return DOUBLE_CONSTANT; }
+{D}*"."{D}+{E}?{FS}?			{ sscanf(yytext, "%lf", &yylval.vdouble); return DOUBLE_CONSTANT; }
+{D}+"."{E}?{FS}?			{ sscanf(yytext, "%lf", &yylval.vdouble); return DOUBLE_CONSTANT; }
+{HP}{H}+{P}{FS}?			{ sscanf(yytext, "%lf", &yylval.vdouble); return DOUBLE_CONSTANT; }
+{HP}{H}*"."{H}+{P}{FS}?			{ sscanf(yytext, "%lf", &yylval.vdouble); return DOUBLE_CONSTANT; }
+{HP}{H}+"."{P}{FS}?			{ sscanf(yytext, "%lf", &yylval.vdouble); return DOUBLE_CONSTANT; }
 
-({SP}?\"([^"\\\n]|{ES})*\"{WS}*)+	{ return STR_CONSTANT; }
+\"              { BEGIN INSTRING; strbuf = ""; }
 
 ">>="					{ return RIGHT_ASSIGN; }
 "<<="					{ return LEFT_ASSIGN; }
@@ -153,13 +185,18 @@ void comment(void)
 
 int check_type(void)
 {
-    /*switch (sym_type(yytext))
+    int type;
+    void *p = LookupSymbol(yytext, &type);
+    switch (type)
     {
-    case TYPEDEF_NAME:                
-        return TYPEDEF_NAME;
-    case ENUM_CONSTANT:        
+    case TYPE_NAME:
+        yylval.vptr = p;
+        return TYPE_NAME;
+    case ENUM_CONSTANT:
+        yylval.vint = *(int*)p;
         return ENUM_CONSTANT;
-    default:                          
+    default:
+        yylval.vstr = strdup(yytext);
         return IDENTIFIER;
-    }*/
+    }
 }

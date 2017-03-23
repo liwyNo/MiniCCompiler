@@ -9,6 +9,7 @@ extern "C" {
 #include <stdint.h>
 
 typedef enum {
+    idt_none, /* no type specified */
     idt_char, idt_short, idt_int, idt_long, /* signed integer */
     idt_uchar, idt_ushort, idt_uint, idt_ulong, /* unsigned integer */
     idt_float, idt_double, /* floating-point number */
@@ -58,6 +59,7 @@ typedef union __IdStructure_t {
     PtrStructure_t pointer; // this is used for both pointer and array
     FPtrStructure_t fpointer; /* function pointer */
     const EnumTable_t *enumerate;
+    int isConst; /* whether it is constant */
 } IdStructure_t; /* detailed structure of identifer type */
 
 typedef struct __Typename_t {
@@ -70,6 +72,7 @@ typedef struct __Identifier_t {
     char *name; /* name of identifer */
     const_Typename_ptr type; /* type of identifer */
     int size; /* size of identifer */
+    char *TACname; /* name in three-address-code */
 } Identifier_t;
 
 typedef struct __TypeList_t {
@@ -104,10 +107,31 @@ void PopSymbolStack();
 void *LookupSymbol(const char *name, int *symbol_type);
 void AddIdentifier(Identifier_t *, SymbolList_t **);
 void StackAddIdentifier(Identifier_t *);
+void StackAddStaticIdentifier(Identifier_t *);
 void AddTypename(Typename_t *, TypeList_t **);
 void StackAddTypename(Typename_t *);
 void AddEnumTable(EnumTable_t *, EnumList_t **);
 void StackAddEnumTable(EnumTable_t *);
+void InitSymbolStack();
+
+typedef struct {
+    int num_c; /* constant */
+    int num_t; /* temperary variable */
+    int num_T; /* native variable */
+    int num_l; /* label */
+    int num_f; /* function */
+    int num_p; /* parameter */
+} VarCounter_t;
+
+extern VarCounter_t varCounter;
+
+int CreateConstant();
+int CreateTempVar();
+int CreateNativeVar(Identifier_t *);
+int CreateLable();
+int CreateFunc(Identifier_t *);
+int CreateParam(Identifier_t *);
+void CounterLeaveFunc();
 
 #ifdef __cplusplus
 }

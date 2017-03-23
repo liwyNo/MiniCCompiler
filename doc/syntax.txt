@@ -1,0 +1,62 @@
+mini-C语法定义
+加(*)表示可选扩展
+
+宏处理：
+    无
+
+数据类型：
+    基础数据类型：
+        整数：
+            char(1)
+            short(2)
+            int(4)
+            long(8)
+            unsigned/signed XXX
+        浮点数：
+            float(4) (*)
+            double(8) (*)
+        指针：
+            数据指针
+            函数指针 (*)
+        空：
+            void
+    结构类型：
+        数组
+        struct
+        enum (*)
+        union (*)
+
+流程控制：
+    条件语句：
+        if
+        else
+    循环语句：
+        while
+        for (*)
+        do-while (*)
+    跳转语句：
+        swith-case-default (*)
+        break
+        continue (*)
+        goto (*)
+    函数调用：
+        只支持有限参数个数的函数调用
+
+表达式：
+    与C的表达式和运算符优先级相同
+    ?: (*)
+
+库函数：
+    read和write函数可以直接使用
+    //课程提供scanf和printf的源码实现
+    需要的再加
+
+一些关键字：
+    sizeof
+    typedef
+    const
+    static (*)
+
+注释：
+    单行 //
+    多行 /* */
