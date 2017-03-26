@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define __symbol_yyerror(s) (puts(s))
+
 SymbolStack_t *symbolStack = NULL;
 
 void FreeFPtrStructure(FPtrStructure_t *p)
@@ -289,4 +291,76 @@ int CreateParam(Identifier_t *id)
 void CounterLeaveFunc()
 {
     varCounter.num_p = 0;
+}
+
+int __isIntegerType(IdType_t t)
+{
+    return t >= idt_char && t <= idt_ulong;
+}
+int setSign(int sign, const_Typename_ptr *type)
+{
+    if (!__isIntegerType((*type)->type))
+        return 0;
+    if (sign == 0) {
+        if ((*type)->type == idt_char)
+            *type = LookupSymbol("uchar", NULL);
+        if ((*type)->type == idt_short)
+            *type = LookupSymbol("ushort", NULL);
+        if ((*type)->type == idt_int)
+            *type = LookupSymbol("uint", NULL);
+        if ((*type)->type == idt_long)
+            *type = LookupSymbol("ulong", NULL);
+    }
+    else if (sign == 1) {
+        if ((*type)->type == idt_uchar)
+            *type = LookupSymbol("char", NULL);
+        if ((*type)->type == idt_ushort)
+            *type = LookupSymbol("short", NULL);
+        if ((*type)->type == idt_uint)
+            *type = LookupSymbol("int", NULL);
+        if ((*type)->type == idt_ulong)
+            *type = LookupSymbol("long", NULL);
+    }
+    return 1;
+}
+
+void TypeCombine(int sign1, const_Typename_ptr type1, int *sign2, const_Typename_ptr *type2)
+{
+    if (*sign2 != -1 && *sign2 != sign1) {
+        __symbol_yyerror("type combination error (sign)");
+        return;
+    }
+    *sign2 = sign1;
+    if (*type2 == NULL)
+        *type2 = type1;
+    else if (type1 != NULL) {
+        if ((*type2)->type != idt_int && (*type2)->type != idt_uint) {
+            if ((type1->type != idt_int && type1->type != idt_uint) || !__isIntegerType((*type2)->type)) {
+                __symbol_yyerror("type combination error (int)");
+                return;
+            }
+        }
+        else
+            switch (type1->type) {
+            case idt_char:
+            case idt_uchar:
+                *type2 = LookupSymbol("char", NULL);
+                break;
+            case idt_short:
+            case idt_ushort:
+                *type2 = LookupSymbol("short", NULL);
+                break;
+            case idt_long:
+            case idt_ulong:
+                *type2 = LookupSymbol("long", NULL);
+                break;
+            default:
+                __symbol_yyerror("type combination error");
+                return;
+            }
+    }
+    if (*sign2 != -1 && !setSign(*sign2, type2)) {
+        __symbol_yyerror("type combination error (sign)");
+        return;
+    }
 }

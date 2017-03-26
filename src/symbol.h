@@ -8,8 +8,8 @@ extern "C" {
 #include <stddef.h>
 #include <stdint.h>
 
+#define IDTYPE_NUM 17
 typedef enum {
-    idt_none, /* no type specified */
     idt_char, idt_short, idt_int, idt_long, /* signed integer */
     idt_uchar, idt_ushort, idt_uint, idt_ulong, /* unsigned integer */
     idt_float, idt_double, /* floating-point number */
@@ -132,6 +132,9 @@ int CreateLable();
 int CreateFunc(Identifier_t *);
 int CreateParam(Identifier_t *);
 void CounterLeaveFunc();
+
+int setSign(int, const_Typename_ptr *);
+void TypeCombine(int sign1, const_Typename_ptr type1, int *sign2, const_Typename_ptr *type2);
 
 #ifdef __cplusplus
 }

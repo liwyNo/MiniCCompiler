@@ -2,6 +2,9 @@
 
 #include <cstdio>
 #include "symbol.h"
+#include "yaccUtils.h"
+#include <cstdlib>
+#include <cstring>
 
 extern int yylex (void);
 void yyerror(const char *s);
@@ -28,6 +31,14 @@ void yyerror(const char *s);
     init_declarator_list_i_t initializer_list_i;
     init_declarator_i_t init_declarator_i;
     enum_specifier_s_t enum_specifier_s;
+    enumerator_list_s_t enumerator_list_s;
+    enumerator_s_t enumerator_s;
+    constant_expression_s_t constant_expression_s;
+    pointer_s_t pointer_s;
+    direct_declarator_s_t direct_declarator_s;
+    identifier_list_s_t *identifier_list_s;
+    parameter_list_s_t *parameter_list_s;
+    declarator_s_t declarator_s;
 }
 
 %token <vstr> IDENTIFIER
@@ -54,6 +65,14 @@ void yyerror(const char *s);
 %type <specifier_qualifier_list_s> specifier_qualifier_list
 %type <declaration_specifiers_s> declaration_specifiers
 %type <enum_specifier_s> enum_specifier
+%type <enumerator_list_s> enumerator_list
+%type <enumerator_s> enumerator
+%type <constant_expression_s> constant_expression
+%type <pointer_s> pointer
+%type <direct_declarator_s> direct_declarator
+%type <identifier_list_s> identifier_list
+%type <parameter_list_s> parameter_list
+%type <declarator_s> declarator
 
 %nonassoc IFX
 %nonassoc ELSE
@@ -73,10 +92,6 @@ constant:
     | CHAR_CONSTANT
 	| DOUBLE_CONSTANT
 	| ENUM_CONSTANT
-	;
-
-enumeration_constant:
-	  IDENTIFIER
 	;
 
 string:
@@ -225,27 +240,27 @@ type_qualifier:
 	;
 
 type_specifier:
-	  VOID                      {$$.type = (const_Typename_ptr)LookupSymbol("void", NULL);$$.sign=-1;}
-	| CHAR                      {$$.type = (const_Typename_ptr)LookupSymbol("char", NULL);$$.sign=-1;}
-	| SHORT                     {$$.type = (const_Typename_ptr)LookupSymbol("short", NULL);$$.sign=-1;}
-	| INT                       {$$.type = (const_Typename_ptr)LookupSymbol("int", NULL);$$.sign=-1;}
-	| LONG                      {$$.type = (const_Typename_ptr)LookupSymbol("long", NULL);$$.sign=-1;}
-	| FLOAT                     {$$.type = (const_Typename_ptr)LookupSymbol("float", NULL);$$.sign=-1;}
-	| DOUBLE                    {$$.type = (const_Typename_ptr)LookupSymbol("double", NULL);$$.sign=-1;}
-	| SIGNED                    {$$.type = (const_Typename_ptr)LookupSymbol("int", NULL);$$.sign=1;}
-	| UNSIGNED                  {$$.type = (const_Typename_ptr)LookupSymbol("char", NULL);$$.sign=0;}
-	| struct_or_union_specifier {$$.type = $1;$$.sign=-1;}
-	| enum_specifier            {$$.type = $1;$$.sign=-1;}
-	| TYPE_NAME                 {$$.type = (const_Typename_ptr)$1;$$.sign=-1;}
+	  VOID                      {$$.type = (const_Typename_ptr)LookupSymbol("void", NULL); $$.sign=-1;}
+	| CHAR                      {$$.type = (const_Typename_ptr)LookupSymbol("char", NULL); $$.sign=-1;}
+	| SHORT                     {$$.type = (const_Typename_ptr)LookupSymbol("short", NULL); $$.sign=-1;}
+	| INT                       {$$.type = (const_Typename_ptr)LookupSymbol("int", NULL); $$.sign=-1;}
+	| LONG                      {$$.type = (const_Typename_ptr)LookupSymbol("long", NULL); $$.sign=-1;}
+	| FLOAT                     {$$.type = (const_Typename_ptr)LookupSymbol("float", NULL); $$.sign=-1;}
+	| DOUBLE                    {$$.type = (const_Typename_ptr)LookupSymbol("double", NULL); $$.sign=-1;}
+	| SIGNED                    {$$.type = (const_Typename_ptr)LookupSymbol("int", NULL); $$.sign=1;}
+	| UNSIGNED                  {$$.type = (const_Typename_ptr)LookupSymbol("char", NULL); $$.sign=0;}
+	| struct_or_union_specifier {$$.type = $1; $$.sign=-1;}
+	| enum_specifier            {$$.type = $1; $$.sign=-1;}
+	| TYPE_NAME                 {$$.type = (const_Typename_ptr)$1; $$.sign=-1;}
 	;
 
 declaration_specifiers:
-	  storage_class_specifier declaration_specifiers
-	| storage_class_specifier
-	| type_specifier declaration_specifiers
-	| type_specifier
-	| type_qualifier declaration_specifiers
-	| type_qualifier
+	  storage_class_specifier declaration_specifiers    {$$ = $2; $$.hasTYPEDEF |= $1.hasTYPEDEF; $$.hasSTATIC |= $1.hasSTATIC;}
+	| storage_class_specifier                           {$$.hasTYPEDEF = $1.hasTYPEDEF; $$.hasSTATIC = $1.hasSTATIC; $$.hasCONST = 0; $$.sign = -1; $$.type = NULL;}
+	| type_specifier declaration_specifiers             {$$ = $2; TypeCombine($1.sign, $1.type, &($$.sign), &($$.type));}
+	| type_specifier                                    {$$.hasTYPEDEF=$$.hasSTATIC=$$.hasCONST=0; $$.sign = $1.sign; $$.type = $1.type;}
+	| type_qualifier declaration_specifiers             {$$ = $2; $$.hasCONST |= $1.hasCONST;}
+	| type_qualifier                                    {$$.hasTYPEDEF=$$.hasSTATIC=0; $$.hasCONST = $1.hasCONST; $$.sign = -1; $$.type = NULL;}
 	;
 
 init_declarator:
@@ -259,8 +274,8 @@ init_declarator_list:
 	;
 
 declaration:
-	  declaration_specifiers ';'
-	| declaration_specifiers init_declarator_list ';'
+	  declaration_specifiers ';'                        {/* nothing to do */}
+	| declaration_specifiers init_declarator_list ';'   {}
 	;
 
 struct_or_union:
@@ -269,16 +284,31 @@ struct_or_union:
 	;
 
 struct_or_union_specifier:
-	  struct_or_union '{' struct_declaration_list '}'
-	| struct_or_union IDENTIFIER '{' struct_declaration_list '}'
-	| struct_or_union IDENTIFIER
+	  struct_or_union '{' struct_declaration_list '}'               {}
+	| struct_or_union IDENTIFIER '{' struct_declaration_list '}'    {}
+	| struct_or_union IDENTIFIER                                    {
+            Typename_t *t = (Typename_t*)malloc(sizeof(Typename_t));
+            if ($1.hasSTRUCT)
+                t->type = idt_struct;
+            else if ($1.hasUNION)
+                t->type = idt_union;
+            t->name = $2;
+            t->structure = NULL;
+            StackAddTypename(t);
+            $$ = t;
+        }
 	;
 
 specifier_qualifier_list:
-	  type_specifier specifier_qualifier_list
-	| type_specifier
-	| type_qualifier specifier_qualifier_list
-	| type_qualifier
+	  type_specifier specifier_qualifier_list   {$$ = $2; TypeCombine($1.sign, $1.type, &($$.sign), &($$.type));}
+	| type_specifier                            {$$.hasCONST=0; $$.sign=$1.sign; $$.type=$1.type;}
+	| type_qualifier specifier_qualifier_list   {$$ = $2; $$.hasCONST = $1.hasCONST;}
+	| type_qualifier                            {$$.hasCONST = $1.hasCONST; $$.sign = -1; $$.type = NULL;}
+	;
+
+struct_declarator_list:
+	  declarator
+	| struct_declarator_list ',' declarator
 	;
 
 struct_declaration:
@@ -291,54 +321,57 @@ struct_declaration_list:
 	| struct_declaration_list struct_declaration
 	;
 
-struct_declarator_list:
-	  declarator
-	| struct_declarator_list ',' declarator
-	;
-
 enum_specifier:
-	  ENUM '{' enumerator_list '}'
-	| ENUM '{' enumerator_list ',' '}'
-	| ENUM IDENTIFIER '{' enumerator_list '}'
-	| ENUM IDENTIFIER '{' enumerator_list ',' '}'
-	| ENUM IDENTIFIER
+	  ENUM '{' enumerator_list '}'                  { $$ = newEnum(NULL, $3); }
+	| ENUM '{' enumerator_list ',' '}'              { $$ = newEnum(NULL, $3); }
+	| ENUM IDENTIFIER '{' enumerator_list '}'       { $$ = newEnum($2, $4); }
+	| ENUM IDENTIFIER '{' enumerator_list ',' '}'   { $$ = newEnum($2, $4); }
+	| ENUM IDENTIFIER                               {
+            Typename_t *t = (Typename_t*)malloc(sizeof(Typename_t));
+            t->type = idt_enum;
+            t->name = $2;
+            t->structure = NULL;
+            StackAddTypename(t);
+            $$ = t;
+        }
 	;
 
 enumerator_list:
-	  enumerator
-	| enumerator_list ',' enumerator
+	  {$<vint>$=0;} enumerator           {$$=(EnumTable_t*)malloc(sizeof(EnumTable_t)); $$->name=$2.name; $$->value=$2.value; $$->next=NULL;}
+	| enumerator_list ',' {$<vint>$=($<enumerator_list_s>-1)->value + 1;} enumerator    {
+            $$=(EnumTable_t*)malloc(sizeof(EnumTable_t));
+            $$->name = $4.name;
+            $$->value = $4.value;
+            $$->next = $1;
+        }
 	;
 
 enumerator:
-	  enumeration_constant '=' constant_expression
-	| enumeration_constant
+	  IDENTIFIER '=' constant_expression    {$$.name=$1; $$.value=$3.value.vint;
+                                                if (!$3.isConst||$3.type!=idt_int) yyerror("enumerator not integer constant");}
+	| IDENTIFIER                            {$$.name=$1; $$.value=$<vint>0;}
 	;
 
 direct_declarator:
-	  IDENTIFIER
-	| '(' declarator ')'
-	| direct_declarator '[' ']'
-	| direct_declarator '[' assignment_expression ']'
-	| direct_declarator '(' parameter_list ')'
-	| direct_declarator '(' ')'
-	| direct_declarator '(' identifier_list ')'
+	  IDENTIFIER                                    {$$.type=1; $$.data.d1=$1;}
+	| '(' declarator ')'                            {$$.type=2; $$.data.d2=$2;}
+	| direct_declarator '[' ']'                     {$$.type=3; $$.data.d3=(direct_declarator_s_t*)memDup(&$1, sizeof(direct_declarator_s_t)); freeDD(&$1);}
+	| direct_declarator '[' constant_expression ']' {$$.type=4; if (!$3.isConst||$3.type!=idt_int) yyerror("array declaration not integer constant"); $$.data.d4.dd=(direct_declarator_s_t*)memDup(&$1, sizeof(direct_declarator_s_t)); freeDD(&$1); $$.data.d4.ce=$3.value.vint;}
+	| direct_declarator '(' parameter_list ')'      {$$.type=5; $$.data.d5.dd=(direct_declarator_s_t*)memDup(&$1,sizeof(direct_declarator_s_t)); freeDD(&$1); $$.data.d5.pl=$3;}
+	| direct_declarator '(' ')'                     {$$.type=6; $$.data.d6=(direct_declarator_s_t*)memDup(&$1,sizeof(direct_declarator_s_t)); freeDD(&$1);}
+	| direct_declarator '(' identifier_list ')'     {$$.type=7; $$.data.d7.dd=(direct_declarator_s_t*)memDup(&$1,sizeof(direct_declarator_s_t)); freeDD(&$1); $$.data.d7.il=$3;}
 	;
 
 pointer:
-	  '*' type_qualifier pointer
-	| '*' type_qualifier
-	| '*' pointer
-	| '*'
+	  '*' type_qualifier pointer    {$$=(pointer_s_t)malloc(sizeof(pointer_list_t)); $$->hasConst=$2.hasCONST; $$->next=$3;}
+	| '*' type_qualifier            {$$=(pointer_s_t)malloc(sizeof(pointer_list_t)); $$->hasConst=$2.hasCONST; $$->next=NULL;}
+	| '*' pointer                   {$$=(pointer_s_t)malloc(sizeof(pointer_list_t)); $$->hasConst=0; $$->next=$2;}
+	| '*'                           {$$=(pointer_s_t)malloc(sizeof(pointer_list_t)); $$->hasConst=0; $$->next=NULL;}
 	;
 
 declarator:
-	  pointer direct_declarator
-	| direct_declarator
-	;
-
-parameter_list:
-	  parameter_declaration
-	| parameter_list ',' parameter_declaration
+	  pointer direct_declarator {$$.ptr=$1; $$.dd=(direct_declarator_s_t*)memDup(&$2,sizeof(direct_declarator_s_t)); freeDD(&$2);}
+	| direct_declarator         {$$.dd=(direct_declarator_s_t*)memDup(&$1,sizeof(direct_declarator_s_t)); freeDD(&$1);}
 	;
 
 parameter_declaration:
@@ -347,9 +380,14 @@ parameter_declaration:
 	| declaration_specifiers
 	;
 
+parameter_list:
+	  parameter_declaration
+	| parameter_list ',' parameter_declaration
+	;
+
 identifier_list:
-	  IDENTIFIER
-	| identifier_list ',' IDENTIFIER
+	  IDENTIFIER                        {$$=(identifier_list_s_t*)malloc(sizeof(identifier_list_s_t)); $$->next=NULL; $$->id=$1;}
+	| identifier_list ',' IDENTIFIER    {$$=(identifier_list_s_t*)malloc(sizeof(identifier_list_s_t)); $$->next=$1; $$->id=$3;}
 	;
 
 type_name:
@@ -366,9 +404,9 @@ abstract_declarator:
 direct_abstract_declarator:
 	  '(' abstract_declarator ')'
 	| '[' ']'
-	| '[' assignment_expression ']'
+	| '[' constant_expression ']'
 	| direct_abstract_declarator '[' ']'
-	| direct_abstract_declarator '[' assignment_expression ']'
+	| direct_abstract_declarator '[' constant_expression ']'
 	| '(' ')'
 	| '(' parameter_list ')'
 	| direct_abstract_declarator '(' ')'
