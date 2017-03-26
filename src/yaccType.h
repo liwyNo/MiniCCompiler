@@ -8,6 +8,18 @@
  */
 
 typedef struct {
+    int isConst;
+    IdType_t type;
+    union {
+        int vint;
+        double vdouble;
+        char vchar;
+        char *vstr;
+    } value;
+    /* other property */
+} constant_expression_s_t;
+
+typedef struct {
     int hasCONST;
 } type_qualifier_s_t;
 
@@ -47,5 +59,59 @@ typedef declaration_specifiers_s_t init_declarator_list_i_t;
 typedef init_declarator_list_i_t init_declarator_i_t;
 
 typedef const_Typename_ptr enum_specifier_s_t;
+
+typedef EnumTable_t *enumerator_list_s_t;
+
+typedef struct {
+    char *name;
+    int value;
+} enumerator_s_t;
+
+typedef struct __pointer_list_t {
+    int hasConst;
+    struct __pointer_list_t *next;
+} pointer_list_t;
+typedef pointer_list_t *pointer_s_t;
+
+struct __parameter_list_s_t;
+
+typedef struct __identifier_list_s_t {
+    char *id;
+    struct __identifier_list_s_t *next;
+} identifier_list_s_t;
+
+struct __direct_declarator_s_t;
+
+typedef struct __declarator_s_t {
+    pointer_s_t ptr;
+    struct __direct_declarator_s_t *dd;
+} declarator_s_t;
+
+typedef struct __direct_declarator_s_t {
+    int type; // 1 ~ 7
+    union {
+        char *d1;
+        declarator_s_t d2;
+        struct __direct_declarator_s_t *d3;
+        struct{
+            struct __direct_declarator_s_t *dd;
+            int ce;
+        } d4;
+        struct {
+            struct __direct_declarator_s_t *dd;
+            struct __parameter_list_s_t *pl;
+        } d5;
+        struct __direct_declarator_s_t *d6;
+        struct {
+            struct __direct_declarator_s_t *dd;
+            identifier_list_s_t *il;
+        } d7;
+    } data;
+} direct_declarator_s_t;
+void freeDD(direct_declarator_s_t*);
+
+typedef struct __parameter_list_s_t {
+
+} parameter_list_s_t;
 
 #endif

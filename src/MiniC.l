@@ -82,9 +82,12 @@ int check_type(void);
 
 {L}{A}*					{ return check_type(); }
 
-{HP}{H}+{IS}?				{ sscanf(yytext, "%x", &yylval.vint); return INT_CONSTANT; }
-{NZ}{D}*{IS}?				{ sscanf(yytext, "%o", &yylval.vint); return INT_CONSTANT; }
-"0"{O}*{IS}?				{ sscanf(yytext, "%d", &yylval.vint); return INT_CONSTANT; }
+{HP}{H}+{IS}?				{ if (!isdigit(yytext[strlen(yytext)-1])) yyerror("{IS} not supported yet"); 
+                                sscanf(yytext, "%x", &yylval.vint); return INT_CONSTANT; }
+{NZ}{D}*{IS}?				{ if (!isdigit(yytext[strlen(yytext)-1])) yyerror("{IS} not supported yet"); 
+                                sscanf(yytext, "%o", &yylval.vint); return INT_CONSTANT; }
+"0"{O}*{IS}?				{ if (!isdigit(yytext[strlen(yytext)-1])) yyerror("{IS} not supported yet"); 
+                                sscanf(yytext, "%d", &yylval.vint); return INT_CONSTANT; }
 '\\a'		{ yylval.vchar = '\a'; return CHAR_CONSTANT; }
 '\\b'		{ yylval.vchar = '\b'; return CHAR_CONSTANT; }
 '\\f'		{ yylval.vchar = '\f'; return CHAR_CONSTANT; }
@@ -99,12 +102,18 @@ int check_type(void);
 '\\x{H}+'    { sscanf(yytext, "'\\x%hhx'", &yylval.vchar); return CHAR_CONSTANT; }
 '[^\\\n']'   { yylval.vchar = yytext[1]; return CHAR_CONSTANT; }
 
-{D}+{E}{FS}?				{ sscanf(yytext, "%lf", &yylval.vdouble); return DOUBLE_CONSTANT; }
-{D}*"."{D}+{E}?{FS}?			{ sscanf(yytext, "%lf", &yylval.vdouble); return DOUBLE_CONSTANT; }
-{D}+"."{E}?{FS}?			{ sscanf(yytext, "%lf", &yylval.vdouble); return DOUBLE_CONSTANT; }
-{HP}{H}+{P}{FS}?			{ sscanf(yytext, "%lf", &yylval.vdouble); return DOUBLE_CONSTANT; }
-{HP}{H}*"."{H}+{P}{FS}?			{ sscanf(yytext, "%lf", &yylval.vdouble); return DOUBLE_CONSTANT; }
-{HP}{H}+"."{P}{FS}?			{ sscanf(yytext, "%lf", &yylval.vdouble); return DOUBLE_CONSTANT; }
+{D}+{E}{FS}?				{ char c=tolower(yytext[strlen(yytext)-1]); if (c=='l'||c=='u') yyerror("{FS} not supported yet");
+                                sscanf(yytext, "%lf", &yylval.vdouble); return DOUBLE_CONSTANT; }
+{D}*"."{D}+{E}?{FS}?		{ char c=tolower(yytext[strlen(yytext)-1]); if (c=='l'||c=='u') yyerror("{FS} not supported yet");
+                                sscanf(yytext, "%lf", &yylval.vdouble); return DOUBLE_CONSTANT; }
+{D}+"."{E}?{FS}?			{ char c=tolower(yytext[strlen(yytext)-1]); if (c=='l'||c=='u') yyerror("{FS} not supported yet");
+                                sscanf(yytext, "%lf", &yylval.vdouble); return DOUBLE_CONSTANT; }
+{HP}{H}+{P}{FS}?			{ char c=tolower(yytext[strlen(yytext)-1]); if (c=='l'||c=='u') yyerror("{FS} not supported yet");
+                                sscanf(yytext, "%lf", &yylval.vdouble); return DOUBLE_CONSTANT; }
+{HP}{H}*"."{H}+{P}{FS}?		{ char c=tolower(yytext[strlen(yytext)-1]); if (c=='l'||c=='u') yyerror("{FS} not supported yet");
+                                sscanf(yytext, "%lf", &yylval.vdouble); return DOUBLE_CONSTANT; }
+{HP}{H}+"."{P}{FS}?			{ char c=tolower(yytext[strlen(yytext)-1]); if (c=='l'||c=='u') yyerror("{FS} not supported yet");
+                                sscanf(yytext, "%lf", &yylval.vdouble); return DOUBLE_CONSTANT; }
 
 \"              { BEGIN INSTRING; strbuf = ""; }
 
