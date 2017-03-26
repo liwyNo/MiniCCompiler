@@ -27,7 +27,7 @@ void yyerror(const char *s);
     declaration_specifiers_s_t declaration_specifiers_s;
     init_declarator_list_i_t initializer_list_i;
     init_declarator_i_t init_declarator_i;
-    enum_specifier_s_t enum_specifier_s;
+    enum_specifier_s_t enum_specifier_s
 }
 
 %token <vstr> IDENTIFIER

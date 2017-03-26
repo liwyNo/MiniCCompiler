@@ -9,7 +9,6 @@ extern "C" {
 #include <stdint.h>
 
 typedef enum {
-    idt_none, /* no type specified */
     idt_char, idt_short, idt_int, idt_long, /* signed integer */
     idt_uchar, idt_ushort, idt_uint, idt_ulong, /* unsigned integer */
     idt_float, idt_double, /* floating-point number */
@@ -20,6 +19,7 @@ typedef enum {
     idt_enum /* enumeration */
 } IdType_t;
 
+#define IDTYPE_NUM 17
 struct __Identifier_t;
 union __IdStructure_t;
 struct __Typename_t;
