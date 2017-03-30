@@ -72,6 +72,7 @@ typedef struct __pointer_list_t {
     struct __pointer_list_t *next;
 } pointer_list_t;
 typedef pointer_list_t *pointer_s_t;
+void freePL(pointer_list_t *);
 
 struct __parameter_list_s_t;
 
@@ -88,12 +89,12 @@ typedef struct __declarator_s_t {
 } declarator_s_t;
 
 typedef struct __direct_declarator_s_t {
-    int type; // 1 ~ 7
+    int type; // 1 ~ 6
     union {
         char *d1;
         declarator_s_t d2;
         struct __direct_declarator_s_t *d3;
-        struct{
+        struct {
             struct __direct_declarator_s_t *dd;
             int ce;
         } d4;
@@ -102,16 +103,49 @@ typedef struct __direct_declarator_s_t {
             struct __parameter_list_s_t *pl;
         } d5;
         struct __direct_declarator_s_t *d6;
-        struct {
-            struct __direct_declarator_s_t *dd;
-            identifier_list_s_t *il;
-        } d7;
     } data;
 } direct_declarator_s_t;
-void freeDD(direct_declarator_s_t*);
+void freeDD(direct_declarator_s_t *);
 
 typedef struct __parameter_list_s_t {
 
 } parameter_list_s_t;
+
+typedef struct __struct_declarator_list_s_t {
+    declarator_s_t decl;
+    struct __struct_declarator_list_s_t *next;
+} struct_declarator_list_s_t;
+void freeSDL(struct_declarator_list_s_t *);
+
+struct __direct_abstract_declarator_s_t;
+
+typedef struct {
+    pointer_s_t ptr;
+    struct __direct_abstract_declarator_s_t *dad;
+} abstract_declarator_s_t;
+
+typedef struct __direct_abstract_declarator_s_t {
+    int type; // 1 ~ 9
+    union {
+        abstract_declarator_s_t d1;
+        int d3;
+        struct __direct_abstract_declarator_s_t *d4;
+        struct {
+            struct __direct_abstract_declarator_s_t *dad;
+            int ce;
+        } d5;
+        parameter_list_s_t *d7;
+        struct __direct_abstract_declarator_s_t *d8;
+        struct {
+            struct __direct_abstract_declarator_s_t *dad;
+            parameter_list_s_t *pl;
+        } d9;
+    } data;
+} direct_abstract_declarator_s_t;
+
+typedef const_Typename_ptr type_name_s_t;
+
+Typename_t *makeType(const_Typename_ptr type, declarator_s_t decl);
+Typename_t *makeType(const_Typename_ptr type, abstract_declarator_s_t ad);
 
 #endif

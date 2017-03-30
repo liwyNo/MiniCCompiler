@@ -1,12 +1,9 @@
 #ifndef SYMBOL_H
 #define SYMBOL_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#include <stddef.h>
-#include <stdint.h>
+#include <cstddef>
+#include <cstdint>
+#include <climits>
 
 #define IDTYPE_NUM 17
 typedef enum {
@@ -20,7 +17,6 @@ typedef enum {
     idt_enum /* enumeration */
 } IdType_t;
 
-#define IDTYPE_NUM 17
 struct __Identifier_t;
 union __IdStructure_t;
 struct __Typename_t;
@@ -33,8 +29,9 @@ typedef struct __SymbolList_t {
 } SymbolList_t;
 
 typedef struct {
+    const_Typename_ptr rbase_type; /* type of pointer real base, only used for array */
     const_Typename_ptr base_type; /* type of pointer base */
-    size_t length; /* only used for array, otherwise set to SIZE_MAX */
+    int length; /* only used for array, otherwise set to -1, INT_MAX is used for array[]*/
 } PtrStructure_t;
 
 typedef struct {
@@ -60,19 +57,19 @@ typedef union __IdStructure_t {
     PtrStructure_t pointer; // this is used for both pointer and array
     FPtrStructure_t fpointer; /* function pointer */
     const EnumTable_t *enumerate;
-    int isConst; /* whether it is constant */
 } IdStructure_t; /* detailed structure of identifer type */
 
 typedef struct __Typename_t {
-    IdType_t type; 
+    IdType_t type;
     char *name; /* name of type */
+    int isConst; /* whether it is constant */
     IdStructure_t *structure; /* detailed type information */
+    int size; /* size of typename */
 } Typename_t;
 
 typedef struct __Identifier_t {
     char *name; /* name of identifer */
     const_Typename_ptr type; /* type of identifer */
-    int size; /* size of identifer */
     char *TACname; /* name in three-address-code */
 } Identifier_t;
 
@@ -106,6 +103,7 @@ void FreeEnumList(EnumList_t *);
 void PushSymbolStack();
 void PopSymbolStack();
 void *LookupSymbol(const char *name, int *symbol_type);
+int StackHasName(SymbolStack_t *, const char *);
 void AddIdentifier(Identifier_t *, SymbolList_t **);
 void StackAddIdentifier(Identifier_t *);
 void StackAddStaticIdentifier(Identifier_t *);
@@ -114,6 +112,8 @@ void StackAddTypename(Typename_t *);
 void AddEnumTable(EnumTable_t *, EnumList_t **);
 void StackAddEnumTable(EnumTable_t *);
 void InitSymbolStack();
+struct __declarator_s_t;
+void StackDeclare(const_Typename_ptr, int hasSTATIC, int hasTYPEDEF, struct __declarator_s_t);
 
 typedef struct {
     int num_c; /* constant */
@@ -128,7 +128,7 @@ extern VarCounter_t varCounter;
 
 int CreateConstant();
 int CreateTempVar();
-int CreateNativeVar(Identifier_t *);
+int CreateNativeVar(Identifier_t *, SymbolStack_t *);
 int CreateLable();
 int CreateFunc(Identifier_t *);
 int CreateParam(Identifier_t *);
@@ -136,9 +136,5 @@ void CounterLeaveFunc();
 
 int setSign(int, const_Typename_ptr *);
 void TypeCombine(int sign1, const_Typename_ptr type1, int *sign2, const_Typename_ptr *type2);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif
