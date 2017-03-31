@@ -2,7 +2,7 @@
 #define YACCTYPE_H
 
 #include "symbol.h"
-
+#include "control_flow.h"
 /* synthesize property of XX: XX_s_t
  * inherit property of XX: XX_i_t
  */
@@ -12,12 +12,13 @@ typedef struct {
     IdType_t type;
     union {
         int vint;
+        long long vlong;
         double vdouble;
         char vchar;
         char *vstr;
     } value;
     /* other property */
-} constant_expression_s_t;
+} expression_s_t;
 
 typedef struct {
     int hasCONST;

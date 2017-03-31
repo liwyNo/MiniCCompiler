@@ -3,6 +3,7 @@
 #include <cstdio>
 #include "symbol.h"
 #include "yaccUtils.h"
+#include "control_flow.h>
 #include <cstdlib>
 #include <cstring>
 
@@ -33,7 +34,7 @@ void yyerror(const char *s);
     enum_specifier_s_t enum_specifier_s;
     enumerator_list_s_t enumerator_list_s;
     enumerator_s_t enumerator_s;
-    constant_expression_s_t constant_expression_s;
+    expression_s_t expression_s;
     pointer_s_t pointer_s;
     direct_declarator_s_t direct_declarator_s;
     identifier_list_s_t *identifier_list_s;
@@ -58,6 +59,26 @@ void yyerror(const char *s);
 %token STRUCT UNION ENUM
 %token CASE DEFAULT IF ELSE SWITCH WHILE DO FOR GOTO CONTINUE BREAK RETURN
 
+%type <expression_s_t> primary_expression
+%type <expression_s_t> constant
+%type <expression_s_t> expression
+%type <expression_s_t> postfix_expression
+%type <expression_s_t> string
+%type <expression_s_t> unary_expression
+%type <expression_s_t> cast_expression
+%type <expression_s_t> multiplicative_expression
+%type <expression_s_t> additive_expression
+%type <expression_s_t> shift_expression
+%type <expression_s_t> relational_expression
+%type <expression_s_t> equality_expression
+%type <expression_s_t> and_expression
+%type <expression_s_t> exclusive_or_expression
+%type <expression_s_t> inclusive_or_expression
+%type <expression_s_t> logical_and_expression
+%type <expression_s_t> logical_or_expression
+%type <expression_s_t> conditional_expression
+%type <expression_s_t> assignment_expression
+
 %type <type_qualifier_s> type_qualifier
 %type <storage_class_specifier_s> storage_class_specifier
 %type <type_specifier_s> type_specifier
@@ -68,7 +89,7 @@ void yyerror(const char *s);
 %type <enum_specifier_s> enum_specifier
 %type <enumerator_list_s> enumerator_list
 %type <enumerator_s> enumerator
-%type <constant_expression_s> constant_expression
+%type <expression_s> constant_expression
 %type <pointer_s> pointer
 %type <direct_declarator_s> direct_declarator
 %type <identifier_list_s> identifier_list
@@ -89,14 +110,22 @@ primary_expression:
 	;
 
 constant:
-	  INT_CONSTANT
-    | CHAR_CONSTANT
+	  INT_CONSTANT		{
+
+		}
+  | CHAR_CONSTANT
 	| DOUBLE_CONSTANT
 	| ENUM_CONSTANT
 	;
 
 string:
-	  STR_CONSTANT
+	  STR_CONSTANT		{
+				char temp_name = new char[7];
+				sprintf(temp_name,"c%d",CreateConstant());
+				gen_const("str",temp_name,$1);
+				$$.value.vstr = $1;
+				$$.truelist = GotoList()
+			}
 	;
 
 postfix_expression:
