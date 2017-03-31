@@ -12,6 +12,8 @@ float : float4 float8
 pointer : ptr
 string : str (只能用于常量声明)
 
+const str c1 65 67 78 0 最后一定有0的
+
 声明：
 const <type> <name> <value>
 var <type> [length] <name>  gen_var(const char *type,const char *name, int length=-1)
