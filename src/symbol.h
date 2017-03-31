@@ -83,6 +83,7 @@ typedef struct __SymbolStack_t {
     TypeList_t *typeList; /* typenames in this chunk */
     EnumList_t *enumList; /* enumerations in this chunk */
     struct __SymbolStack_t *next; /* pointer to next chunk symbol stack node */
+    int normal; /* normal means variables in this stack should be generated to output */
 } SymbolStack_t;
 
 typedef struct __GotoList_t {
@@ -100,10 +101,10 @@ void FreeSymbolList(SymbolList_t *);
 void FreeTypeList(TypeList_t *);
 void FreeEnumTable(EnumTable_t *);
 void FreeEnumList(EnumList_t *);
-void PushSymbolStack();
+void PushSymbolStack(int normal);
 void PopSymbolStack();
 void *LookupSymbol(const char *name, int *symbol_type);
-int StackHasName(SymbolStack_t *, const char *);
+void *StackHasName(SymbolStack_t *, const char *, int *);
 void AddIdentifier(Identifier_t *, SymbolList_t **);
 void StackAddIdentifier(Identifier_t *);
 void StackAddStaticIdentifier(Identifier_t *);
@@ -113,7 +114,7 @@ void AddEnumTable(EnumTable_t *, EnumList_t **);
 void StackAddEnumTable(EnumTable_t *);
 void InitSymbolStack();
 struct __declarator_s_t;
-void StackDeclare(const_Typename_ptr, int hasSTATIC, int hasTYPEDEF, struct __declarator_s_t);
+Identifier_t *StackDeclare(const_Typename_ptr, int hasSTATIC, int hasTYPEDEF, char *name);
 
 typedef struct {
     int num_c; /* constant */

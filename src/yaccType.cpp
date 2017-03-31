@@ -58,6 +58,7 @@ Typename_t *makeType(const_Typename_ptr type, declarator_s_t decl)
     }
     else {
         tmp->isConst = 0;
+        int argNum;
         switch (decl.dd->type) {
         case 1:
             *tmp = *type;
@@ -96,7 +97,14 @@ Typename_t *makeType(const_Typename_ptr type, declarator_s_t decl)
                 yyerror("function can't return function");
             tmp->type = idt_fpointer;
             tmp->structure = new IdStructure_t;
-#warning "complete this!! (parameter list)"
+            argNum = 0;
+            for (SymbolList_t *i = decl.dd->data.d5.pl->idList; i; i = i->next)
+                ++argNum;
+            tmp->structure->fpointer.argNum = argNum;
+            tmp->structure->fpointer.type = new const_Typename_ptr[argNum + 1] {type};
+            argNum = 1;
+            for (SymbolList_t *i = decl.dd->data.d5.pl->idList; i; i = i->next)
+                tmp->structure->fpointer.type[argNum++] = i->id->type;
             tmp->size = 4;
             decl2.ptr = NULL;
             decl2.dd = decl.dd->data.d5.dd;
@@ -114,6 +122,7 @@ Typename_t *makeType(const_Typename_ptr type, declarator_s_t decl)
             return makeType(tmp, decl2);
         }
     }
+    return NULL;
 }
 
 Typename_t *makeType(const_Typename_ptr type, abstract_declarator_s_t ad)
@@ -134,6 +143,7 @@ Typename_t *makeType(const_Typename_ptr type, abstract_declarator_s_t ad)
     }
     else {
         tmp->isConst = 0;
+        int argNum;
         switch (ad.dad->type) {
         case 1:
             delete tmp;
@@ -200,7 +210,14 @@ Typename_t *makeType(const_Typename_ptr type, abstract_declarator_s_t ad)
                 yyerror("function can't return function");
             tmp->type = idt_fpointer;
             tmp->structure = new IdStructure_t;
-#warning "complete this!! (parameter list)"
+            argNum = 0;
+            for (SymbolList_t *i = ad.dad->data.d7->idList; i; i = i->next)
+                ++argNum;
+            tmp->structure->fpointer.argNum = argNum;
+            tmp->structure->fpointer.type = new const_Typename_ptr[argNum + 1] {type};
+            argNum = 1;
+            for (SymbolList_t *i = ad.dad->data.d7->idList; i; i = i->next)
+                tmp->structure->fpointer.type[argNum++] = i->id->type;
             tmp->size = 4;
             return tmp;
         case 8:
@@ -219,11 +236,76 @@ Typename_t *makeType(const_Typename_ptr type, abstract_declarator_s_t ad)
                 yyerror("function can't return function");
             tmp->type = idt_fpointer;
             tmp->structure = new IdStructure_t;
-#warning "complete this!! (parameter list)"
+            argNum = 0;
+            for (SymbolList_t *i = ad.dad->data.d9.pl->idList; i; i = i->next)
+                ++argNum;
+            tmp->structure->fpointer.argNum = argNum;
+            tmp->structure->fpointer.type = new const_Typename_ptr[argNum + 1] {type};
+            argNum = 1;
+            for (SymbolList_t *i = ad.dad->data.d9.pl->idList; i; i = i->next)
+                tmp->structure->fpointer.type[argNum++] = i->id->type;
             tmp->size = 4;
             ad2.ptr = NULL;
             ad2.dad = ad.dad->data.d9.dad;
             return makeType(tmp, ad2);
         }
+    }
+    return NULL;
+}
+
+char *getDeclaratorName(const declarator_s_t *d)
+{
+    direct_declarator_s_t *dd = d->dd;
+    while (dd->type != 1)
+        switch (dd->type) {
+        case 2:
+            dd = dd->data.d2.dd;
+            break;
+        case 3:
+            dd = dd->data.d3;
+            break;
+        case 4:
+            dd = dd->data.d4.dd;
+            break;
+        case 5:
+            dd = dd->data.d5.dd;
+            break;
+        case 6:
+            dd = dd->data.d6;
+            break;
+        }
+    return dd->data.d1;
+}
+
+void freeInit(initializer_s_t *p)
+{
+    if (p->lst)
+        freeIL(p->lst);
+}
+
+void freeIL(initializer_list_s_t *p)
+{
+    while (p)
+    {
+        initializer_list_s_t *t = p;
+        p = p->next;
+        freeInit(&t->data);
+        delete t;
+    }
+}
+
+void freeID(init_declarator_s_t *p)
+{
+    if (p->init)
+        freeInit(p->init);
+    freeDD(p->decl.dd);
+}
+void freeIDL(init_declarator_list_s_t *p)
+{
+    while (p) {
+        init_declarator_list_s_t *t = p;
+        p = p->next;
+        freeID(&t->idecl);
+        delete t;
     }
 }

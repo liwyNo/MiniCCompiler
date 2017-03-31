@@ -11,4 +11,6 @@ template<class T> T *memDup(const T *src)
     return (T*)memcpy(new T, src, sizeof(T));
 }
 
+void genDeclare(const Identifier_t *, bool global);
+
 #endif

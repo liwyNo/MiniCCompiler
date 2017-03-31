@@ -28,21 +28,22 @@ void yyerror(const char *s);
     struct_or_union_specifier_s_t struct_or_union_specifier_s;
     specifier_qualifier_list_s_t specifier_qualifier_list_s;
     declaration_specifiers_s_t declaration_specifiers_s;
-    init_declarator_list_i_t initializer_list_i;
-    init_declarator_i_t init_declarator_i;
     enum_specifier_s_t enum_specifier_s;
     enumerator_list_s_t enumerator_list_s;
     enumerator_s_t enumerator_s;
-    constant_expression_s_t constant_expression_s;
+    expression_s_t expression_s;
     pointer_s_t pointer_s;
     direct_declarator_s_t direct_declarator_s;
-    identifier_list_s_t *identifier_list_s;
-    parameter_list_s_t *parameter_list_s;
+    parameter_list_s_t parameter_list_s;
     declarator_s_t declarator_s;
     struct_declarator_list_s_t *struct_declarator_list_s;
     abstract_declarator_s_t abstract_declarator_s;
     direct_abstract_declarator_s_t direct_abstract_declarator_s;
     type_name_s_t type_name_s;
+    initializer_list_s_t *initializer_list_s;
+    initializer_s_t initializer_s;
+    init_declarator_s_t init_declarator_s;
+    init_declarator_list_s_t *init_declarator_list_s;
 }
 
 %token <vstr> IDENTIFIER
@@ -71,16 +72,19 @@ void yyerror(const char *s);
 %type <enum_specifier_s> enum_specifier
 %type <enumerator_list_s> enumerator_list
 %type <enumerator_s> enumerator
-%type <constant_expression_s> constant_expression
+%type <expression_s> constant_expression assignment_expression
 %type <pointer_s> pointer
 %type <direct_declarator_s> direct_declarator
-%type <identifier_list_s> identifier_list
 %type <parameter_list_s> parameter_list
 %type <declarator_s> declarator
 %type <struct_declarator_list_s> struct_declarator_list
 %type <abstract_declarator_s> abstract_declarator
 %type <direct_abstract_declarator_s> direct_abstract_declarator
 %type <type_name_s> type_name
+%type <initializer_list_s> initializer_list
+%type <initializer_s> initializer
+%type <init_declarator_s> init_declarator
+%type <init_declarator_list_s> init_declarator_list
 
 %nonassoc IFX
 %nonassoc ELSE
@@ -272,18 +276,32 @@ declaration_specifiers:
 	;
 
 init_declarator:
-	  declarator '=' initializer
-	| declarator
+	  declarator '=' initializer    {$$.decl = $1; $$.init = memDup(&$3);}
+	| declarator                    {$$.decl = $1; $$.init = NULL;}
 	;
 
 init_declarator_list:
-	  init_declarator
-	| init_declarator_list ',' init_declarator
+	  init_declarator               {$$=new init_declarator_list_s_t; $$->idecl=$1; $$->next=NULL;}
+	| init_declarator_list ',' init_declarator  {$$=new init_declarator_list_s_t; $$->idecl=$3; $$->next=NULL;}
 	;
 
 declaration:
 	  declaration_specifiers ';'                        {/* nothing to do */}
-	| declaration_specifiers init_declarator_list ';'   {}
+	| declaration_specifiers init_declarator_list ';'   {
+            if ($1.type==NULL)yyerror("declaration error");
+            const_Typename_ptr tmptype = $1.type;
+            if ($1.hasCONST)
+            {
+                Typename_t *tmp = memDup($1.type);
+                tmp->isConst = 1;
+                tmptype = tmp;
+            }
+            for (init_declarator_list_s_t *i = $2; i; i = i->next) {
+                Identifier_t *id = StackDeclare(makeType(tmptype, i->idecl.decl), 0, 0, getDeclaratorName(&(i->idecl.decl)));
+                genDeclare(id, symbolStack->next == NULL);
+            }
+            freeIDL($2);
+        }
 	;
 
 struct_or_union:
@@ -292,38 +310,50 @@ struct_or_union:
 	;
 
 struct_or_union_specifier:
-	  struct_or_union {PushSymbolStack();} '{' struct_declaration_list '}'               {
+	  struct_or_union {PushSymbolStack(0);} '{' struct_declaration_list '}'               {
             Typename_t *t = new Typename_t;
-            if ($1.hasUNION)
+            if ($1.hasUNION) {
                 t->type = idt_union;
-            if ($1.hasSTRUCT)
+                t->size = 0;
+                for (SymbolList_t *i = symbolStack->idList; i; i = i->next)
+                    if (i->id->type->size > t->size)
+                        t->size = i->id->type->size;
+            }
+            if ($1.hasSTRUCT) {
                 t->type = idt_struct;
+                if (symbolStack->idList)
+                    t->size = symbolStack->idList->offset + symbolStack->idList->id->type->size;
+                else
+                    t->size = 0;
+            }
             t->name = NULL;
             t->isConst = 0;
             t->structure = new IdStructure_t;
             t->structure->record = symbolStack->idList;
-            if (symbolStack->idList)
-                t->size = symbolStack->idList->offset + symbolStack->idList->id->type->size;
-            else
-                t->size = 0;
             symbolStack = symbolStack->next;
             StackAddTypename(t);
             $$ = t;
         }
-	| struct_or_union IDENTIFIER {PushSymbolStack();} '{' struct_declaration_list '}'    {
+	| struct_or_union IDENTIFIER {PushSymbolStack(0);} '{' struct_declaration_list '}'    {
             Typename_t *t = new Typename_t;
-            if ($1.hasUNION)
+            if ($1.hasUNION) {
                 t->type = idt_union;
-            if ($1.hasSTRUCT)
+                t->size = 0;
+                for (SymbolList_t *i = symbolStack->idList; i; i = i->next)
+                    if (i->id->type->size > t->size)
+                        t->size = i->id->type->size;
+            }
+            if ($1.hasSTRUCT) {
                 t->type = idt_struct;
+                if (symbolStack->idList)
+                    t->size = symbolStack->idList->offset + symbolStack->idList->id->type->size;
+                else
+                    t->size = 0;
+            }
             t->name = $2;
             t->isConst = 0;
             t->structure = new IdStructure_t;
             t->structure->record = symbolStack->idList;
-            if (symbolStack->idList)
-                t->size = symbolStack->idList->offset + symbolStack->idList->id->type->size;
-            else
-                t->size = 0;
             symbolStack = symbolStack->next;
             StackAddTypename(t);
             $$ = t;
@@ -335,6 +365,7 @@ struct_or_union_specifier:
             else if ($1.hasUNION)
                 t->type = idt_union;
             t->name = $2;
+            t->size = -1;
             t->structure = NULL;
             StackAddTypename(t);
             $$ = t;
@@ -365,7 +396,7 @@ struct_declaration:
                 tmptype = tmp;
             }
             for (struct_declarator_list_s_t *i = $2; i; i = i->next)
-                StackDeclare(tmptype, 0, 0, i->decl);
+                StackDeclare(makeType(tmptype, i->decl), 0, 0, getDeclaratorName(&(i->decl)));
             freeSDL($2);
         }
 	;
@@ -376,16 +407,17 @@ struct_declaration_list:    /* nothing to do */
 	;
 
 enum_specifier:
-	  ENUM '{' enumerator_list '}'                  { $$ = newEnum(NULL, $3); }
-	| ENUM '{' enumerator_list ',' '}'              { $$ = newEnum(NULL, $3); }
-	| ENUM IDENTIFIER '{' enumerator_list '}'       { $$ = newEnum($2, $4); }
-	| ENUM IDENTIFIER '{' enumerator_list ',' '}'   { $$ = newEnum($2, $4); }
+	  ENUM '{' enumerator_list '}'                  { $$ = newEnum(NULL, $3); StackAddEnumTable($3); }
+	| ENUM '{' enumerator_list ',' '}'              { $$ = newEnum(NULL, $3); StackAddEnumTable($3); }
+	| ENUM IDENTIFIER '{' enumerator_list '}'       { $$ = newEnum($2, $4); StackAddEnumTable($4); }
+	| ENUM IDENTIFIER '{' enumerator_list ',' '}'   { $$ = newEnum($2, $4); StackAddEnumTable($4); }
 	| ENUM IDENTIFIER                               {
             Typename_t *t = new Typename_t;
             t->type = idt_enum;
             t->name = $2;
             t->structure = NULL;
             StackAddTypename(t);
+            t->size = -1;
             $$ = t;
         }
 	;
@@ -411,7 +443,7 @@ direct_declarator:
 	| '(' declarator ')'                            {$$.type=2; $$.data.d2=$2;}
 	| direct_declarator '[' ']'                     {$$.type=3; $$.data.d3=memDup(&$1);}
 	| direct_declarator '[' constant_expression ']' {$$.type=4; if (!$3.isConst||$3.type!=idt_int) yyerror("array declaration not integer constant"); $$.data.d4.dd=memDup(&$1); $$.data.d4.ce=$3.value.vint;}
-	| direct_declarator '(' parameter_list ')'      {$$.type=5; $$.data.d5.dd=memDup(&$1); $$.data.d5.pl=$3;}
+	| direct_declarator '(' parameter_list ')'      {$$.type=5; $$.data.d5.dd=memDup(&$1); $$.data.d5.pl=$3; symbolStack = symbolStack->next;}
 	| direct_declarator '(' ')'                     {$$.type=6; $$.data.d6=memDup(&$1);}
 	| direct_declarator '(' identifier_list ')'     {yyerror("not support for this type of function declaration");}
 	;
@@ -429,19 +461,49 @@ declarator:
 	;
 
 parameter_declaration:
-	  declaration_specifiers declarator
-	| declaration_specifiers abstract_declarator
-	| declaration_specifiers
+	  declaration_specifiers declarator             {
+            if ($1.hasTYPEDEF || $1.hasSTATIC)
+                yyerror("typedef/static in parameter");
+            if ($1.hasCONST) {
+                Typename_t *p = memDup($1.type);
+                p->isConst = 1;
+                StackDeclare(makeType(p, $2), 0, 0, getDeclaratorName(&$2));
+            }
+            else
+                StackDeclare(makeType($1.type, $2), 0, 0, getDeclaratorName(&$2));
+        }
+	| declaration_specifiers abstract_declarator    {
+            if ($1.hasTYPEDEF || $1.hasSTATIC)
+                yyerror("typedef/static in parameter");
+            if ($1.hasCONST) {
+                Typename_t *p = memDup($1.type);
+                p->isConst = 1;
+                StackDeclare(makeType(p, $2), 0, 0, NULL);
+            }
+            else
+                StackDeclare(makeType($1.type, $2), 0, 0, NULL);
+        }
+	| declaration_specifiers    {
+            if ($1.hasTYPEDEF || $1.hasSTATIC)
+                yyerror("typedef/static in parameter");
+            if ($1.hasCONST) {
+                Typename_t *p = memDup($1.type);
+                p->isConst = 1;
+                StackDeclare(p, 0, 0, NULL);
+            }
+            else
+                StackDeclare($1.type, 0, 0, NULL);
+        }
 	;
 
 parameter_list:
-	  parameter_declaration
-	| parameter_list ',' parameter_declaration
+	  {PushSymbolStack(0);} parameter_declaration    {$$=symbolStack;}
+	| parameter_list ',' parameter_declaration      {$$=$1;}
 	;
 
-identifier_list:
-	  IDENTIFIER                        {$$=(identifier_list_s_t*)malloc(sizeof(identifier_list_s_t)); $$->next=NULL; $$->id=$1;}
-	| identifier_list ',' IDENTIFIER    {$$=(identifier_list_s_t*)malloc(sizeof(identifier_list_s_t)); $$->next=$1; $$->id=$3;}
+identifier_list: /* not support */
+	  IDENTIFIER
+	| identifier_list ',' IDENTIFIER
 	;
 
 type_name:
@@ -478,9 +540,9 @@ direct_abstract_declarator:
 	| direct_abstract_declarator '[' ']'    {$$.type=4; $$.data.d4=memDup(&$1);}
 	| direct_abstract_declarator '[' constant_expression ']'    {$$.type=5; $$.data.d5.dad=memDup(&$1); if (!$3.isConst || $3.type != idt_int) yyerror("array declaration not integer constant"); $$.data.d5.ce=$3.value.vint;}
 	| '(' ')'                       {$$.type=6;}
-	| '(' parameter_list ')'        {$$.type=7; $$.data.d7=$2;}
+	| '(' parameter_list ')'        {$$.type=7; $$.data.d7=$2; symbolStack = symbolStack->next;}
 	| direct_abstract_declarator '(' ')'    {$$.type=8; $$.data.d8=memDup(&$1);}
-	| direct_abstract_declarator '(' parameter_list ')' {$$.type=9; $$.data.d9.dad=memDup(&$1); $$.data.d9.pl=$3;}
+	| direct_abstract_declarator '(' parameter_list ')' {$$.type=9; $$.data.d9.dad=memDup(&$1); $$.data.d9.pl=$3; symbolStack = symbolStack->next;}
 	;
 
 designator: /* not supported */
@@ -489,16 +551,16 @@ designator: /* not supported */
 	;
 
 initializer:
-	  '{' initializer_list '}'
-	| '{' initializer_list ',' '}'
-	| assignment_expression
+	  '{' initializer_list '}'      {$$.lst=$2;}
+	| '{' initializer_list ',' '}'  {$$.lst=$2;}
+	| assignment_expression         {$$.addr=$1.addr;}
 	;
 
 initializer_list:
 	  designator initializer    {yyerror("designator is not supported");}
-	| initializer
+	| initializer               {$$=new initializer_list_s_t; $$->data=$1; $$->next=NULL;}
 	| initializer_list ',' designator initializer   {yyerror("designator is not supported");}
-	| initializer_list ',' initializer
+	| initializer_list ',' initializer  {$$=new initializer_list_s_t; $$->data=$3; $$->next=$1;}
 	;
 
 statement:

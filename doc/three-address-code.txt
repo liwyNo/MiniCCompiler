@@ -7,7 +7,7 @@
 标号 l1 l2 l3 ...                     gen_label(int num)
 
 变量类型：
-integer : int1 int2 int4 int8
+integer : int1 int2 int4 int8 uint1 uint2 uint4 uint8
 float : float4 float8
 pointer : ptr
 string : str (只能用于常量声明)

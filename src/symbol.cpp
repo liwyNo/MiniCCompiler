@@ -80,9 +80,10 @@ void FreeEnumList(EnumList_t *p)
     }
 }
 
-void PushSymbolStack()
+void PushSymbolStack(int normal)
 {
     SymbolStack_t *p = new SymbolStack_t;
+    p->normal = normal;
     p->idList = NULL;
     p->typeList = NULL;
     p->enumList = NULL;
@@ -106,7 +107,7 @@ void *LookupSymbol(const char *name, int *symbol_type)
 {
     for (SymbolStack_t *i = symbolStack; i; i = i->next) {
         for (SymbolList_t *j = i->idList; j; j = j->next)
-            if (strcmp(j->id->name, name) == 0) {
+            if (j->id->name && strcmp(j->id->name, name) == 0) {
                 if (symbol_type)
                     *symbol_type = IDENTIFIER;
                 return j->id;
@@ -130,21 +131,32 @@ void *LookupSymbol(const char *name, int *symbol_type)
     return NULL;
 }
 
-int StackHasName(SymbolStack_t *ss, const char *name)
+void *StackHasName(SymbolStack_t *ss, const char *name, int *symbol_type)
 {
+    if (symbol_type)
+        *symbol_type = 0;
     if (name == NULL || strlen(name) == 0)
-        return 0;
+        return NULL;
     for (SymbolList_t *j = ss->idList; j; j = j->next)
-        if (strcmp(j->id->name, name) == 0)
-            return 1;
+        if (j->id->name && strcmp(j->id->name, name) == 0) {
+            if (symbol_type)
+                *symbol_type = IDENTIFIER;
+            return j->id;
+        }
     for (TypeList_t *j = ss->typeList; j; j = j->next)
-        if (j->type->name && strcmp(j->type->name, name) == 0)
-            return 1;
+        if (j->type->name && strcmp(j->type->name, name) == 0) {
+            if (symbol_type)
+                *symbol_type = TYPE_NAME;
+            return j->type;
+        }
     for (EnumList_t *j = ss->enumList; j; j = j->next)
         for (EnumTable_t *k = j->table; k; k = k->next)
-            if (strcmp(k->name, name) == 0)
-                return 1;
-    return 0;
+            if (strcmp(k->name, name) == 0) {
+                if (symbol_type)
+                    *symbol_type = ENUM_CONSTANT;
+                return &k->value;
+            }
+    return NULL;
 }
 
 void AddIdentifier(Identifier_t *id, SymbolList_t **slst)
@@ -158,7 +170,7 @@ void AddIdentifier(Identifier_t *id, SymbolList_t **slst)
 
 void StackAddIdentifier(Identifier_t *id)
 {
-    if (StackHasName(symbolStack, id->name))
+    if (StackHasName(symbolStack, id->name, NULL))
         yyerror("Identifier name already exists");
     AddIdentifier(id, &symbolStack->idList);
 }
@@ -168,7 +180,7 @@ void StackAddStaticIdentifier(Identifier_t *id)
     SymbolStack_t *p = symbolStack;
     while (p->next)
         p = p->next;
-    if (StackHasName(symbolStack, id->name) || StackHasName(p, id->name))
+    if (StackHasName(symbolStack, id->name, NULL) || StackHasName(p, id->name, NULL))
         yyerror("Identifier name already exists");
     AddIdentifier(id, &p->idList);
 }
@@ -183,9 +195,15 @@ void AddTypename(Typename_t *tp, TypeList_t **tpl)
 
 void StackAddTypename(Typename_t *tp)
 {
-    if (StackHasName(symbolStack, tp->name))
+    int stype;
+    void *has = StackHasName(symbolStack, tp->name, &stype);
+    Typename_t *htp = (Typename_t*)has;
+    if (has && (stype != TYPE_NAME || htp->size != -1 || htp->type != tp->type))
         yyerror("Identifier name already exists");
-    AddTypename(tp, &symbolStack->typeList);
+    if (!has)
+        AddTypename(tp, &symbolStack->typeList);
+    else
+        *htp = *tp;
 }
 
 void AddEnumTable(EnumTable_t *et, EnumList_t **el)
@@ -198,8 +216,6 @@ void AddEnumTable(EnumTable_t *et, EnumList_t **el)
 
 void StackAddEnumTable(EnumTable_t *et)
 {
-    if (StackHasName(symbolStack, et->name))
-        yyerror("Identifier name already exists");
     AddEnumTable(et, &symbolStack->enumList);
 }
 
@@ -275,54 +291,37 @@ void __AddStandardType()
 
 void InitSymbolStack()
 {
-    PushSymbolStack();
+    PushSymbolStack(1);
     __AddStandardType();
 }
 
-void StackDeclare(const_Typename_ptr type, int hasSTATIC, int hasTYPEDEF, declarator_s_t decl)
+Identifier_t *StackDeclare(const_Typename_ptr type, int hasSTATIC, int hasTYPEDEF, char *name)
 {
     if (hasTYPEDEF && hasSTATIC)
-        yyerror("typedef with const or static");
-    Typename_t *ptype = makeType(type, decl);
-    char *idname;
-    { /* get idname */
-        direct_declarator_s_t *i = decl.dd;
-        while (i->type != 1)
-            switch (i->type) {
-            case 2:
-                i = i->data.d2.dd;
-                break;
-            case 3:
-                i = i->data.d3;
-                break;
-            case 4:
-                i = i->data.d4.dd;
-                break;
-            case 5:
-                i = i->data.d5.dd;
-                break;
-            case 6:
-                i = i->data.d6;
-                break;
-            }
-        idname = i->data.d1;
-    }
+        yyerror("typedef with static");
     if (hasTYPEDEF) {
-        ptype->name = idname;
+        Typename_t *ptype = memDup(type);
+        ptype->name = name;
         StackAddTypename(ptype);
-        return;
+        return NULL;
     }
     Identifier_t *id = new Identifier_t;
-    id->name = idname;
-    id->type = ptype;
+    id->name = name;
+    id->type = type;
     SymbolStack_t *ss = symbolStack;
     if (hasSTATIC)
         while (ss->next)
             ss = ss->next;
-    if (id->type->type == idt_fpointer)
-        CreateFunc(id);
-    else
-        CreateNativeVar(id, ss);
+    if (id->type->type != idt_fpointer) {
+        if (ss->normal)
+            CreateNativeVar(id, ss);
+        else {
+            if (StackHasName(ss, id->name, NULL))
+                yyerror("Identifier name already exists");
+            AddIdentifier(id, &ss->idList);
+        }
+    }
+    return id;
 }
 
 VarCounter_t varCounter;
@@ -342,7 +341,7 @@ int CreateNativeVar(Identifier_t *id, SymbolStack_t *ss)
     char tmp[10];
     sprintf(tmp, "T%d", varCounter.num_T);
     id->TACname = strdup(tmp);
-    if (StackHasName(ss, id->name))
+    if (StackHasName(ss, id->name, NULL))
         yyerror("Identifier name already exists");
     AddIdentifier(id, &ss->idList);
     return varCounter.num_T++;
