@@ -86,11 +86,6 @@ typedef struct __SymbolStack_t {
     int normal; /* normal means variables in this stack should be generated to output */
 } SymbolStack_t;
 
-typedef struct __GotoList_t {
-    int offset; /* offset in output */
-    struct __GotoList_t *next; /* pointer to next GotoList */
-} GotoList_t;
-
 extern SymbolStack_t *symbolStack;
 
 void FreeFPtrStructure(FPtrStructure_t *);

@@ -119,8 +119,20 @@ postfix_expression:
 	| postfix_expression PTR_OP IDENTIFIER
 	| postfix_expression INC_OP
 	| postfix_expression DEC_OP
-	| '(' type_name ')' '{' initializer_list '}'        {yyerror("(type_name){initializer_list} not supported");}
-	| '(' type_name ')' '{' initializer_list ',' '}'    {yyerror("(type_name){initializer_list} not supported");}
+	| '(' type_name ')' '{' initializer_list '}'        /*{
+            initializer_s_t *tmp = new initializer_s_t;
+            tmp->addr = NULL;
+            tmp->lst = $5;
+            int tv = CreateTempVar();
+            char *TACname = strdup(('t' + std::to_string(tv)).c_str());
+            genDeclare($2->type, TACname, false);
+            genInitilize($2->type, TACname, tmp);
+            freeInit(tmp);
+            $$.isConst = 1;
+            $$.type = $2->type;
+            $$.addr = TACname;
+        }*/
+	| '(' type_name ')' '{' initializer_list ',' '}'
 	;
 
 argument_expression_list:
@@ -282,7 +294,7 @@ init_declarator:
 
 init_declarator_list:
 	  init_declarator               {$$=new init_declarator_list_s_t; $$->idecl=$1; $$->next=NULL;}
-	| init_declarator_list ',' init_declarator  {$$=new init_declarator_list_s_t; $$->idecl=$3; $$->next=NULL;}
+	| init_declarator_list ',' init_declarator  {$$=new init_declarator_list_s_t; $$->idecl=$3; $$->next=$1;}
 	;
 
 declaration:
@@ -298,7 +310,8 @@ declaration:
             }
             for (init_declarator_list_s_t *i = $2; i; i = i->next) {
                 Identifier_t *id = StackDeclare(makeType(tmptype, i->idecl.decl), 0, 0, getDeclaratorName(&(i->idecl.decl)));
-                genDeclare(id, symbolStack->next == NULL);
+                genDeclare(id->type, id->TACname, symbolStack->next == NULL);
+                genInitilize(id->type, id->TACname, i->idecl.init);
             }
             freeIDL($2);
         }
@@ -404,6 +417,7 @@ struct_declaration:
 struct_declaration_list:    /* nothing to do */
 	  struct_declaration
 	| struct_declaration_list struct_declaration
+    | 
 	;
 
 enum_specifier:
@@ -551,9 +565,10 @@ designator: /* not supported */
 	;
 
 initializer:
-	  '{' initializer_list '}'      {$$.lst=$2;}
-	| '{' initializer_list ',' '}'  {$$.lst=$2;}
-	| assignment_expression         {$$.addr=$1.addr;}
+	  '{' initializer_list '}'      {$$.lst=$2;$$.addr=NULL;}
+	| '{' initializer_list ',' '}'  {$$.lst=$2;$$.addr=NULL;}
+    | '{' '}'                       {$$.lst=NULL;$$.addr=NULL;}
+	| assignment_expression         {$$.lst=NULL;$$.addr=$1.addr;}
 	;
 
 initializer_list:
@@ -633,7 +648,9 @@ external_declaration:
 
 function_definition:
 	  declaration_specifiers declarator declaration_list compound_statement {yyerror("not support this type of function definition");}
-	| declaration_specifiers declarator compound_statement
+	| declaration_specifiers declarator {} compound_statement   {
+            ;
+        }
 	;
 
 declaration_list: /* this is not supported */
