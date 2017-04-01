@@ -2,7 +2,6 @@
 #define YACCTYPE_H
 
 #include "symbol.h"
-#include "control_flow.h"
 /* synthesize property of XX: XX_s_t
  * inherit property of XX: XX_i_t
  */

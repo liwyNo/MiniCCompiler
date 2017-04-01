@@ -35,43 +35,43 @@ void gen_label(int num)
 void gen_const(const char *type, const char *name, const void *value)
 {
     //#warning "this function has not been implemented"
-    if (strcmp(type, "int1"))
+    if (strcmp(type, "int1")==0)
     {
         char *p = (char *)value;
         printf("const %s %s %d\n", type, name, *p);
     }
-    if (strcmp(type, "int2"))
+    if (strcmp(type, "int2")==0)
     {
         short int *p = (short int *)value;
         printf("const %s %s %d\n", type, name, *p);
     }
-    if (strcmp(type, "int4"))
+    if (strcmp(type, "int4")==0)
     {
         int *p = (int *)value;
         printf("const %s %s %d\n", type, name, *p);
     }
-    if (strcmp(type, "int8"))
+    if (strcmp(type, "int8")==0)
     {
         long long *p = (long long *)value;
         printf("const %s %s %lld\n", type, name, *p);
     }
-    if (strcmp(type, "float4"))
+    if (strcmp(type, "float4")==0)
     {
         float *p = (float *)value;
         printf("const %s %s %f\n", type, name, *p);
     }
-    if (strcmp(type, "float8"))
+    if (strcmp(type, "float8")==0)
     {
         double *p = (double *)value;
         printf("const %s %s %lf\n", type, name, *p);
     }
-    if (strcmp(type, "pointer"))
+    if (strcmp(type, "pointer")==0)
     {
         const void *p = value;
         //#warning "how to print pointer?"
         printf("const %s %s %p\n", type, name, p);
     }
-    if (strcmp(type, "str"))
+    if (strcmp(type, "str")==0)
     {
         char *p = (char *)value;
         int n = strlen(p);

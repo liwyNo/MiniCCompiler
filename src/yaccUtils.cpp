@@ -19,6 +19,42 @@ Typename_t *newEnum(char *name, EnumTable_t *p)
     return t;
 }
 
+Typename_t *newStructUnion(bool hasSTRUCT, const char *name, bool hasSymbol)
+{
+    Typename_t *t = new Typename_t;
+    t->isConst = 0;
+    if (hasSTRUCT) {
+        t->type = idt_struct;
+        if (!hasSymbol)
+            t->size = -1;
+        else {
+            if (symbolStack->idList)
+                t->size = symbolStack->idList->offset + symbolStack->idList->id->type->size;
+            else
+                t->size = 0;
+        }
+    }
+    else {
+        t->type = idt_union;
+        if (!hasSymbol)
+            t->size = -1;
+        else {
+            t->size = 0;
+            for (SymbolList_t *i = symbolStack->idList; i; i = i->next)
+                if (i->id->type->size > t->size)
+                    t->size = i->id->type->size;
+        }
+    }
+    t->name = strdup(name);
+    if (hasSymbol) {
+        t->structure = new IdStructure_t;
+        t->structure->record = symbolStack->idList;
+    }
+    else
+        t->structure = NULL;
+    return t;
+}
+
 void genDeclare(const_Typename_ptr type, const char *TACname, bool global)
 {
     auto autogen = global ? gen_gval : gen_var;
@@ -75,7 +111,7 @@ void genDeclare(const_Typename_ptr type, const char *TACname, bool global)
     }
 }
 
-void genInitilize(const_Typename_ptr type, const char *TACname, const initializer_s_t *init)
+void genInitilize(const_Typename_ptr type, const char *TACname, const initializer_s_t *init, bool outputPTR)
 {
     if (init == NULL)
         return;
@@ -83,7 +119,7 @@ void genInitilize(const_Typename_ptr type, const char *TACname, const initialize
         yyerror("no id for initilization");
     if (init->addr) {
 #warning "call operator="
-        printf("(!!) %s = %s\n", TACname, init->addr);
+        printf("(!!) %s%s = %s\n", outputPTR ? "* " : "", TACname, init->addr);
     }
     else {
         int tnum = CreateTempVar();
@@ -105,15 +141,15 @@ void genInitilize(const_Typename_ptr type, const char *TACname, const initialize
             for (int i = 0; i < type->structure->pointer.length; ++i) {
                 if (init_it == vinit.rend()) {
                     noinit.addr = (btp->type == idt_struct || btp->type == idt_array ? NULL : c0);
-                    genInitilize(btp, tname, &noinit);
+                    genInitilize(btp, tname, &noinit, true);
                 }
                 else
-                    genInitilize(btp, tname, &*(init_it++));
+                    genInitilize(btp, tname, &*(init_it++), true);
                 gen_op2(tname, tname, scsize.c_str(), "+");
             }
         }
         else if (type->type == idt_struct) {
-            std::vector<SymbolList_t*> vsl;
+            std::vector<SymbolList_t *> vsl;
             for (SymbolList_t *i = type->structure->record; i; i = i->next)
                 vsl.push_back(i);
             for (auto vsl_it = vsl.rbegin(); vsl_it != vsl.rend(); ++vsl_it) {
@@ -124,10 +160,10 @@ void genInitilize(const_Typename_ptr type, const char *TACname, const initialize
                 const_Typename_ptr btp = (*vsl_it)->id->type;
                 if (init_it == vinit.rend()) {
                     noinit.addr = (btp->type == idt_struct || btp->type == idt_array ? NULL : c0);
-                    genInitilize(btp, tname, &noinit);
+                    genInitilize(btp, tname, &noinit, true);
                 }
                 else
-                    genInitilize(btp, tname, &*(init_it++));
+                    genInitilize(btp, tname, &*(init_it++), true);
             }
         }
         else
