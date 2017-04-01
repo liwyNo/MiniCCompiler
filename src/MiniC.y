@@ -2,9 +2,12 @@
 
 #include <cstdio>
 #include "symbol.h"
+#include "gen.h"
 #include "yaccUtils.h"
+#include "control_flow.h"
 #include <cstdlib>
 #include <cstring>
+#include <string>
 
 int yylex (void);
 
@@ -62,6 +65,27 @@ void yyerror(const char *s);
 %token STRUCT UNION ENUM
 %token CASE DEFAULT IF ELSE SWITCH WHILE DO FOR GOTO CONTINUE BREAK RETURN
 
+%type <expression_s> constant_expression
+%type <expression_s> primary_expression
+%type <expression_s> constant
+%type <expression_s> expression
+%type <expression_s> postfix_expression
+%type <expression_s> string
+%type <expression_s> unary_expression
+%type <expression_s> cast_expression
+%type <expression_s> multiplicative_expression
+%type <expression_s> additive_expression
+%type <expression_s> shift_expression
+%type <expression_s> relational_expression
+%type <expression_s> equality_expression
+%type <expression_s> and_expression
+%type <expression_s> exclusive_or_expression
+%type <expression_s> inclusive_or_expression
+%type <expression_s> logical_and_expression
+%type <expression_s> logical_or_expression
+%type <expression_s> conditional_expression
+%type <expression_s> assignment_expression
+
 %type <type_qualifier_s> type_qualifier
 %type <storage_class_specifier_s> storage_class_specifier
 %type <type_specifier_s> type_specifier
@@ -72,7 +96,6 @@ void yyerror(const char *s);
 %type <enum_specifier_s> enum_specifier
 %type <enumerator_list_s> enumerator_list
 %type <enumerator_s> enumerator
-%type <expression_s> constant_expression assignment_expression
 %type <pointer_s> pointer
 %type <direct_declarator_s> direct_declarator
 %type <parameter_list_s> parameter_list
@@ -93,21 +116,48 @@ void yyerror(const char *s);
 
 %%
 primary_expression:
-	  IDENTIFIER
-	| constant
+	  IDENTIFIER			{
+            int symbol_type;
+            void *sym_ptr;
+            sym_ptr = LookupSymbol($1,&symbol_type);
+            if(symbol_type == 0)//啥都不是，返回错误
+            {
+                yyerror("Symbol hasn't been declared!");
+            }
+            else if(symbol_type == IDENTIFIER)//没有其他可能了，不可能是enum_constant或者type,在lex时就被筛过了
+            {
+                $$.isConst = 0;
+                //$$.type = 
+            }
+        }
+	| constant		{
+		$$ = $1;
+	}
 	| string
 	| '(' expression ')'
 	;
 
 constant:
-	  INT_CONSTANT
-    | CHAR_CONSTANT
+	INT_CONSTANT		{
+		$$.lr_value=1;
+		$$.isConst = 1;
+		$$.value.vint = $1;
+		$$.addr = strdup(('c' + std::to_string(CreateConstant())).c_str());
+		$$.type = (const_Typename_ptr)LookupSymbol("int", NULL);
+		gen_const("int4",$$.addr,&$1);
+	}
+  	| CHAR_CONSTANT
 	| DOUBLE_CONSTANT
 	| ENUM_CONSTANT
 	;
 
 string:
-	  STR_CONSTANT
+	  STR_CONSTANT		{
+				char *temp_name = new char[7];
+				sprintf(temp_name,"c%d",CreateConstant());
+				gen_const("str",temp_name,$1);
+				$$.value.vstr = $1;
+			}
 	;
 
 postfix_expression:
@@ -228,7 +278,7 @@ conditional_expression:
 
 assignment_expression:
 	  conditional_expression
-	| unary_expression assignment_operator assignment_expression
+	| unary_expression assignment_operator assignment_expression {}
 	;
 
 assignment_operator:

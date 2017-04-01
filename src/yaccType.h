@@ -2,16 +2,18 @@
 #define YACCTYPE_H
 
 #include "symbol.h"
-
+#include "control_flow.h"
 /* synthesize property of XX: XX_s_t
  * inherit property of XX: XX_i_t
  */
 
 typedef struct {
     int isConst;
-    IdType_t type;
+    const_Typename_ptr type;
+    bool lr_value;
     union {
         int vint;
+        long long vlong;
         double vdouble;
         char vchar;
         char *vstr;
