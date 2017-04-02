@@ -46,6 +46,7 @@ void yyerror(const char *s);
     initializer_s_t initializer_s;
     init_declarator_s_t init_declarator_s;
     init_declarator_list_s_t *init_declarator_list_s;
+    compound_statement_i_t compound_statement_i;
 }
 
 %token <vstr> IDENTIFIER
@@ -350,6 +351,7 @@ declaration:
 	  declaration_specifiers ';'                        {/* nothing to do */}
 	| declaration_specifiers init_declarator_list ';'   {
             if ($1.type==NULL)yyerror("declaration error");
+            if ($1.hasTYPEDEF && $1.hasSTATIC) yyerror("typedef with static");
             const_Typename_ptr tmptype = $1.type;
             if ($1.hasCONST)
             {
@@ -358,9 +360,13 @@ declaration:
                 tmptype = tmp;
             }
             for (init_declarator_list_s_t *i = $2; i; i = i->next) {
-                Identifier_t *id = StackDeclare(makeType(tmptype, i->idecl.decl), 0, 0, getDeclaratorName(&(i->idecl.decl)));
-                genDeclare(id->type, id->TACname, symbolStack->next == NULL);
-                genInitilize(id->type, id->TACname, i->idecl.init);
+                Identifier_t *id = StackDeclare(makeType(tmptype, i->idecl.decl), $1.hasSTATIC, $1.hasTYPEDEF, getDeclaratorName(&(i->idecl.decl)));
+                if (!$1.hasTYPEDEF) {
+                    genDeclare(id->type, id->TACname, symbolStack->next == NULL || $1.hasSTATIC);
+                    genInitilize(id->type, id->TACname, i->idecl.init);
+                } else
+                    if (i->idecl.init)
+                        yyerror("typedef with initial value");
             }
             freeIDL($2);
         }
@@ -500,10 +506,10 @@ parameter_declaration:
             if ($1.hasCONST) {
                 Typename_t *p = memDup($1.type);
                 p->isConst = 1;
-                StackDeclare(makeType(p, $2), 0, 0, getDeclaratorName(&$2));
+                StackDeclare(makeType(p, $2), $1.hasSTATIC, $1.hasTYPEDEF, getDeclaratorName(&$2));
             }
             else
-                StackDeclare(makeType($1.type, $2), 0, 0, getDeclaratorName(&$2));
+                StackDeclare(makeType($1.type, $2), $1.hasSTATIC, $1.hasTYPEDEF, getDeclaratorName(&$2));
         }
 	| declaration_specifiers abstract_declarator    {
             if ($1.hasTYPEDEF || $1.hasSTATIC)
@@ -511,10 +517,10 @@ parameter_declaration:
             if ($1.hasCONST) {
                 Typename_t *p = memDup($1.type);
                 p->isConst = 1;
-                StackDeclare(makeType(p, $2), 0, 0, NULL);
+                StackDeclare(makeType(p, $2), $1.hasSTATIC, $1.hasTYPEDEF, NULL);
             }
             else
-                StackDeclare(makeType($1.type, $2), 0, 0, NULL);
+                StackDeclare(makeType($1.type, $2), $1.hasSTATIC, $1.hasTYPEDEF, NULL);
         }
 	| declaration_specifiers    {
             if ($1.hasTYPEDEF || $1.hasSTATIC)
@@ -522,10 +528,10 @@ parameter_declaration:
             if ($1.hasCONST) {
                 Typename_t *p = memDup($1.type);
                 p->isConst = 1;
-                StackDeclare(p, 0, 0, NULL);
+                StackDeclare(p, $1.hasSTATIC, $1.hasTYPEDEF, NULL);
             }
             else
-                StackDeclare($1.type, 0, 0, NULL);
+                StackDeclare($1.type, $1.hasSTATIC, $1.hasTYPEDEF, NULL);
         }
 	;
 
@@ -599,7 +605,7 @@ initializer_list:
 
 statement:
 	  labeled_statement
-	| compound_statement
+	| {$<compound_statement_i>$=NULL;} compound_statement
 	| expression_statement
 	| selection_statement
 	| iteration_statement
@@ -623,9 +629,11 @@ block_item_list:
 	;
 
 compound_statement:
-	  '{' '}'
-	| '{'  block_item_list '}'
+	  '{' push_symbol_stack_normal '}'  {PopSymbolStack();}
+	| '{' push_symbol_stack_normal  block_item_list '}' {PopSymbolStack();}
 	;
+
+push_symbol_stack_normal:   {PushSymbolStack(1); declareParameter($<compound_statement_i>-1);}
 
 expression_statement:
 	  ';'
@@ -666,9 +674,27 @@ external_declaration:
 	;
 
 function_definition:
-	  declaration_specifiers declarator declaration_list compound_statement {yyerror("not support this type of function definition");}
-	| declaration_specifiers declarator {} compound_statement   {
-            ;
+	  declaration_specifiers declarator declaration_list {$<compound_statement_i>$=NULL;} compound_statement {yyerror("not support this type of function definition");}
+	| declaration_specifiers declarator {
+            if ($1.type==NULL) yyerror("declaration error");
+            if ($1.hasTYPEDEF) yyerror("funtion typedef");
+            const_Typename_ptr tmptype = $1.type;
+            if ($1.hasCONST)
+            {
+                Typename_t *tmp = memDup($1.type);
+                tmp->isConst = 1;
+                tmptype = tmp;
+            }
+            Identifier_t *id = StackDeclare(makeType(tmptype, $2), 0, 0, getDeclaratorName(&$2));
+            if (id->type->type != idt_fpointer || ($2.dd->type != 5 && $2.dd->type != 6))
+                yyerror("function declaration error");
+            gen_func(CreateFunc(id));
+            if ($2.dd->type == 5)
+                $<compound_statement_i>$ = $2.dd->data.d5.pl->idList;
+            else
+                $<compound_statement_i>$ = NULL;
+        } compound_statement    {
+            CounterLeaveFunc();
         }
 	;
 

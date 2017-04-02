@@ -164,4 +164,6 @@ typedef struct __init_declarator_list_s_t {
 } init_declarator_list_s_t;
 void freeIDL(init_declarator_list_s_t *);
 
+typedef SymbolList_t *compound_statement_i_t;
+
 #endif

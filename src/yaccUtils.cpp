@@ -45,7 +45,7 @@ Typename_t *newStructUnion(bool hasSTRUCT, const char *name, bool hasSymbol)
                     t->size = i->id->type->size;
         }
     }
-    t->name = strdup(name);
+    t->name = name ? strdup(name) : NULL;
     if (hasSymbol) {
         t->structure = new IdStructure_t;
         t->structure->record = symbolStack->idList;
@@ -57,7 +57,7 @@ Typename_t *newStructUnion(bool hasSTRUCT, const char *name, bool hasSymbol)
 
 void genDeclare(const_Typename_ptr type, const char *TACname, bool global)
 {
-    auto autogen = global ? gen_gval : gen_var;
+    auto autogen = global ? gen_gvar : gen_var;
     switch (type->type) {
     case idt_char:
         autogen("int1", TACname, -1);
@@ -124,7 +124,7 @@ void genInitilize(const_Typename_ptr type, const char *TACname, const initialize
     else {
         int tnum = CreateTempVar();
         char *tname = strdup(('t' + std::to_string(tnum)).c_str());
-        genDeclare(type, tname, false);
+        gen_var("ptr", tname);
         gen_cpy(tname, TACname);
         std::vector<initializer_s_t> vinit;
         for (initializer_list_s_t *i = init->lst; i; i = i->next)
@@ -168,5 +168,20 @@ void genInitilize(const_Typename_ptr type, const char *TACname, const initialize
         }
         else
             yyerror("initilize error");
+    }
+}
+
+void declareParameter(const SymbolList_t *lst)
+{
+    std::vector<Identifier_t*> vid;
+    for (auto i = lst; i; i = i->next)
+        vid.push_back(i->id);
+    std::reverse(vid.begin(), vid.end());
+    for (size_t i = 0; i < vid.size(); ++i) {
+        Identifier_t *id = vid[i];
+        CreateParam(id);
+        genDeclare(id->type, id->TACname, false);
+        if (id->name == NULL)
+            yyerror("parameter name omitted");
     }
 }

@@ -17,4 +17,6 @@ void arrayLengthSum(const_Typename_ptr);
 void genDeclare(const_Typename_ptr type, const char *TACname, bool global);
 void genInitilize(const_Typename_ptr, const char *TACname, const initializer_s_t *, bool outputPTR = false);
 
+void declareParameter(const SymbolList_t *);
+
 #endif

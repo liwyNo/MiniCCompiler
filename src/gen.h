@@ -13,7 +13,7 @@ void gen_const(const char *type, const char *name, const void *value);
 
 void gen_var(const char *type, const char *name, int length = -1);
 
-void gen_gval(const char *type, const char *name, int length = -1);
+void gen_gvar(const char *type, const char *name, int length = -1);
 
 void gen_op2(const char *name1, const char *name2, const char *name3, const char *op);
 
@@ -31,11 +31,11 @@ void gen_cpy_arr(const char *name1, const char *name2, const char *name3);
 
 void gen_goto(int num);
 
-int gen_b_goto(); //留了5个空格，设返回的值为x,则x恰好为第一个空格的位置
+//int gen_b_goto(); //留了5个空格，设返回的值为x,则x恰好为第一个空格的位置
 
 void gen_if_goto(const char *name1, const char *name2, const char *op, int num);
 
-int gen_if_b_goto(const char *name1, const char *name2, const char *op); //留了5个空格，设返回的值为x,则x恰好为第一个空格的位置
+//int gen_if_b_goto(const char *name1, const char *name2, const char *op); //留了5个空格，设返回的值为x,则x恰好为第一个空格的位置
 
 void gen_param(const char *name);
 

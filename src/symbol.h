@@ -132,5 +132,6 @@ void CounterLeaveFunc();
 
 int setSign(int, const_Typename_ptr *);
 void TypeCombine(int sign1, const_Typename_ptr type1, int *sign2, const_Typename_ptr *type2);
+bool sameType(const_Typename_ptr, const_Typename_ptr);
 
 #endif

@@ -96,7 +96,7 @@ void gen_var(const char *type, const char *name, int length)
     }
 }
 
-void gen_gval(const char *type, const char *name, int length)
+void gen_gvar(const char *type, const char *name, int length)
 {
     if (length == -1)
     {
