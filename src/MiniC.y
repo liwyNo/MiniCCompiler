@@ -4,7 +4,6 @@
 #include "symbol.h"
 #include "gen.h"
 #include "yaccUtils.h"
-#include "control_flow.h"
 #include <cstdlib>
 #include <cstring>
 #include <string>
@@ -126,15 +125,22 @@ primary_expression:
             }
             else if(symbol_type == IDENTIFIER)//没有其他可能了，不可能是enum_constant或者type,在lex时就被筛过了
             {
+				Identifier_t *id = (Identifier_t *)sym_ptr;
                 $$.isConst = 0;
-                //$$.type = 
+                $$.lr_value = 0;
+				$$.addr = id -> TACname;
+				$$.type = id -> type;
             }
         }
 	| constant		{
 		$$ = $1;
 	}
-	| string
-	| '(' expression ')'
+	| string		{
+		$$ = $1;
+	}
+	| '(' expression ')'	{
+		$$ = $2;
+	}
 	;
 
 constant:
@@ -146,28 +152,84 @@ constant:
 		$$.type = (const_Typename_ptr)LookupSymbol("int", NULL);
 		gen_const("int4",$$.addr,&$1);
 	}
-  	| CHAR_CONSTANT
-	| DOUBLE_CONSTANT
-	| ENUM_CONSTANT
+  	| CHAR_CONSTANT		{
+		$$.lr_value = 1;
+		$$.isConst = 1;
+		$$.value.vchar = $1;
+		$$.addr = strdup(('c' + std::to_string(CreateConstant())).c_str());
+		$$.type = (const_Typename_ptr)LookupSymbol("char", NULL);
+		gen_const("int1",$$.addr,&$1);
+	}
+	| DOUBLE_CONSTANT	{
+		$$.lr_value = 1;
+		$$.isConst = 1;
+		$$.value.vdouble = $1;
+		$$.addr = strdup(('c' + std::to_string(CreateConstant())).c_str());
+		$$.type = (const_Typename_ptr)LookupSymbol("double", NULL);
+		gen_const("float8",$$.addr,&$1); //应该翻译成三地址码中的double!
+	}
+	| ENUM_CONSTANT		{
+		$$.lr_value = 1;
+		$$.isConst = 1;
+		$$.value.vint = $1;
+		$$.addr = strdup(('c' + std::to_string(CreateConstant())).c_str());
+		$$.type = (const_Typename_ptr)LookupSymbol("int", NULL);
+		gen_const("int4",$$.addr,&$1);
+	}
 	;
 
 string:
 	  STR_CONSTANT		{
-				char *temp_name = new char[7];
-				sprintf(temp_name,"c%d",CreateConstant());
-				gen_const("str",temp_name,$1);
 				$$.value.vstr = $1;
+				$$.lr_value = 1;
+				$$.addr = strdup(('c' + std::to_string(CreateConstant())).c_str());
+				$$.isConst = 1;			
+				Typename_t *tmp_type = new Typename_t;
+				tmp_type -> type = idt_array;
+				tmp_type -> name = NULL;
+				tmp_type -> isConst = 1;
+				tmp_type -> size = strlen($1) + 1;
+				tmp_type -> structure = new IdStructure_t;
+				tmp_type -> structure -> pointer.rbase_type = (const_Typename_ptr)LookupSymbol("char", NULL);
+				tmp_type -> structure -> pointer.base_type = (const_Typename_ptr)LookupSymbol("char", NULL);
+				tmp_type -> structure -> pointer.length = strlen($1) + 1;
+				$$.type = tmp_type;
+				gen_const("str",$$.addr,$1);
 			}
 	;
 
 postfix_expression:
-	  primary_expression
-	| postfix_expression '[' expression ']'
+	  primary_expression	{
+		  $$ = $1;
+	  }
+	| postfix_expression '[' expression ']'	{
+		if($3.type -> type < 8) //下标必须是整数
+		{
+			if($1.lr_value == 0 && $1.type -> type == idt_array || $1.type -> type == idt_pointer)
+			{
+				if($3.type -> type != idt_int)
+				{
+					gen_cast();
+				}
+			}
+			else yyerror("only the pointer or array can use [] operator !");
+
+		}
+		else yyerror("The subscript must be integer!");
+
+	}
 	| postfix_expression '(' ')'
 	| postfix_expression '(' argument_expression_list ')'
 	| postfix_expression '.' IDENTIFIER
 	| postfix_expression PTR_OP IDENTIFIER
-	| postfix_expression INC_OP
+	| postfix_expression INC_OP	{
+		if($1.lr_value == 0) 
+		{
+			//if($1.type -> type )
+		}
+		else
+			yyerror("Can't use ++ operator on right value!");
+	}
 	| postfix_expression DEC_OP
 	| '(' type_name ')' '{' initializer_list '}'        {yyerror("(type_name){initializer_list} not supported");}
 	| '(' type_name ')' '{' initializer_list ',' '}'    {yyerror("(type_name){initializer_list} not supported");}
