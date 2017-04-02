@@ -85,9 +85,9 @@ int check_type(void);
 {HP}{H}+{IS}?				{ if (!isdigit(yytext[strlen(yytext)-1])) yyerror("{IS} not supported yet"); 
                                 sscanf(yytext, "%x", &yylval.vint); return INT_CONSTANT; }
 {NZ}{D}*{IS}?				{ if (!isdigit(yytext[strlen(yytext)-1])) yyerror("{IS} not supported yet"); 
-                                sscanf(yytext, "%o", &yylval.vint); return INT_CONSTANT; }
-"0"{O}*{IS}?				{ if (!isdigit(yytext[strlen(yytext)-1])) yyerror("{IS} not supported yet"); 
                                 sscanf(yytext, "%d", &yylval.vint); return INT_CONSTANT; }
+"0"{O}*{IS}?				{ if (!isdigit(yytext[strlen(yytext)-1])) yyerror("{IS} not supported yet"); 
+                                sscanf(yytext, "%o", &yylval.vint); return INT_CONSTANT; }
 '\\a'		{ yylval.vchar = '\a'; return CHAR_CONSTANT; }
 '\\b'		{ yylval.vchar = '\b'; return CHAR_CONSTANT; }
 '\\f'		{ yylval.vchar = '\f'; return CHAR_CONSTANT; }

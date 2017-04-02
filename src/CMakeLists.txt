@@ -1,5 +1,6 @@
 find_package(FLEX REQUIRED)
 find_package(BISON REQUIRED)
+add_compile_options(-std=c++11)
 BISON_TARGET(MiniCParser MiniC.y ${CMAKE_CURRENT_BINARY_DIR}/MiniC.tab.cpp)
 FLEX_TARGET(MiniCLexer MiniC.l ${CMAKE_CURRENT_BINARY_DIR}/MiniC.yy.cpp)
 ADD_FLEX_BISON_DEPENDENCY(MiniCLexer MiniCParser)
