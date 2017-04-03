@@ -166,4 +166,33 @@ typedef struct __init_declarator_list_s_t {
 } init_declarator_list_s_t;
 void freeIDL(init_declarator_list_s_t *);
 
+typedef struct {
+    SymbolList_t *sblst;
+    bool has_begin, has_end;
+    int begin_num, end_num;
+} statement_i_t;
+
+typedef struct __CaseList_t {
+    bool isDefault;
+    const char *value;
+    IdType_t type;
+    int label;
+    struct __CaseList_t *next;
+} CaseList_t;
+
+typedef struct {
+    CaseList_t *caseList;
+} statement_s_t;
+
+typedef struct {
+    bool have;
+    expression_s_t expr;
+} expression_statement_s_t;
+
+typedef struct {
+    int lb_end;
+    int lb_state;
+    int lb_iter;
+} for_jumper2_s_t;
+
 #endif

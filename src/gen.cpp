@@ -28,7 +28,7 @@ void gen_func(int num)
 
 void gen_label(int num)
 {
-    printf("l%d\n", num);
+    printf("l%d:\n", num);
     //now_byte += 3 + count_byte(num);
 }
 
@@ -96,7 +96,7 @@ void gen_var(const char *type, const char *name, int length)
     }
 }
 
-void gen_gval(const char *type, const char *name, int length)
+void gen_gvar(const char *type, const char *name, int length)
 {
     if (length == -1)
     {

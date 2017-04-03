@@ -80,7 +80,7 @@ Typename_t *makeType(const_Typename_ptr type, declarator_s_t decl)
             return tmp;
         case 2:
             delete tmp;
-            return makeType(tmp, decl.dd->data.d2);
+            return makeType(type, decl.dd->data.d2);
         case 3:
             tmp->type = idt_pointer;
             tmp->structure = new IdStructure_t;
@@ -157,6 +157,10 @@ Typename_t *makeType(const_Typename_ptr type, abstract_declarator_s_t ad)
         return makeType(tmp, ad2);
     }
     else {
+        if (ad.dad == NULL) {
+            *tmp = *type;
+            return tmp;
+        }
         tmp->isConst = 0;
         int argNum;
         switch (ad.dad->type) {

@@ -47,6 +47,10 @@ void yyerror(const char *s);
     initializer_s_t initializer_s;
     init_declarator_s_t init_declarator_s;
     init_declarator_list_s_t *init_declarator_list_s;
+    statement_i_t statement_i;
+    statement_s_t statement_s;
+    expression_statement_s_t expression_statement_s;
+    for_jumper2_s_t for_jumper2_s;
 }
 
 %token <vstr> IDENTIFIER
@@ -108,6 +112,12 @@ void yyerror(const char *s);
 %type <initializer_s> initializer
 %type <init_declarator_s> init_declarator
 %type <init_declarator_list_s> init_declarator_list
+%type <vint> jumper for_jumper1
+%type <for_jumper2_s> for_jumper2
+%type <expression_statement_s> expression_statement
+%type <statement_s> statement labeled_statement compound_statement selection_statement iteration_statement jump_statement
+%type <statement_s> block_item block_item_list
+%type <statement_i> if_statement_inherit
 
 %nonassoc IFX
 %nonassoc ELSE
@@ -433,9 +443,10 @@ init_declarator_list:
 	;
 
 declaration:
-	  declaration_specifiers ';'                        {/* nothing to do */}
+	  declaration_specifiers ';'                        /* nothing to do */
 	| declaration_specifiers init_declarator_list ';'   {
             if ($1.type==NULL)yyerror("declaration error");
+            if ($1.hasTYPEDEF && $1.hasSTATIC) yyerror("typedef with static");
             const_Typename_ptr tmptype = $1.type;
             if ($1.hasCONST)
             {
@@ -444,9 +455,13 @@ declaration:
                 tmptype = tmp;
             }
             for (init_declarator_list_s_t *i = $2; i; i = i->next) {
-                Identifier_t *id = StackDeclare(makeType(tmptype, i->idecl.decl), 0, 0, getDeclaratorName(&(i->idecl.decl)));
-                genDeclare(id->type, id->TACname, symbolStack->next == NULL);
-                genInitilize(id->type, id->TACname, i->idecl.init);
+                Identifier_t *id = StackDeclare(makeType(tmptype, i->idecl.decl), $1.hasSTATIC, $1.hasTYPEDEF, getDeclaratorName(&(i->idecl.decl)));
+                if (!$1.hasTYPEDEF) {
+                    genDeclare(id->type, id->TACname, symbolStack->next == NULL || $1.hasSTATIC);
+                    genInitilize(id->type, id->TACname, i->idecl.init);
+                } else
+                    if (i->idecl.init)
+                        yyerror("typedef with initial value");
             }
             freeIDL($2);
         }
@@ -586,10 +601,10 @@ parameter_declaration:
             if ($1.hasCONST) {
                 Typename_t *p = memDup($1.type);
                 p->isConst = 1;
-                StackDeclare(makeType(p, $2), 0, 0, getDeclaratorName(&$2));
+                StackDeclare(makeType(p, $2), $1.hasSTATIC, $1.hasTYPEDEF, getDeclaratorName(&$2));
             }
             else
-                StackDeclare(makeType($1.type, $2), 0, 0, getDeclaratorName(&$2));
+                StackDeclare(makeType($1.type, $2), $1.hasSTATIC, $1.hasTYPEDEF, getDeclaratorName(&$2));
         }
 	| declaration_specifiers abstract_declarator    {
             if ($1.hasTYPEDEF || $1.hasSTATIC)
@@ -597,10 +612,10 @@ parameter_declaration:
             if ($1.hasCONST) {
                 Typename_t *p = memDup($1.type);
                 p->isConst = 1;
-                StackDeclare(makeType(p, $2), 0, 0, NULL);
+                StackDeclare(makeType(p, $2), $1.hasSTATIC, $1.hasTYPEDEF, NULL);
             }
             else
-                StackDeclare(makeType($1.type, $2), 0, 0, NULL);
+                StackDeclare(makeType($1.type, $2), $1.hasSTATIC, $1.hasTYPEDEF, NULL);
         }
 	| declaration_specifiers    {
             if ($1.hasTYPEDEF || $1.hasSTATIC)
@@ -608,10 +623,10 @@ parameter_declaration:
             if ($1.hasCONST) {
                 Typename_t *p = memDup($1.type);
                 p->isConst = 1;
-                StackDeclare(p, 0, 0, NULL);
+                StackDeclare(p, $1.hasSTATIC, $1.hasTYPEDEF, NULL);
             }
             else
-                StackDeclare($1.type, 0, 0, NULL);
+                StackDeclare($1.type, $1.hasSTATIC, $1.hasTYPEDEF, NULL);
         }
 	;
 
@@ -683,78 +698,269 @@ initializer_list:
 	| initializer_list ',' initializer  {$$=new initializer_list_s_t; $$->data=$3; $$->next=$1;}
 	;
 
-statement:
+statement: /* auto convert except expression_statement */
 	  labeled_statement
 	| compound_statement
-	| expression_statement
+	| expression_statement  {$$.caseList = NULL;}
 	| selection_statement
 	| iteration_statement
 	| jump_statement
 	;
 
 labeled_statement:
-	  IDENTIFIER ':' statement
-	| CASE constant_expression ':' statement
-	| DEFAULT ':' statement
+	  /*IDENTIFIER ':' {
+            int lbnum = CreateLabel();
+            gen_label(lbnum);
+            $<statement_i>$ = $<statement_i>0;
+        } statement*/
+	  CASE constant_expression {gen_label($<vint>$ = CreateLabel());} ':' {$<statement_i>$=$<statement_i>0;} statement   {
+            if (!$2.isConst)
+                yyerror("case not constant");
+            $$.caseList = new CaseList_t;
+            $$.caseList->isDefault = 0;
+            switch ($2.type->type) {
+            case idt_char:
+            case idt_uchar:
+            case idt_short:
+            case idt_ushort:
+            case idt_int:
+            case idt_uint:
+            case idt_long:
+            case idt_ulong:
+                break;
+            default:
+                yyerror("case not integer");
+            }
+            $$.caseList->type = $2.type->type;
+            $$.caseList->value = $2.addr;
+            $$.caseList->label = $<vint>3;
+            $$.caseList->next = NULL;
+        }
+	| DEFAULT {gen_label($<vint>$ = CreateLabel());} ':' {$<statement_i>$=$<statement_i>0;} statement  {
+            $$.caseList = new CaseList_t;
+            $$.caseList->isDefault = 1;
+            $$.caseList->label = $<vint>2;
+            $$.caseList->next = NULL;
+        }
 	;
 
 block_item:
-	  declaration
-	| statement
+	  declaration   {$$.caseList=NULL;}
+	| statement /* auto convert */
 	;
 
 block_item_list:
-	  block_item
-	| block_item_list block_item
+	  block_item /* auto convert */
+	| block_item_list {$<statement_i>$ = $<statement_i>0;} block_item   {
+            $$.caseList = $3.caseList;
+            if ($$.caseList == NULL)
+                $$.caseList = $1.caseList;
+            else
+                $$.caseList->next = $1.caseList;
+        }
 	;
 
 compound_statement:
-	  '{' '}'
-	| '{'  block_item_list '}'
+	  '{' compound_push_symbol_stack_normal '}'  {
+            PopSymbolStack();
+            $$.caseList = NULL;
+        }
+	| '{' compound_push_symbol_stack_normal  {$<statement_i>$ = $<statement_i>0; $<statement_i>$.sblst = NULL;} block_item_list '}' {
+            PopSymbolStack();
+            $$.caseList = $4.caseList;
+        }
 	;
 
+compound_push_symbol_stack_normal:   {PushSymbolStack(1); declareParameter($<statement_i>-1.sblst);}
+                                 ;
+
 expression_statement:
-	  ';'
-	| expression ';'
+	  ';'               {$$.have = false;}
+	| expression ';'    {$$.have = true; $$.expr = $1;}
 	;
 
 selection_statement:
-	  IF '(' expression ')' statement ELSE statement
-	| IF '(' expression ')' statement %prec IFX
-	| SWITCH '(' expression ')' statement
+	  IF '(' expression jumper ')' if_statement_inherit statement ELSE {gen_label($4); $<statement_i>$=$<statement_i>0;} statement  {$$.caseList=NULL;}
+	| IF '(' expression jumper ')' if_statement_inherit statement %prec IFX {gen_label($4); $$.caseList=NULL;}
+	| SWITCH {gen_goto($<vint>$=CreateLabel());} '(' expression ')' {
+            $<statement_i>$=$<statement_i>0;
+            $<statement_i>$.has_end=1;
+            $<statement_i>$.end_num=CreateLabel();
+        } statement {
+            gen_goto($<statement_i>6.end_num);
+            gen_label($<vint>2);
+            int default_label = -1;
+            for (CaseList_t *i = $7.caseList; i; i = i->next)
+                if (i->isDefault)
+                    default_label = i->label;
+                else
+                    genIfGoto($4, i->value, "==", i->label);
+            if (default_label != -1)
+                gen_goto(default_label);
+            gen_label($<statement_i>6.end_num);
+            $$.caseList=NULL;
+        }
 	;
+
+if_statement_inherit:   {$$=$<statement_i>-4;}
+                    ;
+
+jumper: { /* $0 must be an expression */
+            $$ = CreateLabel();
+            genIfGoto($<expression_s>0, "c0", "==", $$);
+        }
+      ;
 
 iteration_statement:
-	  WHILE '(' expression ')' statement
-	| DO statement WHILE '(' expression ')' ';'
-	| FOR '(' expression_statement expression_statement ')' statement
-	| FOR '(' expression_statement expression_statement expression ')' statement
-	| FOR '(' declaration expression_statement ')' statement
-	| FOR '(' declaration expression_statement expression ')' statement
+	  WHILE '(' {
+            $<vint>$ = CreateLabel();
+            gen_label($<vint>$);
+        } expression jumper ')' {
+            $<statement_i>$.has_begin = 1;
+            $<statement_i>$.has_end = 1;
+            $<statement_i>$.begin_num = $<vint>3;
+            $<statement_i>$.end_num = $5;
+            $<statement_i>$.sblst = NULL;
+        } statement   {gen_goto($<vint>3); gen_label($5); $$.caseList=NULL;}
+	| DO {
+            $<statement_i>$.has_begin = 1;
+            $<statement_i>$.has_end = 1;
+            $<statement_i>$.begin_num = CreateLabel();
+            $<statement_i>$.end_num = CreateLabel();
+            $<statement_i>$.sblst = NULL;
+            gen_label($<statement_i>$.begin_num);
+        } statement WHILE '(' expression ')' ';'    {
+            genIfGoto($6, "c0", "!=", $<statement_i>2.begin_num);
+            gen_label($<statement_i>2.end_num);
+            $$.caseList = NULL;
+        }
+	| FOR '(' expression_statement for_jumper1 expression_statement ')' {
+            $<statement_i>$.has_begin = 1;
+            $<statement_i>$.has_end = 1;
+            $<statement_i>$.begin_num = $4;
+            $<statement_i>$.end_num = CreateLabel();
+            $<statement_i>$.sblst = NULL;
+            if ($5.have)
+                genIfGoto($5.expr, "c0", "==", $<statement_i>$.end_num);
+        } statement {
+            gen_goto($4);
+            gen_label($<statement_i>7.end_num);
+            $$.caseList = NULL;
+        }
+	| FOR '(' expression_statement for_jumper1 expression_statement for_jumper2 expression for_jumper3 ')' {
+            $<statement_i>$.has_begin = 1;
+            $<statement_i>$.has_end = 1;
+            $<statement_i>$.begin_num = $4;
+            $<statement_i>$.end_num = $6.lb_end;
+            $<statement_i>$.sblst = NULL;
+        } statement {
+            gen_goto($6.lb_iter);
+            gen_label($6.lb_end);
+            $$.caseList = NULL;
+        }
+	| FOR '(' for_push_symbol_stack declaration for_jumper1 expression_statement ')' {
+            $<statement_i>$.has_begin = 1;
+            $<statement_i>$.has_end = 1;
+            $<statement_i>$.begin_num = $5;
+            $<statement_i>$.end_num = CreateLabel();
+            $<statement_i>$.sblst = NULL;
+            if ($6.have)
+                genIfGoto($6.expr, "c0", "==", $<statement_i>$.end_num);
+        } statement {
+            gen_goto($5);
+            gen_label($<statement_i>8.end_num);
+            $$.caseList = NULL;
+            PopSymbolStack();
+        }
+	| FOR '(' for_push_symbol_stack declaration for_jumper1 expression_statement for_jumper2 expression for_jumper3 ')' {
+            $<statement_i>$.has_begin = 1;
+            $<statement_i>$.has_end = 1;
+            $<statement_i>$.begin_num = $5;
+            $<statement_i>$.end_num = $7.lb_end;
+            $<statement_i>$.sblst = NULL;
+        } statement {
+            gen_goto($7.lb_iter);
+            gen_label($7.lb_end);
+            $$.caseList = NULL;
+            PopSymbolStack();
+        }
 	;
 
+for_push_symbol_stack:  {PushSymbolStack(1);}
+                     ;
+
+for_jumper1:    { gen_label($$ = CreateLabel()); }
+           ;
+
+for_jumper2:    {
+                    $$.lb_end = CreateLabel();
+                    if ($<expression_statement_s>0.have)
+                        genIfGoto($<expression_statement_s>0.expr, "c0", "==", $$.lb_end);
+                    gen_goto($$.lb_state = CreateLabel());
+                    gen_label($$.lb_iter = CreateLabel());
+                }
+           ;
+
+for_jumper3:    {
+                    gen_goto($<vint>-3);
+                    gen_label(($<for_jumper2_s>-1).lb_state);
+                }
+           ;
+
 jump_statement:
-	  GOTO IDENTIFIER ';'
-	| CONTINUE ';'
-	| BREAK ';'
-	| RETURN ';'
-	| RETURN expression ';'
+	  /*GOTO IDENTIFIER ';'   {yyerror("no support for goto");}*/
+	  CONTINUE ';'  {
+            if ($<statement_i>0.has_begin)
+                gen_goto($<statement_i>0.begin_num);
+            else
+                yyerror("continue error");
+            $$.caseList = NULL;
+        }
+	| BREAK ';'     {
+            if ($<statement_i>0.has_end)
+                gen_goto($<statement_i>0.end_num);
+            else
+                yyerror("break; error");
+            $$.caseList = NULL;
+        }
+	| RETURN ';'    { gen_return(NULL); $$.caseList = NULL; }
+	| RETURN expression ';' { gen_return($2.addr); $$.caseList = NULL; }
 	;
 
 translation_unit:
-	  external_declaration                  {/*nothing*/}
-	| translation_unit external_declaration {/*nothing*/}
+	  external_declaration                  /*nothing*/
+	| translation_unit external_declaration /*nothing*/
 	;
 
 external_declaration:
-	  function_definition   {/*nothing*/}
-	| declaration           {/*nothing*/}
+	  function_definition   /*nothing*/
+	| declaration           /*nothing*/
 	;
 
 function_definition:
-	  declaration_specifiers declarator declaration_list compound_statement {yyerror("not support this type of function definition");}
-	| declaration_specifiers declarator {} compound_statement   {
-            ;
+	  declaration_specifiers declarator declaration_list {yyerror("not support this type of function definition");} compound_statement 
+	| declaration_specifiers declarator {
+            if ($1.type==NULL) yyerror("declaration error");
+            if ($1.hasTYPEDEF) yyerror("funtion typedef");
+            const_Typename_ptr tmptype = $1.type;
+            if ($1.hasCONST)
+            {
+                Typename_t *tmp = memDup($1.type);
+                tmp->isConst = 1;
+                tmptype = tmp;
+            }
+            Identifier_t *id = StackDeclare(makeType(tmptype, $2), 0, 0, getDeclaratorName(&$2));
+            if (id->type->type != idt_fpointer || ($2.dd->type != 5 && $2.dd->type != 6))
+                yyerror("function declaration error");
+            gen_func(atoi(id->TACname + 1));
+            if ($2.dd->type == 5)
+                $<statement_i>$.sblst = $2.dd->data.d5.pl->idList;
+            else
+                $<statement_i>$.sblst = NULL;
+            $<statement_i>$.has_begin=0;
+            $<statement_i>$.has_end=0;
+        } compound_statement    {
+            CounterLeaveFunc();
         }
 	;
 

@@ -47,7 +47,7 @@ Typename_t *newStructUnion(bool hasSTRUCT, const char *name, bool hasSymbol)
                     t->size = i->id->type->size;
         }
     }
-    t->name = strdup(name);
+    t->name = name ? strdup(name) : NULL;
     if (hasSymbol) {
         t->structure = new IdStructure_t;
         t->structure->record = symbolStack->idList;
@@ -59,7 +59,7 @@ Typename_t *newStructUnion(bool hasSTRUCT, const char *name, bool hasSymbol)
 
 void genDeclare(const_Typename_ptr type, const char *TACname, bool global)
 {
-    auto autogen = global ? gen_gval : gen_var;
+    auto autogen = global ? gen_gvar : gen_var;
     switch (type->type) {
     case idt_char:
         autogen("int1", TACname, -1);
@@ -126,8 +126,7 @@ void genInitilize(const_Typename_ptr type, const char *TACname, const initialize
     else {
         int tnum = CreateTempVar();
         char *tname = strdup(('t' + std::to_string(tnum)).c_str());
-        genDeclare(type, tname, false);
-        gen_cpy(tname, TACname);
+        gen_var("ptr", tname);
         std::vector<initializer_s_t> vinit;
         for (initializer_list_s_t *i = init->lst; i; i = i->next)
             vinit.push_back(i->data);
@@ -136,6 +135,7 @@ void genInitilize(const_Typename_ptr type, const char *TACname, const initialize
         noinit.lst = NULL;
         char c0[] = "c0";
         if (type->type == idt_array) {
+            gen_cpy(tname, TACname);
             const_Typename_ptr btp = type->structure->pointer.base_type;
             int csize = CreateConstant();
             std::string scsize = 'c' + std::to_string(csize);
@@ -173,6 +173,7 @@ void genInitilize(const_Typename_ptr type, const char *TACname, const initialize
     }
 }
 
+
 char *get_TAC_name(char TAC_name_prefix, int TAC_num) //注意，这玩意会内存泄漏。。。
 {
     return strdup((TAC_name_prefix + std::to_string(TAC_num)).c_str());
@@ -197,4 +198,39 @@ char *get_cast_name(IdType_t goal_type, IdType_t now_type, char *now_name)
         return tmp_name;
     }
     else return now_name;
+}
+
+void declareParameter(const SymbolList_t *lst)
+{
+    std::vector<Identifier_t *> vid;
+    for (auto i = lst; i; i = i->next)
+        vid.push_back(i->id);
+    std::reverse(vid.begin(), vid.end());
+    for (size_t i = 0; i < vid.size(); ++i) {
+        Identifier_t *id = vid[i];
+        CreateParam(id);
+        genDeclare(id->type, id->TACname, false);
+        if (id->name == NULL)
+            yyerror("parameter name omitted");
+    }
+}
+
+void genIfGoto(expression_s_t expr, const char *name2, const char *op, int num)
+{
+#warning "need be changed to call expression functions"
+    printf("(!!) if %s %s %s goto l%d\n", expr.addr, op, name2, num);
+    /*switch (expr.type->type) {
+    case idt_struct:
+    case idt_union:
+        yyerror("struct/union condition error");
+    }
+    if (expr.type->type == idt_int)
+        gen_if_goto(expr.addr, name2, op, num);
+    else {
+        int tnu = CreateTempVar();
+        std::string stmp = 't' + std::to_string(tnu);
+        gen_cast(stmp.c_str(), name2, "int4");
+        gen_if_goto(stmp.c_str(), name2, op, num);
+    }*/
+
 }

@@ -105,6 +105,11 @@ void PopSymbolStack()
 
 void *LookupSymbol(const char *name, int *symbol_type)
 {
+    if (name == NULL) {
+        if (symbol_type)
+            *symbol_type = 0;
+        return NULL;
+    }
     for (SymbolStack_t *i = symbolStack; i; i = i->next) {
         for (SymbolList_t *j = i->idList; j; j = j->next)
             if (j->id->name && strcmp(j->id->name, name) == 0) {
@@ -291,6 +296,7 @@ void __AddStandardType()
 
 void InitSymbolStack()
 {
+    varCounter.num_f = 1;
     PushSymbolStack(1);
     __AddStandardType();
 }
@@ -321,6 +327,18 @@ Identifier_t *StackDeclare(const_Typename_ptr type, int hasSTATIC, int hasTYPEDE
             AddIdentifier(id, &ss->idList);
         }
     }
+    else {
+        int symbol_type;
+        Identifier_t *id2 = (Identifier_t*)LookupSymbol(id->name, &symbol_type);
+        if (id2 != NULL && (symbol_type != IDENTIFIER || !sameType(id2->type, id->type)))
+            yyerror("identifier already exists");
+        else {
+            if (id2 == NULL) {
+                AddIdentifier(id, &symbolStack->idList);
+                CreateFunc(id);
+            }
+        }
+    }
     return id;
 }
 
@@ -347,18 +365,19 @@ int CreateNativeVar(Identifier_t *id, SymbolStack_t *ss)
     return varCounter.num_T++;
 }
 
-int CreateLable()
+int CreateLabel()
 {
     return varCounter.num_l++;
 }
 
 int CreateFunc(Identifier_t *id)
 {
+    int nu = id->name && strcmp(id->name, "main") == 0 ? 0 : varCounter.num_f++;
     char tmp[10];
-    sprintf(tmp, "f%d", varCounter.num_f);
+    sprintf(tmp, "f%d", nu);
     id->TACname = strdup(tmp);
-    StackAddIdentifier(id);
-    return varCounter.num_f++;
+    //StackAddIdentifier(id);
+    return nu;
 }
 
 int CreateParam(Identifier_t *id)
@@ -445,4 +464,53 @@ void TypeCombine(int sign1, const_Typename_ptr type1, int *sign2, const_Typename
         yyerror("type combination error (sign)");
         return;
     }
+}
+
+bool sameType(const_Typename_ptr p1, const_Typename_ptr p2)
+{
+    if (p1->type != p2->type) {
+        if (p1->type == idt_fpointer && p2->type == idt_pointer)
+            return sameType(p1, p2->structure->pointer.base_type);
+        if (p2->type == idt_fpointer && p1->type == idt_pointer)
+            return sameType(p2, p1->structure->pointer.base_type);
+        return false;
+    } else
+        switch (p1->type) {
+            case idt_char:
+            case idt_uchar:
+            case idt_short:
+            case idt_ushort:
+            case idt_int:
+            case idt_uint:
+            case idt_long:
+            case idt_ulong:
+            case idt_float:
+            case idt_double:
+            case idt_void:
+                return true;
+            case idt_pointer:
+                return sameType(p1->structure->pointer.base_type, p2->structure->pointer.base_type);
+            case idt_fpointer:
+                if (p1->structure->fpointer.argNum != p2->structure->fpointer.argNum)
+                    return false;
+                for (size_t i = 0; i <= p1->structure->fpointer.argNum; ++i)
+                    if (!sameType(p1->structure->fpointer.type[i], p2->structure->fpointer.type[i]))
+                        return false;
+                return true;
+            case idt_array:
+                return p1->structure->pointer.length == p2->structure->pointer.length && sameType(p1->structure->pointer.base_type, p2->structure->pointer.base_type);
+            case idt_struct:
+            case idt_union:
+                for (SymbolList_t *i = p1->structure->record, *j = p2->structure->record;; i = i->next, j = j->next) {
+                    if (i == NULL && j == NULL)
+                        break;
+                    if (i == NULL || j == NULL)
+                        return false;
+                    if (!sameType(i->id->type, j->id->type))
+                        return false;
+                }
+                return true;
+            default:
+                return false;
+        }
 }

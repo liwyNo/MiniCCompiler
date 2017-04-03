@@ -125,12 +125,13 @@ extern VarCounter_t varCounter;
 int CreateConstant();
 int CreateTempVar();
 int CreateNativeVar(Identifier_t *, SymbolStack_t *);
-int CreateLable();
+int CreateLabel();
 int CreateFunc(Identifier_t *);
 int CreateParam(Identifier_t *);
 void CounterLeaveFunc();
 
 int setSign(int, const_Typename_ptr *);
 void TypeCombine(int sign1, const_Typename_ptr type1, int *sign2, const_Typename_ptr *type2);
+bool sameType(const_Typename_ptr, const_Typename_ptr);
 
 #endif
