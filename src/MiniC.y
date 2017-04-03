@@ -4,6 +4,7 @@
 #include "symbol.h"
 #include "gen.h"
 #include "yaccUtils.h"
+#include "expression.h"
 #include <cstdlib>
 #include <cstring>
 #include <string>
@@ -126,9 +127,12 @@ primary_expression:
             else if(symbol_type == IDENTIFIER)//没有其他可能了，不可能是enum_constant或者type,在lex时就被筛过了
             {
 				Identifier_t *id = (Identifier_t *)sym_ptr;
-                $$.isConst = 0;
+                $$.isConst = id -> type-> isConst;
+				//if($$.isConst)
+					//$$.value = id -> ;
                 $$.lr_value = 0;
 				$$.addr = id -> TACname;
+				$$.laddr = NULL;
 				$$.type = id -> type;
             }
         }
@@ -149,6 +153,7 @@ constant:
 		$$.isConst = 1;
 		$$.value.vint = $1;
 		$$.addr = strdup(('c' + std::to_string(CreateConstant())).c_str());
+		$$.laddr = NULL;
 		$$.type = (const_Typename_ptr)LookupSymbol("int", NULL);
 		gen_const("int4",$$.addr,&$1);
 	}
@@ -157,6 +162,7 @@ constant:
 		$$.isConst = 1;
 		$$.value.vchar = $1;
 		$$.addr = strdup(('c' + std::to_string(CreateConstant())).c_str());
+		$$.laddr = NULL;
 		$$.type = (const_Typename_ptr)LookupSymbol("char", NULL);
 		gen_const("int1",$$.addr,&$1);
 	}
@@ -165,6 +171,7 @@ constant:
 		$$.isConst = 1;
 		$$.value.vdouble = $1;
 		$$.addr = strdup(('c' + std::to_string(CreateConstant())).c_str());
+		$$.laddr = NULL;
 		$$.type = (const_Typename_ptr)LookupSymbol("double", NULL);
 		gen_const("float8",$$.addr,&$1); //应该翻译成三地址码中的double!
 	}
@@ -173,6 +180,7 @@ constant:
 		$$.isConst = 1;
 		$$.value.vint = $1;
 		$$.addr = strdup(('c' + std::to_string(CreateConstant())).c_str());
+		$$.laddr = NULL;
 		$$.type = (const_Typename_ptr)LookupSymbol("int", NULL);
 		gen_const("int4",$$.addr,&$1);
 	}
@@ -183,6 +191,7 @@ string:
 				$$.value.vstr = $1;
 				$$.lr_value = 1;
 				$$.addr = strdup(('c' + std::to_string(CreateConstant())).c_str());
+				$$.laddr = NULL;
 				$$.isConst = 1;			
 				Typename_t *tmp_type = new Typename_t;
 				tmp_type -> type = idt_array;
@@ -205,15 +214,32 @@ postfix_expression:
 	| postfix_expression '[' expression ']'	{
 		if($3.type -> type < 8) //下标必须是整数
 		{
-			if($1.lr_value == 0 && $1.type -> type == idt_array || $1.type -> type == idt_pointer)
+			if($1.lr_value == 0 && ($1.type -> type == idt_array || $1.type -> type == idt_pointer))
 			{
-				if($3.type -> type != idt_int)
-				{
-					gen_cast();
-				}
+				char *tmp_name1, *tmp_name2, *tmp_name3;
+				//直接利用如下函数
+				tmp_name1 = get_cast_name(idt_int, $3.type -> type, $3.get_addr());
+				
+				const_Typename_ptr b_type = $1.type -> structure -> pointer . base_type;
+				
+				tmp_name2 = sizeof_type(b_type);
+				tmp_name3 = get_TAC_name('t',CreateTempVar());
+				gen_cpy(tmp_name3,tmp_name2); //这么一大坨终于得到该指针这一维的大小了。。。
+
+				gen_op2(tmp_name2,tmp_name2,tmp_name1,"*");
+				char *pf = $1.get_addr();
+				gen_op2(pf, pf, tmp_name2,"+");
+
+				$$.type = b_type;
+				$$.addr = NULL;
+				$$.laddr = pf;
+				if($$.type -> type == idt_array) //假如这是个数组，则不能修改，是个右值
+					$$.lr_value = 1;
+				else	
+					$$.lr_value = 0;
+				$$.isConst = 0; //只要是这种带指针的统统不算常量表达式
 			}
 			else yyerror("only the pointer or array can use [] operator !");
-
 		}
 		else yyerror("The subscript must be integer!");
 
@@ -223,14 +249,11 @@ postfix_expression:
 	| postfix_expression '.' IDENTIFIER
 	| postfix_expression PTR_OP IDENTIFIER
 	| postfix_expression INC_OP	{
-		if($1.lr_value == 0) 
-		{
-			//if($1.type -> type )
-		}
-		else
-			yyerror("Can't use ++ operator on right value!");
+		postfix_expression_INC_DEC_OP($$,$1,"+");
 	}
-	| postfix_expression DEC_OP
+	| postfix_expression DEC_OP {
+		postfix_expression_INC_DEC_OP($$,$1,"-");
+	}
 	| '(' type_name ')' '{' initializer_list '}'        /*{
             initializer_s_t *tmp = new initializer_s_t;
             tmp->addr = NULL;

@@ -1,6 +1,21 @@
 #include "yaccType.h"
 #include "MiniC.tab.hpp"
 #include <cstdlib>
+#include "yaccUtils.h"
+#include "gen.h"
+
+char* expression_s_t::get_addr() const
+{
+    if(addr != NULL)
+        return addr;
+    else
+    {
+        char *tvar = get_TAC_name('t',CreateTempVar());
+        gen_var(map_name[type -> type], tvar);
+        gen_op1(tvar, laddr, "*");
+        return tvar;
+    }
+}
 
 void freePL(pointer_list_t *p)
 {

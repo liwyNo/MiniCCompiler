@@ -6,6 +6,8 @@
 #include <string>
 #include <vector>
 #include <algorithm>
+#include <iostream>
+using namespace std;
 
 Typename_t *newEnum(char *name, EnumTable_t *p)
 {
@@ -169,4 +171,30 @@ void genInitilize(const_Typename_ptr type, const char *TACname, const initialize
         else
             yyerror("initilize error");
     }
+}
+
+char *get_TAC_name(char TAC_name_prefix, int TAC_num) //注意，这玩意会内存泄漏。。。
+{
+    return strdup((TAC_name_prefix + std::to_string(TAC_num)).c_str());
+}
+
+const char map_name[IDTYPE_NUM][10]={"int1","int2","int4","int8","uint1","uint2","uint4","uint8","float4","float8",
+    "pointer","fpointer","void","array","struct","union","enum"};
+char *get_cast_name(IdType_t goal_type, IdType_t now_type, char *now_name)
+{
+    if(goal_type >= 10) //这个函数目前仅被用于数字类型的类型转换
+    {
+        cerr << "wrong use at get_cast_name !" << endl;
+        while(1);
+    }
+    
+    if(now_type != goal_type)
+    {
+        char* tmp_name;
+        tmp_name = get_TAC_name('t',CreateTempVar());
+        gen_var(map_name[goal_type],tmp_name);
+		gen_cast(tmp_name,now_name,map_name[goal_type]);
+        return tmp_name;
+    }
+    else return now_name;
 }
