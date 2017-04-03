@@ -125,7 +125,6 @@ void genInitilize(const_Typename_ptr type, const char *TACname, const initialize
         int tnum = CreateTempVar();
         char *tname = strdup(('t' + std::to_string(tnum)).c_str());
         gen_var("ptr", tname);
-        gen_cpy(tname, TACname);
         std::vector<initializer_s_t> vinit;
         for (initializer_list_s_t *i = init->lst; i; i = i->next)
             vinit.push_back(i->data);
@@ -134,6 +133,7 @@ void genInitilize(const_Typename_ptr type, const char *TACname, const initialize
         noinit.lst = NULL;
         char c0[] = "c0";
         if (type->type == idt_array) {
+            gen_cpy(tname, TACname);
             const_Typename_ptr btp = type->structure->pointer.base_type;
             int csize = CreateConstant();
             std::string scsize = 'c' + std::to_string(csize);
@@ -173,7 +173,7 @@ void genInitilize(const_Typename_ptr type, const char *TACname, const initialize
 
 void declareParameter(const SymbolList_t *lst)
 {
-    std::vector<Identifier_t*> vid;
+    std::vector<Identifier_t *> vid;
     for (auto i = lst; i; i = i->next)
         vid.push_back(i->id);
     std::reverse(vid.begin(), vid.end());
@@ -184,4 +184,23 @@ void declareParameter(const SymbolList_t *lst)
         if (id->name == NULL)
             yyerror("parameter name omitted");
     }
+}
+
+void genIfGoto(expression_s_t expr, const char *name2, const char *op, int num)
+{
+#warning "need be changed to call expression functions"
+    printf("(!!) if %s %s %s goto l%d\n", expr.addr, op, name2, num);
+    /*switch (expr.type->type) {
+    case idt_struct:
+    case idt_union:
+        yyerror("struct/union condition error");
+    }
+    if (expr.type->type == idt_int)
+        gen_if_goto(expr.addr, name2, op, num);
+    else {
+        int tnu = CreateTempVar();
+        std::string stmp = 't' + std::to_string(tnu);
+        gen_cast(stmp.c_str(), name2, "int4");
+        gen_if_goto(stmp.c_str(), name2, op, num);
+    }*/
 }

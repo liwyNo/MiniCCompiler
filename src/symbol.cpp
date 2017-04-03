@@ -296,6 +296,7 @@ void __AddStandardType()
 
 void InitSymbolStack()
 {
+    varCounter.num_f = 1;
     PushSymbolStack(1);
     __AddStandardType();
 }
@@ -331,8 +332,12 @@ Identifier_t *StackDeclare(const_Typename_ptr type, int hasSTATIC, int hasTYPEDE
         Identifier_t *id2 = (Identifier_t*)LookupSymbol(id->name, &symbol_type);
         if (id2 != NULL && (symbol_type != IDENTIFIER || !sameType(id2->type, id->type)))
             yyerror("identifier already exists");
-        else
-            AddIdentifier(id, &symbolStack->idList);
+        else {
+            if (id2 == NULL) {
+                AddIdentifier(id, &symbolStack->idList);
+                CreateFunc(id);
+            }
+        }
     }
     return id;
 }
@@ -360,18 +365,19 @@ int CreateNativeVar(Identifier_t *id, SymbolStack_t *ss)
     return varCounter.num_T++;
 }
 
-int CreateLable()
+int CreateLabel()
 {
     return varCounter.num_l++;
 }
 
 int CreateFunc(Identifier_t *id)
 {
+    int nu = id->name && strcmp(id->name, "main") == 0 ? 0 : varCounter.num_f++;
     char tmp[10];
-    sprintf(tmp, "f%d", varCounter.num_f);
+    sprintf(tmp, "f%d", nu);
     id->TACname = strdup(tmp);
     //StackAddIdentifier(id);
-    return varCounter.num_f++;
+    return nu;
 }
 
 int CreateParam(Identifier_t *id)

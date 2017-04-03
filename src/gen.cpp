@@ -28,7 +28,7 @@ void gen_func(int num)
 
 void gen_label(int num)
 {
-    printf("l%d\n", num);
+    printf("l%d:\n", num);
     //now_byte += 3 + count_byte(num);
 }
 
