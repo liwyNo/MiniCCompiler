@@ -9,7 +9,7 @@
 变量类型：
 integer : int1 int2 int4 int8 uint1 uint2 uint4 uint8
 float : float4 float8
-pointer : ptr
+pointer : ptr (指针只能和int4互相运算)
 string : str (只能用于常量声明)
 
 const str c1 65 67 78 0 最后一定有0的
@@ -28,7 +28,7 @@ gvar <type> [length] <name> gen_gval(const char *type,const char *name, int leng
 
 赋值语句：
 除了类型转换语句，其他赋值语句等号两边类型必须匹配
-t1 = t2 <op> t3             gen_op2(const char *name1, const char *name2, const char *name3, const char *op)
+t1 = t1 <op> t2             gen_op2(const char *name1, const char *name2, const char *name3, const char *op)
 t1 = <op> t2                gen_op1(const char *name1,const char *name2, const char *op)
 t1 = <type> t2 (类型转换)   gen_cast(const char *name1, char* name2, const char *type)
 t1 = t2                     gen_cpy(const char *name1, const char *name2)

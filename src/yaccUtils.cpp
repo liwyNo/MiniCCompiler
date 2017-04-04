@@ -183,7 +183,7 @@ const char map_name[IDTYPE_NUM][10]={"int1","int2","int4","int8","uint1","uint2"
     "pointer","fpointer","void","array","struct","union","enum"};
 char *get_cast_name(IdType_t goal_type, IdType_t now_type, char *now_name)
 {
-    if(goal_type >= 10) //这个函数目前仅被用于数字类型的类型转换
+    if(!(goal_type < 12 || goal_type == idt_array)) //这个函数目前仅被用于数字和指针，数组，函数指针之间类型的类型转换
     {
         cerr << "wrong use at get_cast_name !" << endl;
         while(1);

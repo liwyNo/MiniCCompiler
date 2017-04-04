@@ -125,7 +125,7 @@ extern VarCounter_t varCounter;
 int CreateConstant();
 int CreateTempVar();
 int CreateNativeVar(Identifier_t *, SymbolStack_t *);
-int CreateLabel();
+int CreateLable();
 int CreateFunc(Identifier_t *);
 int CreateParam(Identifier_t *);
 void CounterLeaveFunc();

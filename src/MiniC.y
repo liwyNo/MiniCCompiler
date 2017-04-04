@@ -89,6 +89,7 @@ void yyerror(const char *s);
 %type <expression_s> logical_or_expression
 %type <expression_s> conditional_expression
 %type <expression_s> assignment_expression
+%type <vint> assignment_operator 
 
 %type <type_qualifier_s> type_qualifier
 %type <storage_class_specifier_s> storage_class_specifier
@@ -137,9 +138,10 @@ primary_expression:
             else if(symbol_type == IDENTIFIER)//没有其他可能了，不可能是enum_constant或者type,在lex时就被筛过了
             {
 				Identifier_t *id = (Identifier_t *)sym_ptr;
-                $$.isConst = id -> type-> isConst;
+                $$.isConst = id -> isConst;
+				#warning "The IDENTIFIER hasn't finished yet!"
 				//if($$.isConst)
-					//$$.value = id -> ;
+					//$$.value = id -> value;
                 $$.lr_value = 0;
 				$$.addr = id -> TACname;
 				$$.laddr = NULL;
@@ -286,7 +288,7 @@ argument_expression_list:
 	;
 
 unary_expression:
-	  postfix_expression
+	  postfix_expression		{$$ = $1;}
 	| INC_OP unary_expression
 	| DEC_OP unary_expression
 	| unary_operator cast_expression
@@ -304,31 +306,31 @@ unary_operator:
 	;
 
 cast_expression:
-	  unary_expression
+	  unary_expression			{$$ = $1;}
 	| '(' type_name ')' cast_expression
 	;
 
 multiplicative_expression:
-	  cast_expression
-	| multiplicative_expression '*' cast_expression
-	| multiplicative_expression '/' cast_expression
+	  cast_expression           {$$ = $1;}
+	| multiplicative_expression '*' cast_expression			{get_ADD_SUB_MUL_DIV($$,$1,$3,"+");}
+	| multiplicative_expression '/' cast_expression			{get_ADD_SUB_MUL_DIV($$,$1,$3,"+");}
 	| multiplicative_expression '%' cast_expression
 	;
 
 additive_expression:
-	  multiplicative_expression
-	| additive_expression '+' multiplicative_expression
-	| additive_expression '-' multiplicative_expression
+	  multiplicative_expression {$$ = $1;}
+	| additive_expression '+' multiplicative_expression		{get_ADD_SUB_MUL_DIV($$,$1,$3,"+");}
+	| additive_expression '-' multiplicative_expression		{get_ADD_SUB_MUL_DIV($$,$1,$3,"+");}
 	;
 
 shift_expression:
-	  additive_expression
+	  additive_expression       {$$ = $1;}
 	| shift_expression LEFT_OP additive_expression
 	| shift_expression RIGHT_OP additive_expression
 	;
 
 relational_expression:
-	  shift_expression
+	  shift_expression          {$$ = $1;}
 	| relational_expression '<' shift_expression
 	| relational_expression '>' shift_expression
 	| relational_expression LE_OP shift_expression
@@ -336,67 +338,78 @@ relational_expression:
 	;
 
 equality_expression:
-	  relational_expression
+	  relational_expression     {$$ = $1;}
 	| equality_expression EQ_OP relational_expression
 	| equality_expression NE_OP relational_expression
 	;
 
 and_expression:
-	  equality_expression
+	  equality_expression       {$$ = $1;}
 	| and_expression '&' equality_expression
 	;
 
 exclusive_or_expression:
-	  and_expression
+	  and_expression            {$$ = $1;}
 	| exclusive_or_expression '^' and_expression
 	;
 
 inclusive_or_expression:
-	  exclusive_or_expression
+	  exclusive_or_expression   {$$ = $1;}
 	| inclusive_or_expression '|' exclusive_or_expression
 	;
 
 logical_and_expression:
-	  inclusive_or_expression
+	  inclusive_or_expression   {$$ = $1;}
 	| logical_and_expression AND_OP inclusive_or_expression
 	;
 
 logical_or_expression:
-	  logical_and_expression
+	  logical_and_expression    {$$ = $1;}
 	| logical_or_expression OR_OP logical_and_expression
 	;
 
 conditional_expression:
-	  logical_or_expression
+	  logical_or_expression     {$$ = $1;}
 	| logical_or_expression '?' expression ':' conditional_expression
 	;
 
 assignment_expression:
-	  conditional_expression
-	| unary_expression assignment_operator assignment_expression {}
+	  conditional_expression    {$$ = $1;}
+	| unary_expression assignment_operator assignment_expression {
+		if($2 == 0)
+		{
+			$$ = get_assign($1,$3);	
+		}
+		if($2 == ADD_ASSIGN)
+		{
+			expression_s_t tmp;
+		}
+    }
 	;
 
 assignment_operator:
-	  '='
-	| MUL_ASSIGN
-	| DIV_ASSIGN
-	| MOD_ASSIGN
-	| ADD_ASSIGN
-	| SUB_ASSIGN
-	| LEFT_ASSIGN
-	| RIGHT_ASSIGN
-	| AND_ASSIGN
-	| XOR_ASSIGN
-	| OR_ASSIGN
+	  '='			{
+		  $$ = 0; //0 表示等号
+	  }
+	| MUL_ASSIGN	{$$ = MUL_ASSIGN;}
+	| DIV_ASSIGN	{$$ = DIV_ASSIGN;}
+	| MOD_ASSIGN	{$$ = MOD_ASSIGN;}
+	| ADD_ASSIGN	{$$ = ADD_ASSIGN;}
+	| SUB_ASSIGN	{$$ = SUB_ASSIGN;}
+	| LEFT_ASSIGN	{$$ = LEFT_ASSIGN;}
+	| RIGHT_ASSIGN	{$$ = RIGHT_ASSIGN;}
+	| AND_ASSIGN	{$$ = AND_ASSIGN;}
+	| XOR_ASSIGN	{$$ = XOR_ASSIGN;}
+	| OR_ASSIGN		{$$ = OR_ASSIGN;}
 	;
 
 expression:
-	  assignment_expression
-	| expression ',' assignment_expression
+	  assignment_expression     {$$ = $1;}
+	| expression ',' assignment_expression  {$$ = $3;}
 	;
 
 constant_expression:
-	  conditional_expression
+	  conditional_expression    {$$ = $1;}
 	;
 
 storage_class_specifier:
