@@ -194,9 +194,10 @@ void get_ADD_SUB_MUL_DIV(expression_s_t &This, const expression_s_t &A, const ex
     else
         yyerror("only numbers or same type of pointers can subtract");
     This.isConst = A.isConst & B.isConst;
-    #warning ""haven't implement the calculation of const"
+    //#warning ""haven't implement the calculation of const"
     if(This.isConst == 1)
-        ;
+        if(type_of_const_exp[This.type -> type]==1)
+            This.value.vint += A.value.vint + B.value.vint; 
     This.lr_value = 1;
     This.laddr = NULL;
 }
