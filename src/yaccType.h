@@ -10,13 +10,7 @@ typedef struct {
     int isConst;
     const_Typename_ptr type;
     bool lr_value;
-    union {
-        int vint;
-        long long vlong;
-        double vdouble;
-        char vchar;
-        char *vstr;
-    } value; /* only use for constant */
+    ConstValue_t value; /* only use for constant */
     char *addr; /* name */
     /* other property */
 } expression_s_t;
@@ -143,14 +137,16 @@ struct __initializer_list_s_t;
 typedef struct __initializer_s_t {
     char *addr;
     struct __initializer_list_s_t *lst;
+    ConstValue_t value;
+    int isConst;
 } initializer_s_t;
-void freeInit(initializer_s_t*);
+void freeInit(initializer_s_t *);
 
 typedef struct __initializer_list_s_t {
     initializer_s_t data;
     struct __initializer_list_s_t *next;
 } initializer_list_s_t;
-void freeIL(initializer_list_s_t*);
+void freeIL(initializer_list_s_t *);
 
 typedef struct {
     declarator_s_t decl;

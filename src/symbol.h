@@ -5,6 +5,14 @@
 #include <cstdint>
 #include <climits>
 
+typedef union {
+    int vint;
+    long long vlong;
+    double vdouble;
+    char vchar;
+    char *vstr;
+} ConstValue_t;
+
 #define IDTYPE_NUM 17
 typedef enum {
     idt_char, idt_short, idt_int, idt_long, /* signed integer */
@@ -71,6 +79,10 @@ typedef struct __Identifier_t {
     char *name; /* name of identifer */
     const_Typename_ptr type; /* type of identifer */
     char *TACname; /* name in three-address-code */
+    ConstValue_t value;
+    int isConst; /* this is different from type->isConst
+                    const int a = 5; // this will set isConst to identifier and typename
+                    int f(const int a) {} // this will only set isConst to identifier */
 } Identifier_t;
 
 typedef struct __TypeList_t {

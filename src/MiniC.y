@@ -373,6 +373,12 @@ declaration:
                 if (!$1.hasTYPEDEF) {
                     genDeclare(id->type, id->TACname, symbolStack->next == NULL || $1.hasSTATIC);
                     genInitilize(id->type, id->TACname, i->idecl.init);
+                    if (i->idecl.init->addr && id->type->isConst) {
+                        id->isConst = 1;
+                        id->value = i->idecl.init->value;
+                    }
+                    else
+                        id->isConst = 0;
                 } else
                     if (i->idecl.init)
                         yyerror("typedef with initial value");
@@ -461,7 +467,7 @@ enum_specifier:
 	| ENUM IDENTIFIER '{' enumerator_list ',' '}'   { $$ = newEnum($2, $4); StackAddEnumTable($4); }
 	| ENUM IDENTIFIER                               {
             Typename_t *t = new Typename_t;
-            t->type = idt_enum;
+            t->type = idt_int; // idt_enum is replaced by idt_int
             t->name = $2;
             t->structure = NULL;
             StackAddTypename(t);
@@ -602,7 +608,7 @@ initializer:
 	  '{' initializer_list '}'      {$$.lst=$2;$$.addr=NULL;}
 	| '{' initializer_list ',' '}'  {$$.lst=$2;$$.addr=NULL;}
     | '{' '}'                       {$$.lst=NULL;$$.addr=NULL;}
-	| assignment_expression         {$$.lst=NULL;$$.addr=$1.addr;}
+	| assignment_expression         {$$.lst=NULL;$$.addr=$1.get_addr(); $$.isConst=$1.isConst; $$.value=$1.value;}
 	;
 
 initializer_list:
@@ -646,7 +652,7 @@ labeled_statement:
                 yyerror("case not integer");
             }
             $$.caseList->type = $2.type->type;
-            $$.caseList->value = $2.addr;
+            $$.caseList->value = $2.get_addr();
             $$.caseList->label = $<vint>3;
             $$.caseList->next = NULL;
         }
@@ -838,7 +844,7 @@ jump_statement:
             $$.caseList = NULL;
         }
 	| RETURN ';'    { gen_return(NULL); $$.caseList = NULL; }
-	| RETURN expression ';' { gen_return($2.addr); $$.caseList = NULL; }
+	| RETURN expression ';' { gen_return($2.get_addr()); $$.caseList = NULL; }
 	;
 
 translation_unit:

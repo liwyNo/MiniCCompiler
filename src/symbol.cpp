@@ -337,8 +337,11 @@ Identifier_t *StackDeclare(const_Typename_ptr type, int hasSTATIC, int hasTYPEDE
                 AddIdentifier(id, &symbolStack->idList);
                 CreateFunc(id);
             }
+            else
+                id = id2;
         }
     }
+    id->isConst = 0;
     return id;
 }
 
