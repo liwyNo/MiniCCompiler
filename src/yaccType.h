@@ -9,10 +9,11 @@
 typedef struct {
     int isConst;
     const_Typename_ptr type;
-    bool lr_value;
+    bool lr_value; //left : 0,right :1
     ConstValue_t value; /* only use for constant */
-    char *addr; /* name */
-    /* other property */
+    char *addr; /* 直接有变量名的东西，就用addr存 */
+    char *laddr; /*只能用指针访问的东西，就存它的指针，以上两者一定是不共存的，即一定有一个为NULL*/
+    char *get_addr() const;//得到该表达式的真正的addr
 } expression_s_t;
 
 typedef struct {
