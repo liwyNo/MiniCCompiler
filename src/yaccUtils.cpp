@@ -12,7 +12,7 @@ using namespace std;
 Typename_t *newEnum(char *name, EnumTable_t *p)
 {
     Typename_t *t = new Typename_t;
-    t->type = idt_enum;
+    t->type = idt_int; // idt_enum is replaced by idt_int
     t->size = 4;
     t->name = NULL;
     t->structure = new IdStructure_t;
@@ -218,7 +218,7 @@ void declareParameter(const SymbolList_t *lst)
 void genIfGoto(expression_s_t expr, const char *name2, const char *op, int num)
 {
 #warning "need be changed to call expression functions"
-    printf("(!!) if %s %s %s goto l%d\n", expr.addr, op, name2, num);
+    printf("(!!) if %s %s %s goto l%d\n", expr.get_addr(), op, name2, num);
     /*switch (expr.type->type) {
     case idt_struct:
     case idt_union:

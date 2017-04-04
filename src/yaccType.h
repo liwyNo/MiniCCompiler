@@ -10,17 +10,10 @@ typedef struct {
     int isConst;
     const_Typename_ptr type;
     bool lr_value; //left : 0,right :1
-    union {
-        int vint;
-        long long vlong;
-        double vdouble;
-        char vchar;
-        char *vstr;
-    } value; /* only use for constant */
+    ConstValue_t value; /* only use for constant */
     char *addr; /* 直接有变量名的东西，就用addr存 */
     char *laddr; /*只能用指针访问的东西，就存它的指针，以上两者一定是不共存的，即一定有一个为NULL*/
     char *get_addr() const;//得到该表达式的真正的addr
-    /* other property */
 } expression_s_t;
 
 typedef struct {
@@ -145,14 +138,16 @@ struct __initializer_list_s_t;
 typedef struct __initializer_s_t {
     char *addr;
     struct __initializer_list_s_t *lst;
+    ConstValue_t value;
+    int isConst;
 } initializer_s_t;
-void freeInit(initializer_s_t*);
+void freeInit(initializer_s_t *);
 
 typedef struct __initializer_list_s_t {
     initializer_s_t data;
     struct __initializer_list_s_t *next;
 } initializer_list_s_t;
-void freeIL(initializer_list_s_t*);
+void freeIL(initializer_list_s_t *);
 
 typedef struct {
     declarator_s_t decl;
