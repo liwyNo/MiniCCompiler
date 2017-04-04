@@ -196,8 +196,17 @@ void get_ADD_SUB_MUL_DIV(expression_s_t &This, const expression_s_t &A, const ex
     This.isConst = A.isConst & B.isConst;
     //#warning ""haven't implement the calculation of const"
     if(This.isConst == 1)
-        if(type_of_const_exp[This.type -> type]==1)
-            This.value.vint += A.value.vint + B.value.vint; 
+        if(type_of_const_exp[This.type -> type] == 1)
+        {
+            if(op[0]=='+')
+                This.value.vint = A.value.vint + B.value.vint;
+            if(op[0]=='-')
+                This.value.vint = A.value.vint - B.value.vint;
+            if(op[0]=='*')
+                This.value.vint = A.value.vint * B.value.vint;
+            if(op[0]=='/')
+                This.value.vint = A.value.vint / B.value.vint;
+        }
     This.lr_value = 1;
     This.laddr = NULL;
 }

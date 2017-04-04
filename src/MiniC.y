@@ -238,15 +238,17 @@ postfix_expression:
 				
 				tmp_name2 = sizeof_type(b_type);
 				tmp_name3 = get_TAC_name('t',CreateTempVar());
+				gen_var("int4", tmp_name3);
 				gen_cpy(tmp_name3,tmp_name2); //这么一大坨终于得到该指针这一维的大小了。。。
 
-				gen_op2(tmp_name2,tmp_name2,tmp_name1,"*");
+				gen_op2(tmp_name3,tmp_name3,tmp_name1,"*");
 				char *pf = $1.get_addr();
-				gen_op2(pf, pf, tmp_name2,"+");
+
+				gen_op2(tmp_name3, pf, tmp_name3,"+");
 
 				$$.type = b_type;
 				$$.addr = NULL;
-				$$.laddr = pf;
+				$$.laddr = tmp_name3;
 				if($$.type -> type == idt_array) //假如这是个数组，则不能修改，是个右值
 					$$.lr_value = 1;
 				else	
