@@ -140,12 +140,14 @@ primary_expression:
 				Identifier_t *id = (Identifier_t *)sym_ptr;
                 $$.isConst = id -> isConst;
 				#warning "The IDENTIFIER hasn't finished yet!"
-				//if($$.isConst)
-					//$$.value = id -> value;
-                $$.lr_value = 0;
+				$$.lr_value = 0;
 				$$.addr = id -> TACname;
 				$$.laddr = NULL;
 				$$.type = id -> type;
+				if($$.isConst)
+					if(type_of_const_exp[$$.type -> type])
+						$$.value.vint = id -> value.vint;
+                
             }
         }
 	| constant		{

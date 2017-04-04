@@ -7,7 +7,7 @@
 
 typedef union {
     int vint;
-    /*暂时认定constant_expression的值只能为int，所以暂时只维护int的值
+    /*暂时认定constant_expression的值只能为int，所以暂时只维护 int 及其子集的值 (无视子集类型溢出的bug**)
     long long vlong;
     double vdouble;
     char vchar;
@@ -27,7 +27,7 @@ typedef enum {
     idt_enum /* enumeration */
 } IdType_t;
 
-extern int type_of_const_exp[IDTYPE_NUM];
+extern int type_of_const_exp[IDTYPE_NUM]; //若该类型为 int 的子集，则该值为1
 
 struct __Identifier_t;
 union __IdStructure_t;
