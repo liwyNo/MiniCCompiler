@@ -172,7 +172,7 @@ constant:
   	| CHAR_CONSTANT		{
 		$$.lr_value = 1;
 		$$.isConst = 1;
-		$$.value.vchar = $1;
+		//$$.value.vchar = $1;
 		$$.addr = strdup(('c' + std::to_string(CreateConstant())).c_str());
 		$$.laddr = NULL;
 		$$.type = (const_Typename_ptr)LookupSymbol("char", NULL);
@@ -181,7 +181,7 @@ constant:
 	| DOUBLE_CONSTANT	{
 		$$.lr_value = 1;
 		$$.isConst = 1;
-		$$.value.vdouble = $1;
+		//$$.value.vdouble = $1;
 		$$.addr = strdup(('c' + std::to_string(CreateConstant())).c_str());
 		$$.laddr = NULL;
 		$$.type = (const_Typename_ptr)LookupSymbol("double", NULL);
@@ -200,7 +200,7 @@ constant:
 
 string:
 	  STR_CONSTANT		{
-				$$.value.vstr = $1;
+				//$$.value.vstr = $1;
 				$$.lr_value = 1;
 				$$.addr = strdup(('c' + std::to_string(CreateConstant())).c_str());
 				$$.laddr = NULL;

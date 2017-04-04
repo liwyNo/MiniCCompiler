@@ -7,10 +7,12 @@
 
 typedef union {
     int vint;
+    /*暂时认定constant_expression的值只能为int，所以暂时只维护int的值
     long long vlong;
     double vdouble;
     char vchar;
     char *vstr;
+    */
 } ConstValue_t;
 
 #define IDTYPE_NUM 17
@@ -24,6 +26,8 @@ typedef enum {
     idt_struct, idt_union, /* structured record */
     idt_enum /* enumeration */
 } IdType_t;
+
+extern int type_of_const_exp[IDTYPE_NUM];
 
 struct __Identifier_t;
 union __IdStructure_t;
@@ -137,7 +141,7 @@ extern VarCounter_t varCounter;
 int CreateConstant();
 int CreateTempVar();
 int CreateNativeVar(Identifier_t *, SymbolStack_t *);
-int CreateLable();
+int CreateLabel();
 int CreateFunc(Identifier_t *);
 int CreateParam(Identifier_t *);
 void CounterLeaveFunc();

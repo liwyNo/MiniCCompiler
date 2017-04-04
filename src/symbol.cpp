@@ -8,6 +8,8 @@
 
 SymbolStack_t *symbolStack = NULL;
 
+int type_of_const_exp[IDTYPE_NUM] = {1,1,1,0,1,1};
+
 void FreeFPtrStructure(FPtrStructure_t *p)
 {
     delete[] p->type;
