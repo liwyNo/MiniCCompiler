@@ -20,7 +20,7 @@ void genInitilize(const_Typename_ptr, const char *TACname, const initializer_s_t
 
 
 char *get_TAC_name(char TAC_name_prefix, int TAC_num);
-char *get_cast_name(IdType_t goal_type, IdType_t now_type, char *now_name);
+char *get_cast_name(IdType_t goal_type, IdType_t now_type, const char *now_name);
 //判断类型是否一样，一样返回now_name,否则自动产生新临时变量，并返回新变量的名字
 extern const char map_name[IDTYPE_NUM][10];
 

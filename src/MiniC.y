@@ -472,7 +472,7 @@ declaration:
                 if (!$1.hasTYPEDEF) {
                     genDeclare(id->type, id->TACname, symbolStack->next == NULL || $1.hasSTATIC);
                     genInitilize(id->type, id->TACname, i->idecl.init);
-                    if (i->idecl.init->addr && id->type->isConst) {
+                    if (i->idecl.init && i->idecl.init->addr && id->type->isConst) {
                         id->isConst = 1;
                         id->value = i->idecl.init->value;
                     }
@@ -577,7 +577,7 @@ enum_specifier:
 
 enumerator_list:
 	  {$<vint>$=0;} enumerator           {$$=new EnumTable_t; $$->name=$2.name; $$->value=$2.value; $$->next=NULL;}
-	| enumerator_list ',' {$<vint>$=($<enumerator_list_s>-1)->value + 1;} enumerator    {
+	| enumerator_list ',' {$<vint>$=$1->value + 1;} enumerator    {
             $$=new EnumTable_t;
             $$->name = $4.name;
             $$->value = $4.value;
@@ -587,7 +587,7 @@ enumerator_list:
 
 enumerator:
 	  IDENTIFIER '=' constant_expression    {$$.name=$1; $$.value=$3.value.vint;
-                                                if (!$3.isConst||$3.type->type!=idt_int) yyerror("enumerator not integer constant");}
+                                                if (!$3.isConst||!type_of_const_exp[$3.type->type]) yyerror("enumerator not integer constant");}
 	| IDENTIFIER                            {$$.name=$1; $$.value=$<vint>0;}
 	;
 
@@ -595,7 +595,7 @@ direct_declarator:
 	  IDENTIFIER                                    {$$.type=1; $$.data.d1=$1;}
 	| '(' declarator ')'                            {$$.type=2; $$.data.d2=$2;}
 	| direct_declarator '[' ']'                     {$$.type=3; $$.data.d3=memDup(&$1);}
-	| direct_declarator '[' constant_expression ']' {$$.type=4; if (!$3.isConst||$3.type->type!=idt_int) yyerror("array declaration not integer constant"); $$.data.d4.dd=memDup(&$1); $$.data.d4.ce=$3.value.vint;}
+	| direct_declarator '[' constant_expression ']' {$$.type=4; if (!$3.isConst||!type_of_const_exp[$3.type->type]) yyerror("array declaration not integer constant"); $$.data.d4.dd=memDup(&$1); $$.data.d4.ce=$3.value.vint;}
 	| direct_declarator '(' parameter_list ')'      {$$.type=5; $$.data.d5.dd=memDup(&$1); $$.data.d5.pl=$3; symbolStack = symbolStack->next;}
 	| direct_declarator '(' ')'                     {$$.type=6; $$.data.d6=memDup(&$1);}
 	| direct_declarator '(' identifier_list ')'     {yyerror("not support for this type of function declaration");}
@@ -689,9 +689,9 @@ abstract_declarator:
 direct_abstract_declarator:
 	  '(' abstract_declarator ')'   {$$.type=1; $$.data.d1=$2;}
 	| '[' ']'                       {$$.type=2;}
-	| '[' constant_expression ']'   {$$.type=3; if (!$2.isConst || $2.type->type != idt_int) yyerror("array declaration not integer constant"); $$.data.d3=$2.value.vint;}
+	| '[' constant_expression ']'   {$$.type=3; if (!$2.isConst || !type_of_const_exp[$2.type->type]) yyerror("array declaration not integer constant"); $$.data.d3=$2.value.vint;}
 	| direct_abstract_declarator '[' ']'    {$$.type=4; $$.data.d4=memDup(&$1);}
-	| direct_abstract_declarator '[' constant_expression ']'    {$$.type=5; $$.data.d5.dad=memDup(&$1); if (!$3.isConst || $3.type->type != idt_int) yyerror("array declaration not integer constant"); $$.data.d5.ce=$3.value.vint;}
+	| direct_abstract_declarator '[' constant_expression ']'    {$$.type=5; $$.data.d5.dad=memDup(&$1); if (!$3.isConst || !type_of_const_exp[$3.type->type]) yyerror("array declaration not integer constant"); $$.data.d5.ce=$3.value.vint;}
 	| '(' ')'                       {$$.type=6;}
 	| '(' parameter_list ')'        {$$.type=7; $$.data.d7=$2; symbolStack = symbolStack->next;}
 	| direct_abstract_declarator '(' ')'    {$$.type=8; $$.data.d8=memDup(&$1);}
