@@ -90,6 +90,7 @@ void yyerror(const char *s);
 %type <expression_s> conditional_expression
 %type <expression_s> assignment_expression
 %type <vint> assignment_operator 
+%type <vstr> unary_operator
 
 %type <type_qualifier_s> type_qualifier
 %type <storage_class_specifier_s> storage_class_specifier
@@ -239,16 +240,18 @@ postfix_expression:
 				tmp_name2 = sizeof_type(b_type);
 				tmp_name3 = get_TAC_name('t',CreateTempVar());
 				gen_var("int4", tmp_name3);
-				gen_cpy(tmp_name3,tmp_name2); //这么一大坨终于得到该指针这一维的大小了。。。
+				//gen_cpy(tmp_name3, tmp_name2); //这么一大坨终于得到该指针这一维的大小了。。。
 
-				gen_op2(tmp_name3,tmp_name3,tmp_name1,"*");
+				gen_op2(tmp_name3,tmp_name2,tmp_name1,"*");
 				char *pf = $1.get_addr();
 
-				gen_op2(tmp_name3, pf, tmp_name3,"+");
+				char *rel_loc = get_TAC_name('t',CreateTempVar());
+				gen_var("ptr", rel_loc);
+				gen_op2(rel_loc, pf, tmp_name3,"+");
 
 				$$.type = b_type;
 				$$.addr = NULL;
-				$$.laddr = tmp_name3;
+				$$.laddr = rel_loc;
 				if($$.type -> type == idt_array) //假如这是个数组，则不能修改，是个右值
 					$$.lr_value = 1;
 				else	
@@ -292,45 +295,167 @@ argument_expression_list:
 	;
 
 unary_expression:
-	  postfix_expression		{$$ = $1;}
-	| INC_OP unary_expression
-	| DEC_OP unary_expression
-	| unary_operator cast_expression
-	| SIZEOF unary_expression
-	| SIZEOF '(' type_name ')'
+	  postfix_expression						{$$ = $1;}
+	| INC_OP unary_expression{
+		INC_DEC_OP_unary_expression($2,"+");
+		$$ = $2; //++i 应该传回的是i的引用
+	}
+	| DEC_OP unary_expression{
+		INC_DEC_OP_unary_expression($2,"-");
+		$$ = $2; //++i 应该传回的是i的引用
+	}				
+	| unary_operator cast_expression			{
+		if($1[0] == '&')
+		{
+			if($2.lr_value == 1)
+				yyerror("lvalue required as unary & operand");
+			
+			char *loc = get_TAC_name('t',CreateTempVar());
+			gen_var("ptr",loc);
+			if($2.addr == NULL)
+				gen_cpy(loc, $2.laddr);
+			else
+				gen_op1(loc, $2.addr, "&");
+			$$.lr_value = 1;
+			$$.isConst = 0;
+			Typename_t *tmp_type = new Typename_t;
+			tmp_type -> type = idt_pointer;
+			tmp_type -> name = NULL;
+			tmp_type -> isConst = 0;
+			tmp_type -> size = 4;
+			tmp_type -> structure = new IdStructure_t;
+			tmp_type -> structure -> pointer.base_type = $2.type;
+			$$.type = tmp_type;
+		}
+		if($1[0] == '*')
+		{
+			//???对一个函数指针进行该操作会有啥用？
+			if($2.type -> type == idt_array || $2.type -> type == idt_pointer)
+			{
+				const_Typename_ptr b_type = $2.type -> structure -> pointer.base_type;
+				$$.laddr = get_TAC_name('t',CreateTempVar());
+				gen_var("ptr",$$.laddr);
+				gen_cpy($$.laddr,$2.get_addr());
+				$$.addr = NULL;
+				$$.type = b_type;
+				$$.lr_value = (b_type -> type) == idt_array ? 1 : 0;
+				$$.isConst = 0; //只要是这种带指针的统统不算常量表达式，是不是常量要看type.isConst!
+			}
+		}
+		if($1[0] == '+')
+		{
+			if(!check_number($2)) //只有数字能有这种操作！
+				yyerror("wrong type argument on unary +");
+			$$.addr = $2.addr;
+			$$.laddr = $2.laddr;
+			$$.lr_value = 1;
+			$$.type = $2.type;
+			$$.isConst = $2.isConst;
+			if($$.isConst)
+				$$.value = $2.value;
+		}
+		if($1[0] == '-')
+		{
+			if(!check_number($2)) //只有数字能有这种操作！
+				yyerror("wrong type argument on unary -");
+			$$.addr = get_TAC_name('t',CreateTempVar());
+			genDeclare($2.type, $$.addr, 0);
+			gen_op1($$.addr, $2.get_addr(), "-");
+			$$.laddr = NULL;
+			$$.lr_value = 1;
+			$$.type = $2.type;
+			$$.isConst = $2.isConst;
+			if($$.isConst)
+				$$.value.vint = -$2.value.vint;
+		}
+		if($1[0] == '~')
+		{
+			if(!check_int($2)) //只有整数能有这种操作！
+				yyerror("wrong type argument on unary ~ (only integer can use '~')");
+			$$.addr = get_TAC_name('t',CreateTempVar());
+			genDeclare($2.type, $$.addr, 0);
+			gen_op1($$.addr, $2.get_addr(), "~");
+			$$.laddr = NULL;
+			$$.lr_value = 1;
+			$$.type = $2.type;
+			$$.isConst = $2.isConst;
+			if($$.isConst)
+				$$.value.vint = ~$2.value.vint;
+		}
+		if($1[0] == '!')
+		{
+			if(!check_int($2)) //只有数字能有这种操作！
+				yyerror("wrong type argument on unary !");
+			$$.addr = get_TAC_name('t',CreateTempVar());
+			genDeclare($2.type, $$.addr, 0);
+			gen_op1($$.addr, $2.get_addr(), "!");
+			$$.laddr = NULL;
+			$$.lr_value = 1;
+			$$.type = $2.type;
+			$$.isConst = $2.isConst;
+			if($$.isConst)
+				$$.value.vint = !$2.value.vint;
+		}
+	}
+	| SIZEOF unary_expression					{
+		$$.laddr = get_TAC_name('c',CreateConstant());
+		gen_const("uint4", $$.laddr, &($2.type -> size));
+		$$.type = (const_Typename_ptr)LookupSymbol("unsigned int", NULL);
+		$$.lr_value = 1;
+		$$.isConst = 1;
+		//$$.value.vint = $2.type -> size; //unsigned int 不用维护
+	}
+	| SIZEOF '(' type_name ')'					{
+		$$.laddr = get_TAC_name('c',CreateConstant());
+		gen_const("uint4", $$.laddr, &($3 -> size));
+		$$.type = (const_Typename_ptr)LookupSymbol("unsigned int", NULL);
+		$$.lr_value = 1;
+		$$.isConst = 1;
+		//$$.value.vint = $2.type -> size;
+	}
 	;
 
 unary_operator:
-	  '&'
-	| '*'
-	| '+'
-	| '-'
-	| '~'
-	| '!'
+	  '&'	{$$="&";}
+	| '*'	{$$="*";}
+	| '+'	{$$="+";}
+	| '-'	{$$="-";}
+	| '~'	{$$="~";}
+	| '!'	{$$="!";}
 	;
 
 cast_expression:
 	  unary_expression			{$$ = $1;}
-	| '(' type_name ')' cast_expression
+	| '(' type_name ')' cast_expression	{
+		if(type_to_type[$2->type][$4.type->type]==-1) //可以直接利用这个表来判断强制转换的合法性
+			yyerror("invalid cast!");
+		$$.addr = get_cast_name($2->type, $4.type -> type, $4.get_addr());
+		$$.laddr = NULL;
+		$$.type = $2;
+		$$.lr_value = 1;//这东西一定是产生右值
+		$$.isConst = $4.isConst;
+		if($$.isConst)
+			$$.value.vint = $4.value.vint;
+	}
 	;
 
 multiplicative_expression:
 	  cast_expression           {$$ = $1;}
-	| multiplicative_expression '*' cast_expression			{get_ADD_SUB_MUL_DIV($$,$1,$3,"+");}
-	| multiplicative_expression '/' cast_expression			{get_ADD_SUB_MUL_DIV($$,$1,$3,"+");}
-	| multiplicative_expression '%' cast_expression
+	| multiplicative_expression '*' cast_expression			{get_ADD_SUB_MUL_DIV($$,$1,$3,"*");}
+	| multiplicative_expression '/' cast_expression			{get_ADD_SUB_MUL_DIV($$,$1,$3,"/");}
+	| multiplicative_expression '%' cast_expression			{get_MOD_AND_OR_XOR_LEFT_RIGHT($$,$1,$3,"%");}
 	;
 
 additive_expression:
 	  multiplicative_expression {$$ = $1;}
 	| additive_expression '+' multiplicative_expression		{get_ADD_SUB_MUL_DIV($$,$1,$3,"+");}
-	| additive_expression '-' multiplicative_expression		{get_ADD_SUB_MUL_DIV($$,$1,$3,"+");}
+	| additive_expression '-' multiplicative_expression		{get_ADD_SUB_MUL_DIV($$,$1,$3,"-");}
 	;
 
 shift_expression:
 	  additive_expression       {$$ = $1;}
-	| shift_expression LEFT_OP additive_expression
-	| shift_expression RIGHT_OP additive_expression
+	| shift_expression LEFT_OP additive_expression			{get_MOD_AND_OR_XOR_LEFT_RIGHT($$,$1,$3,"<<");}
+	| shift_expression RIGHT_OP additive_expression			{get_MOD_AND_OR_XOR_LEFT_RIGHT($$,$1,$3,">>");}
 	;
 
 relational_expression:
@@ -349,22 +474,22 @@ equality_expression:
 
 and_expression:
 	  equality_expression       {$$ = $1;}
-	| and_expression '&' equality_expression
+	| and_expression '&' equality_expression				{get_MOD_AND_OR_XOR_LEFT_RIGHT($$,$1,$3,"&");}
 	;
 
 exclusive_or_expression:
 	  and_expression            {$$ = $1;}
-	| exclusive_or_expression '^' and_expression
+	| exclusive_or_expression '^' and_expression			{get_MOD_AND_OR_XOR_LEFT_RIGHT($$,$1,$3,"^");}
 	;
 
 inclusive_or_expression:
 	  exclusive_or_expression   {$$ = $1;}
-	| inclusive_or_expression '|' exclusive_or_expression
+	| inclusive_or_expression '|' exclusive_or_expression	{get_MOD_AND_OR_XOR_LEFT_RIGHT($$,$1,$3,"|");}
 	;
 
 logical_and_expression:
 	  inclusive_or_expression   {$$ = $1;}
-	| logical_and_expression AND_OP inclusive_or_expression
+	| logical_and_expression AND_OP inclusive_or_expression	
 	;
 
 logical_or_expression:
@@ -384,9 +509,30 @@ assignment_expression:
 		{
 			$$ = get_assign($1,$3);	
 		}
-		if($2 == ADD_ASSIGN)
+		else
 		{
 			expression_s_t tmp;
+			if($2 == ADD_ASSIGN)
+				get_ADD_SUB_MUL_DIV(tmp,$1,$3,"+");
+			else if($2 == SUB_ASSIGN)
+				get_ADD_SUB_MUL_DIV(tmp,$1,$3,"-");
+			else if($2 == MUL_ASSIGN)
+				get_ADD_SUB_MUL_DIV(tmp,$1,$3,"*");
+			else if($2 == DIV_ASSIGN)
+				get_ADD_SUB_MUL_DIV(tmp,$1,$3,"/");
+			else if($2 == MOD_ASSIGN)
+				get_MOD_AND_OR_XOR_LEFT_RIGHT(tmp,$1,$3,"%");
+			else if($2 == LEFT_ASSIGN)
+				get_MOD_AND_OR_XOR_LEFT_RIGHT(tmp,$1,$3,"<<");
+			else if($2 == RIGHT_ASSIGN)
+				get_MOD_AND_OR_XOR_LEFT_RIGHT(tmp,$1,$3,">>");
+			else if($2 == OR_ASSIGN)
+				get_MOD_AND_OR_XOR_LEFT_RIGHT(tmp,$1,$3,"|");
+			else if($2 == XOR_ASSIGN)
+				get_MOD_AND_OR_XOR_LEFT_RIGHT(tmp,$1,$3,"^");
+			else if($2 == AND_ASSIGN)
+				get_MOD_AND_OR_XOR_LEFT_RIGHT(tmp,$1,$3,"&");
+			$$ = get_assign($1,tmp);
 		}
     }
 	;

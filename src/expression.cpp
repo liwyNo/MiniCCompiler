@@ -49,16 +49,21 @@ char *sizeof_type(const_Typename_ptr b_type) //得到这个type的类型的大�
 
 void postfix_expression_INC_DEC_OP(expression_s_t &This, const expression_s_t &Next, const char *op)
 {
+    if (Next.type -> isConst == 1)
+        yyerror("can't use ++/-- on read-only variable!");
     if (Next.lr_value == 0)
     {
-        if (Next.type->type < 10 || Next.type->type == idt_pointer) //数字 or pointer
+        if (Next.type->type < 10 || Next.type->type == idt_pointer || Next.type->type == idt_fpointer) //数字 or pointer or fpointer
         {
             char *tmp_name = get_TAC_name('t', CreateTempVar()), *addr_1 = Next.get_addr();
             gen_var(map_name[Next.type->type], tmp_name);
             gen_cpy(tmp_name, addr_1);
-            if (Next.type->type < 8) //number!
+            if (Next.type->type < 10 || Next.type->type == idt_fpointer) //number or fpointer,fpointer也是直接加1
             {
-                char *int_1 = get_cast_name(Next.type->type, idt_int, "c1"); //永远要消息变量类型要一样
+                char *int_1;
+                if(Next.type->type == idt_fpointer)
+                    int_1 = get_TAC_name('c', 1);//fpointer:直接取 c1 即可
+                else int_1 = get_cast_name(Next.type->type, idt_int, "c1"); //永远要消息变量类型要一样
                 gen_op2(addr_1, addr_1, int_1, op);
             }
             else //pointer
@@ -82,6 +87,37 @@ void postfix_expression_INC_DEC_OP(expression_s_t &This, const expression_s_t &N
         yyerror("Can't use ++ operator on right value!");
 }
 
+void INC_DEC_OP_unary_expression(expression_s_t &This, const char *op)
+{
+    if (This.type -> isConst == 1)
+        yyerror("can't use ++/-- on read-only variable!");
+    if (This.lr_value == 1)
+        yyerror("Can't use ++ operator on right value!");
+        
+    if (This.type->type < 10 || This.type->type == idt_pointer || This.type->type == idt_fpointer) //数字 or pointer or fpointer
+    {
+        char *addr_1 = This.get_addr();
+        if (This.type->type < 8) //number!
+        {
+            char *int_1;
+            if(This.type->type == idt_fpointer)
+                int_1 = get_TAC_name('c', 1);//fpointer:直接取 c1 即可
+            else int_1 = get_cast_name(This.type->type, idt_int, "c1"); //永远要消息变量类型要一样
+            gen_op2(addr_1, addr_1, int_1, op);
+        }
+        else //pointer
+        {
+            const_Typename_ptr b_type = (((This.type)->structure)->pointer).base_type;
+            char *b_size = sizeof_type(b_type);
+            gen_op2(addr_1, addr_1, b_size, op);
+        }
+        if (This.addr == NULL) // 是用地址访问的，就需要设置laddr,否则不需要设置
+            gen_pnt_cpy(This.laddr, addr_1);
+    }
+    else
+        yyerror("you can only use ++ on number or pointer");
+}
+
 expression_s_t __Assign(expression_s_t &A, const expression_s_t &B) //不加类型合法行判断的直接赋值。。。
 {
     char *addr_b = B.get_addr(), *addr_rel;
@@ -103,14 +139,16 @@ expression_s_t get_assign(expression_s_t &A, const expression_s_t &B)
     {
         if (B.type->type < 12 || B.type->type == idt_array)
         {
+            if((A.type->type == idt_float || A.type->type == idt_double) && (B.type -> type >= 10)) //浮点数不能赋值成指针
+                yyerror("incompatible types when assigning to type 'float/double' from type pointer/array/fpointer\n");
             return __Assign(A, B);
         }
         else
-            yyerror("number can only be assigned with a number!");
+            yyerror("number can only be assigned with a number or pointer!");
     }
     if (A.type->type == idt_pointer || A.type->type == idt_fpointer) //指针之间能随便复制，但是减法只有同类型之间可以。指针还能等于整数！类型用sameType函数判断！
     {
-        if (B.type->type == idt_pointer || B.type->type == idt_fpointer || B.type->type == idt_array)
+        if (check_pointer(B.type->type))
         {
             return __Assign(A, B);
         }
@@ -156,43 +194,61 @@ const_Typename_ptr get_Typename_t(IdType_t type)
 
 void get_ADD_SUB_MUL_DIV(expression_s_t &This, const expression_s_t &A, const expression_s_t &B, const char *op) //处理加减乘除，答案放This里
 {
-    if (A.type->type < 10 && B.type->type < 10)
+    if (type_to_type[A.type->type][B.type->type] != (IdType_t)-1)
     {
-        IdType_t rel_type = type_to_type[A.type->type][B.type->type];
-        char *val_a, *val_b;
-        val_a = get_cast_name(rel_type, A.type->type, A.get_addr());
-        val_b = get_cast_name(rel_type, B.type->type, B.get_addr());
-        char *rel = get_TAC_name('t', CreateTempVar());
-        gen_var(map_name[rel_type], rel);
-        gen_op2(rel,val_a,val_b,op);
-        This.type = get_Typename_t(rel_type);
-        This.addr = rel;
-    }
-    else if (op[0] == '-') //同类型指针之间可以减法,函数指针之间和void*指针之间的减法就是绝对地址的减法，其他指针的减法要除以单位大小！
-    {
-        if (A.type->type == idt_array || A.type->type == idt_pointer || A.type->type == idt_fpointer)
-            if (B.type->type == idt_array || B.type->type == idt_pointer || B.type->type == idt_fpointer)
-                if (sameType(A.type, B.type))
+        if(!check_pointer(A) && !check_pointer(B)) //都不是指针(都是数字)
+        {
+            IdType_t rel_type = type_to_type[A.type->type][B.type->type];
+            char *val_a, *val_b;
+            val_a = get_cast_name(rel_type, A.type->type, A.get_addr());
+            val_b = get_cast_name(rel_type, B.type->type, B.get_addr());
+            char *rel = get_TAC_name('t', CreateTempVar());
+            gen_var(map_name[rel_type], rel);
+            gen_op2(rel,val_a,val_b,op);
+            This.type = get_Typename_t(rel_type);
+            This.addr = rel;
+        }
+        else if(check_pointer(A) && check_int(B) && (op[0] == '-' || op[0] =='+'))//第一个是指针，第二个是整数，而且运算是加号或者减号
+        {
+            IdType_t rel_type = type_to_type[A.type->type][B.type->type];
+            char *val_a, *val_b;
+            val_a = get_cast_name(rel_type, A.type->type, A.get_addr());
+            val_b = get_cast_name(rel_type, B.type->type, B.get_addr());
+            char *rel = get_TAC_name('t', CreateTempVar());
+            gen_var(map_name[rel_type], rel);
+            const_Typename_ptr b_type = A.type->structure->pointer.base_type;
+            char *b_size = sizeof_type(b_type);
+            gen_op2(rel, val_b, b_size, "*");
+            gen_op2(rel, rel, val_a,op);
+            This.type = get_Typename_t(rel_type);
+            This.addr = rel;
+        }
+        else if (op[0] == '-' && check_pointer(A.type->type)&&check_pointer(B.type->type)) //同类型指针之间可以减法,函数指针之间和void*指针之间的减法就是绝对地址的减法，其他指针的减法要除以单位大小！
+        {
+            if (sameType(A.type, B.type))
+            {
+                char *rel = get_TAC_name('t', CreateTempVar());
+                gen_var("int4", rel);
+                gen_op2(rel, A.get_addr(), B.get_addr(), "-");
+                if (A.type->type == idt_fpointer || (A.type->type == idt_pointer && A.type->structure->pointer.base_type -> type == idt_void))
+                    ; //nothing to do
+                else  //否则需要除以单位大小
                 {
-                    char *rel = get_TAC_name('t', CreateTempVar());
-                    gen_var("int4", rel);
-                    gen_op2(rel, A.get_addr(), B.get_addr(), "-");
-                    if (A.type->type == idt_fpointer || (A.type->type == idt_pointer && A.type->structure->pointer.base_type -> type == idt_void))
-                        ; //nothing to do
-                    else  //否则需要除以单位大小
-                    {
-                        const_Typename_ptr b_type = A.type->structure->pointer.base_type;
-                        char *b_size = sizeof_type(b_type);
-                        gen_op2(rel, rel, b_size, "/");
-                    }
-                    This.type = (const_Typename_ptr)LookupSymbol("int", NULL);
-                    This.addr = rel;
+                    const_Typename_ptr b_type = A.type->structure->pointer.base_type;
+                    char *b_size = sizeof_type(b_type);
+                    gen_op2(rel, rel, b_size, "/");
                 }
-                else
-                    yyerror("only same type of pointer can subtract");
+                This.type = (const_Typename_ptr)LookupSymbol("int", NULL);
+                This.addr = rel;
+            }
+            else
+                yyerror("only same type of pointer can subtract");
+        }
+        else
+            yyerror("these two item can't +/-/*//");
     }
     else
-        yyerror("only numbers or same type of pointers can subtract");
+        yyerror("only numbers or same type of pointers can +/-/*//");
     This.isConst = A.isConst & B.isConst;
     //#warning ""haven't implement the calculation of const"
     if(This.isConst == 1)
@@ -209,4 +265,41 @@ void get_ADD_SUB_MUL_DIV(expression_s_t &This, const expression_s_t &A, const ex
         }
     This.lr_value = 1;
     This.laddr = NULL;
+}
+
+void get_MOD_AND_OR_XOR_LEFT_RIGHT(expression_s_t &This, const expression_s_t &A, const expression_s_t &B, const char *op)//处理类似的只有整数之间进行的运算
+{
+    if(A.type -> type < 8 && B.type -> type < 8)//必须是两个整数参与运算
+    {
+        IdType_t rel_type = type_to_type[A.type->type][B.type->type];
+        char *val_a, *val_b;
+        val_a = get_cast_name(rel_type, A.type->type, A.get_addr());
+        val_b = get_cast_name(rel_type, B.type->type, B.get_addr());
+        char *rel = get_TAC_name('t', CreateTempVar());
+        gen_var(map_name[rel_type], rel);
+        gen_op2(rel,val_a,val_b,op);
+        This.type = get_Typename_t(rel_type);
+        This.addr = rel;
+        This.lr_value = 1;
+        This.laddr = NULL;
+        This.isConst = A.isConst & B.isConst;
+        if(This.isConst == 1)
+        if(type_of_const_exp[This.type -> type] == 1)
+        {
+            if(op[0]=='%')
+                This.value.vint = A.value.vint % B.value.vint;
+            if(op[0]=='&')
+                This.value.vint = A.value.vint & B.value.vint;
+            if(op[0]=='|')
+                This.value.vint = A.value.vint | B.value.vint;
+            if(op[0]=='^')
+                This.value.vint = A.value.vint ^ B.value.vint;
+            if(op[0]=='<')
+                This.value.vint = A.value.vint << B.value.vint;
+            if(op[0]=='>')
+                This.value.vint = A.value.vint >> B.value.vint;
+        }
+    }
+    else
+        yyerror("invalid operands to binary operation(mod,and,or,xor,left/right_shift)");
 }

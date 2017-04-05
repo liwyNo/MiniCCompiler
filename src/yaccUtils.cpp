@@ -181,14 +181,13 @@ char *get_TAC_name(char TAC_name_prefix, int TAC_num) //注意，这玩意会内
 
 const char map_name[IDTYPE_NUM][10]={"int1","int2","int4","int8","uint1","uint2","uint4","uint8","float4","float8",
     "pointer","fpointer","void","array","struct","union","enum"};
-char *get_cast_name(IdType_t goal_type, IdType_t now_type, const char *now_name)
+char *get_cast_name(IdType_t goal_type, IdType_t now_type, const char *now_name) //该函数基本不判断合法性
 {
     if(!(goal_type < 12 || goal_type == idt_array)) //这个函数目前仅被用于数字和指针，数组，函数指针之间类型的类型转换
     {
         cerr << "wrong use at get_cast_name !" << endl;
         while(1);
     }
-    
     if(now_type != goal_type)
     {
         char* tmp_name;
@@ -198,6 +197,48 @@ char *get_cast_name(IdType_t goal_type, IdType_t now_type, const char *now_name)
         return tmp_name;
     }
     else return strdup(now_name);
+}
+
+bool check_float(IdType_t now_type)//判断是否为浮点数
+{
+    if(now_type == idt_float || now_type == idt_double)
+        return 1;
+    else return 0;
+}
+bool check_pointer(IdType_t now_type)//判断是否为指针
+{
+    if(now_type == idt_pointer || now_type == idt_fpointer || now_type == idt_array)
+        return 1;
+    else return 0;
+}
+bool check_int(IdType_t now_type)//判断是否为整数
+{
+    if(now_type < 8)
+        return 1;
+    else return 0;
+}
+bool check_number(IdType_t now_type)//判断是否为数字
+{
+    if(now_type < 10)
+        return 1;
+    else return 0;
+}
+
+bool check_float(expression_s_t now)
+{
+    return check_float(now.type ->type);
+}
+bool check_pointer(expression_s_t now)
+{
+    return check_pointer(now.type ->type);
+}
+bool check_int(expression_s_t now)
+{
+    return check_int(now.type ->type);
+}
+bool check_number(expression_s_t now)
+{
+    return check_number(now.type ->type);
 }
 
 void declareParameter(const SymbolList_t *lst)
