@@ -129,11 +129,11 @@ expression_s_t __Assign(expression_s_t &A, const expression_s_t &B) //不加类�
     return A;
 }
 
-expression_s_t get_assign(expression_s_t &A, const expression_s_t &B)
+expression_s_t get_assign(expression_s_t &A, const expression_s_t &B, bool checkConst)
 {
     if (A.lr_value == 1)
         yyerror("lvalue required as left operand of assignment!");
-    if (A.type->isConst == 1)
+    if (A.type->isConst == 1 && checkConst)
         yyerror("assignment of read-only variable!");
     if (A.type->type < 10) //数字可以赋成数字和指针和array和函数指针。然而在c++中，就只有数字可以！注意:不存在enum类型的变量！
     {

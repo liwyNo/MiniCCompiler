@@ -90,7 +90,7 @@ void yyerror(const char *s);
 %type <expression_s> conditional_expression
 %type <expression_s> assignment_expression
 %type <vint> assignment_operator 
-%type <vstr> unary_operator
+%type <vchar> unary_operator
 
 %type <type_qualifier_s> type_qualifier
 %type <storage_class_specifier_s> storage_class_specifier
@@ -305,7 +305,7 @@ unary_expression:
 		$$ = $2; //++i 应该传回的是i的引用
 	}				
 	| unary_operator cast_expression			{
-		if($1[0] == '&')
+		if($1 == '&')
 		{
 			if($2.lr_value == 1)
 				yyerror("lvalue required as unary & operand");
@@ -327,7 +327,7 @@ unary_expression:
 			tmp_type -> structure -> pointer.base_type = $2.type;
 			$$.type = tmp_type;
 		}
-		if($1[0] == '*')
+		if($1 == '*')
 		{
 			//???对一个函数指针进行该操作会有啥用？
 			if($2.type -> type == idt_array || $2.type -> type == idt_pointer)
@@ -342,7 +342,7 @@ unary_expression:
 				$$.isConst = 0; //只要是这种带指针的统统不算常量表达式，是不是常量要看type.isConst!
 			}
 		}
-		if($1[0] == '+')
+		if($1 == '+')
 		{
 			if(!check_number($2)) //只有数字能有这种操作！
 				yyerror("wrong type argument on unary +");
@@ -354,7 +354,7 @@ unary_expression:
 			if($$.isConst)
 				$$.value = $2.value;
 		}
-		if($1[0] == '-')
+		if($1 == '-')
 		{
 			if(!check_number($2)) //只有数字能有这种操作！
 				yyerror("wrong type argument on unary -");
@@ -368,7 +368,7 @@ unary_expression:
 			if($$.isConst)
 				$$.value.vint = -$2.value.vint;
 		}
-		if($1[0] == '~')
+		if($1 == '~')
 		{
 			if(!check_int($2)) //只有整数能有这种操作！
 				yyerror("wrong type argument on unary ~ (only integer can use '~')");
@@ -382,7 +382,7 @@ unary_expression:
 			if($$.isConst)
 				$$.value.vint = ~$2.value.vint;
 		}
-		if($1[0] == '!')
+		if($1 == '!')
 		{
 			if(!check_int($2)) //只有数字能有这种操作！
 				yyerror("wrong type argument on unary !");
@@ -416,12 +416,12 @@ unary_expression:
 	;
 
 unary_operator:
-	  '&'	{$$="&";}
-	| '*'	{$$="*";}
-	| '+'	{$$="+";}
-	| '-'	{$$="-";}
-	| '~'	{$$="~";}
-	| '!'	{$$="!";}
+	  '&'	{$$='&';}
+	| '*'	{$$='*';}
+	| '+'	{$$='+';}
+	| '-'	{$$='-';}
+	| '~'	{$$='~';}
+	| '!'	{$$='!';}
 	;
 
 cast_expression:
@@ -622,9 +622,9 @@ declaration:
                 if (!$1.hasTYPEDEF) {
                     genDeclare(id->type, id->TACname, symbolStack->next == NULL || $1.hasSTATIC);
                     genInitilize(id->type, id->TACname, i->idecl.init);
-                    if (i->idecl.init && i->idecl.init->addr && id->type->isConst) {
+                    if (i->idecl.init && (i->idecl.init->data.addr || i->idecl.init->data.laddr) && id->type->isConst) {
                         id->isConst = 1;
-                        id->value = i->idecl.init->value;
+                        id->value = i->idecl.init->data.value;
                     }
                     else
                         id->isConst = 0;
@@ -854,10 +854,10 @@ designator: /* not supported */
 	;
 
 initializer:
-	  '{' initializer_list '}'      {$$.lst=$2;$$.addr=NULL;}
-	| '{' initializer_list ',' '}'  {$$.lst=$2;$$.addr=NULL;}
-    | '{' '}'                       {$$.lst=NULL;$$.addr=NULL;}
-	| assignment_expression         {$$.lst=NULL;$$.addr=$1.get_addr(); $$.isConst=$1.isConst; $$.value=$1.value;}
+	  '{' initializer_list '}'      {$$.lst=$2;$$.data.addr=NULL;}
+	| '{' initializer_list ',' '}'  {$$.lst=$2;$$.data.addr=NULL;}
+    | '{' '}'                       {$$.lst=NULL;$$.data.addr=NULL;}
+	| assignment_expression         {$$.lst=NULL;$$.data=$1;}
 	;
 
 initializer_list:
@@ -1129,6 +1129,7 @@ function_definition:
             $<statement_i>$.has_begin=0;
             $<statement_i>$.has_end=0;
         } compound_statement    {
+            gen_return(NULL);
             CounterLeaveFunc();
         }
 	;

@@ -1,5 +1,6 @@
 #include "yaccUtils.h"
 #include "gen.h"
+#include "expression.h"
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -119,9 +120,20 @@ void genInitilize(const_Typename_ptr type, const char *TACname, const initialize
         return;
     if (type == NULL || TACname == NULL)
         yyerror("no id for initilization");
-    if (init->addr) {
-#warning "call operator="
-        printf("(!!) %s%s = %s\n", outputPTR ? "* " : "", TACname, init->addr);
+    if (init->data.addr || init->data.laddr) {
+        expression_s_t eA;
+        eA.isConst = 0;
+        eA.type = type;
+        eA.lr_value = 0;
+        if (outputPTR)
+            eA.laddr = strdup(TACname), eA.addr = NULL;
+        else
+            eA.laddr = NULL, eA.addr = strdup(TACname);
+        get_assign(eA, init->data, false);
+        if (eA.laddr)
+            free(eA.laddr);
+        else
+            free(eA.addr);
     }
     else {
         int tnum = CreateTempVar();
@@ -133,6 +145,11 @@ void genInitilize(const_Typename_ptr type, const char *TACname, const initialize
         auto init_it = vinit.rbegin();
         initializer_s_t noinit;
         noinit.lst = NULL;
+        noinit.data.isConst = 1;
+        noinit.data.type = (const_Typename_ptr)LookupSymbol("int", NULL);
+        noinit.data.lr_value = 1;
+        noinit.data.value.vint = 0;
+        noinit.data.laddr = NULL;
         char c0[] = "c0";
         if (type->type == idt_array) {
             gen_cpy(tname, TACname);
@@ -142,7 +159,7 @@ void genInitilize(const_Typename_ptr type, const char *TACname, const initialize
             gen_const("int4", scsize.c_str(), &btp->size);
             for (int i = 0; i < type->structure->pointer.length; ++i) {
                 if (init_it == vinit.rend()) {
-                    noinit.addr = (btp->type == idt_struct || btp->type == idt_array ? NULL : c0);
+                    noinit.data.addr = (btp->type == idt_struct || btp->type == idt_array ? NULL : c0);
                     genInitilize(btp, tname, &noinit, true);
                 }
                 else
@@ -161,7 +178,7 @@ void genInitilize(const_Typename_ptr type, const char *TACname, const initialize
                 gen_op2(tname, TACname, scsize.c_str(), "+");
                 const_Typename_ptr btp = (*vsl_it)->id->type;
                 if (init_it == vinit.rend()) {
-                    noinit.addr = (btp->type == idt_struct || btp->type == idt_array ? NULL : c0);
+                    noinit.data.addr = (btp->type == idt_struct || btp->type == idt_array ? NULL : c0);
                     genInitilize(btp, tname, &noinit, true);
                 }
                 else
@@ -170,6 +187,7 @@ void genInitilize(const_Typename_ptr type, const char *TACname, const initialize
         }
         else
             yyerror("initilize error");
+        free(tname);
     }
 }
 

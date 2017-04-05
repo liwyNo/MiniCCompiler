@@ -136,10 +136,8 @@ Typename_t *makeType(const_Typename_ptr type, abstract_declarator_s_t ad);
 struct __initializer_list_s_t;
 
 typedef struct __initializer_s_t {
-    char *addr;
     struct __initializer_list_s_t *lst;
-    ConstValue_t value;
-    int isConst;
+    expression_s_t data;
 } initializer_s_t;
 void freeInit(initializer_s_t *);
 
