@@ -1,5 +1,6 @@
 #include "yaccUtils.h"
 #include "gen.h"
+#include "expression.h"
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -125,10 +126,20 @@ void genInitilize(const_Typename_ptr type, const char *TACname, const initialize
         return;
     if (type == NULL || TACname == NULL)
         yyerror("no id for initilization");
-    if (init->addr)
-    {
-#warning "call operator="
-        printf("(!!) %s%s = %s\n", outputPTR ? "* " : "", TACname, init->addr);
+    if (init->data.addr || init->data.laddr) {
+        expression_s_t eA;
+        eA.isConst = 0;
+        eA.type = type;
+        eA.lr_value = 0;
+        if (outputPTR)
+            eA.laddr = strdup(TACname), eA.addr = NULL;
+        else
+            eA.laddr = NULL, eA.addr = strdup(TACname);
+        get_assign(eA, init->data, false);
+        if (eA.laddr)
+            free(eA.laddr);
+        else
+            free(eA.addr);
     }
     else
     {
@@ -141,6 +152,11 @@ void genInitilize(const_Typename_ptr type, const char *TACname, const initialize
         auto init_it = vinit.rbegin();
         initializer_s_t noinit;
         noinit.lst = NULL;
+        noinit.data.isConst = 1;
+        noinit.data.type = (const_Typename_ptr)LookupSymbol("int", NULL);
+        noinit.data.lr_value = 1;
+        noinit.data.value.vint = 0;
+        noinit.data.laddr = NULL;
         char c0[] = "c0";
         if (type->type == idt_array)
         {
@@ -149,11 +165,10 @@ void genInitilize(const_Typename_ptr type, const char *TACname, const initialize
             int csize = CreateConstant();
             std::string scsize = 'c' + std::to_string(csize);
             gen_const("int4", scsize.c_str(), &btp->size);
-            for (int i = 0; i < type->structure->pointer.length; ++i)
-            {
-                if (init_it == vinit.rend())
-                {
-                    noinit.addr = (btp->type == idt_struct || btp->type == idt_array ? NULL : c0);
+
+            for (int i = 0; i < type->structure->pointer.length; ++i) {
+                if (init_it == vinit.rend()) {
+                    noinit.data.addr = (btp->type == idt_struct || btp->type == idt_array ? NULL : c0);
                     genInitilize(btp, tname, &noinit, true);
                 }
                 else
@@ -173,9 +188,9 @@ void genInitilize(const_Typename_ptr type, const char *TACname, const initialize
                 gen_const("int4", scsize.c_str(), &(*vsl_it)->offset);
                 gen_op2(tname, TACname, scsize.c_str(), "+");
                 const_Typename_ptr btp = (*vsl_it)->id->type;
-                if (init_it == vinit.rend())
-                {
-                    noinit.addr = (btp->type == idt_struct || btp->type == idt_array ? NULL : c0);
+
+                if (init_it == vinit.rend()) {
+                    noinit.data.addr = (btp->type == idt_struct || btp->type == idt_array ? NULL : c0);
                     genInitilize(btp, tname, &noinit, true);
                 }
                 else
@@ -184,6 +199,7 @@ void genInitilize(const_Typename_ptr type, const char *TACname, const initialize
         }
         else
             yyerror("initilize error");
+        free(tname);
     }
 }
 
@@ -192,8 +208,9 @@ char *get_TAC_name(char TAC_name_prefix, int TAC_num) //注意，这玩意会内
     return strdup((TAC_name_prefix + std::to_string(TAC_num)).c_str());
 }
 
-const char map_name[IDTYPE_NUM][10] = {"int1", "int2", "int4", "int8", "uint1", "uint2", "uint4", "uint8", "float4", "float8",
-                                       "pointer", "fpointer", "void", "array", "struct", "union", "enum"};
+
+const char map_name[IDTYPE_NUM][10]={"int1","int2","int4","int8","uint1","uint2","uint4","uint8","float4","float8",
+    "ptr","ptr","(error)","(error)","(error)","(error)","(error)"};
 char *get_cast_name(IdType_t goal_type, IdType_t now_type, const char *now_name) //该函数基本不判断合法性
 {
     if (!(goal_type < 12 || goal_type == idt_array)) //这个函数目前仅被用于数字和指针，数组，函数指针之间类型的类型转换

@@ -90,7 +90,7 @@ void yyerror(const char *s);
 %type <expression_s> conditional_expression
 %type <expression_s> assignment_expression
 %type <vint> assignment_operator 
-%type <vstr> unary_operator
+%type <vchar> unary_operator
 
 %type <type_qualifier_s> type_qualifier
 %type <storage_class_specifier_s> storage_class_specifier
@@ -285,21 +285,27 @@ postfix_expression:
 	| postfix_expression DEC_OP {
 		postfix_expression_INC_DEC_OP($$,$1,"-");
 	}
-	| '(' type_name ')' '{' initializer_list '}'        /*{
+	| '(' type_name ')' '{' initializer_list comma_or_none '}'        {
             initializer_s_t *tmp = new initializer_s_t;
-            tmp->addr = NULL;
+            tmp->data.addr = tmp->data.laddr = NULL;
             tmp->lst = $5;
             int tv = CreateTempVar();
             char *TACname = strdup(('t' + std::to_string(tv)).c_str());
-            genDeclare($2->type, TACname, false);
-            genInitilize($2->type, TACname, tmp);
+            genDeclare($2, TACname, false);
+            genInitilize($2, TACname, tmp);
             freeInit(tmp);
             $$.isConst = 1;
-            $$.type = $2->type;
+            $$.type = $2;
             $$.addr = TACname;
-        }*/
-	| '(' type_name ')' '{' initializer_list ',' '}'
+            $$.laddr = NULL;
+            $$.lr_value = 1;
+        }
 	;
+
+comma_or_none:
+      ','
+    |
+    ;
 
 argument_expression_list:
 	  assignment_expression
@@ -317,7 +323,7 @@ unary_expression:
 		$$ = $2; //++i 应该传回的是i的引用
 	}				
 	| unary_operator cast_expression			{
-		if($1[0] == '&')
+		if($1 == '&')
 		{
 			if($2.lr_value == 1)
 				yyerror("lvalue required as unary & operand");
@@ -328,6 +334,7 @@ unary_expression:
 				gen_cpy(loc, $2.laddr);
 			else
 				gen_op1(loc, $2.addr, "&");
+            $$.addr = loc;
 			$$.lr_value = 1;
 			$$.isConst = 0;
 			Typename_t *tmp_type = new Typename_t;
@@ -339,7 +346,7 @@ unary_expression:
 			tmp_type -> structure -> pointer.base_type = $2.type;
 			$$.type = tmp_type;
 		}
-		if($1[0] == '*')
+		if($1 == '*')
 		{
 			//???对一个函数指针进行该操作会有啥用？
 			if($2.type -> type == idt_array || $2.type -> type == idt_pointer)
@@ -364,7 +371,7 @@ unary_expression:
 			}
 			else yyerror("only array or pointer can use * operator!");
 		}
-		if($1[0] == '+')
+		if($1 == '+')
 		{
 			if(!check_number($2)) //只有数字能有这种操作！
 				yyerror("wrong type argument on unary +");
@@ -376,7 +383,7 @@ unary_expression:
 			if($$.isConst)
 				$$.value = $2.value;
 		}
-		if($1[0] == '-')
+		if($1 == '-')
 		{
 			if(!check_number($2)) //只有数字能有这种操作！
 				yyerror("wrong type argument on unary -");
@@ -390,7 +397,7 @@ unary_expression:
 			if($$.isConst)
 				$$.value.vint = -$2.value.vint;
 		}
-		if($1[0] == '~')
+		if($1 == '~')
 		{
 			if(!check_int($2)) //只有整数能有这种操作！
 				yyerror("wrong type argument on unary ~ (only integer can use '~')");
@@ -404,7 +411,7 @@ unary_expression:
 			if($$.isConst)
 				$$.value.vint = ~$2.value.vint;
 		}
-		if($1[0] == '!')
+		if($1 == '!')
 		{
 			if(!check_int($2)) //只有数字能有这种操作！
 				yyerror("wrong type argument on unary !");
@@ -420,16 +427,18 @@ unary_expression:
 		}
 	}
 	| SIZEOF unary_expression					{
-		$$.laddr = get_TAC_name('c',CreateConstant());
-		gen_const("uint4", $$.laddr, &($2.type -> size));
+		$$.addr = get_TAC_name('c',CreateConstant());
+		gen_const("uint4", $$.addr, &($2.type -> size));
+        $$.laddr = NULL;
 		$$.type = (const_Typename_ptr)LookupSymbol("unsigned int", NULL);
 		$$.lr_value = 1;
 		$$.isConst = 1;
 		//$$.value.vint = $2.type -> size; //unsigned int 不用维护
 	}
 	| SIZEOF '(' type_name ')'					{
-		$$.laddr = get_TAC_name('c',CreateConstant());
-		gen_const("uint4", $$.laddr, &($3 -> size));
+		$$.addr = get_TAC_name('c',CreateConstant());
+		gen_const("uint4", $$.addr, &($3 -> size));
+        $$.laddr = NULL;
 		$$.type = (const_Typename_ptr)LookupSymbol("unsigned int", NULL);
 		$$.lr_value = 1;
 		$$.isConst = 1;
@@ -438,12 +447,12 @@ unary_expression:
 	;
 
 unary_operator:
-	  '&'	{$$="&";}
-	| '*'	{$$="*";}
-	| '+'	{$$="+";}
-	| '-'	{$$="-";}
-	| '~'	{$$="~";}
-	| '!'	{$$="!";}
+	  '&'	{$$='&';}
+	| '*'	{$$='*';}
+	| '+'	{$$='+';}
+	| '-'	{$$='-';}
+	| '~'	{$$='~';}
+	| '!'	{$$='!';}
 	;
 
 cast_expression:
@@ -602,7 +611,7 @@ type_specifier:
 	| FLOAT                     {$$.type = (const_Typename_ptr)LookupSymbol("float", NULL); $$.sign=-1;}
 	| DOUBLE                    {$$.type = (const_Typename_ptr)LookupSymbol("double", NULL); $$.sign=-1;}
 	| SIGNED                    {$$.type = (const_Typename_ptr)LookupSymbol("int", NULL); $$.sign=1;}
-	| UNSIGNED                  {$$.type = (const_Typename_ptr)LookupSymbol("uint", NULL); $$.sign=0;}
+	| UNSIGNED                  {$$.type = (const_Typename_ptr)LookupSymbol("unsigned int", NULL); $$.sign=0;}
 	| struct_or_union_specifier {$$.type = $1; $$.sign=-1;}
 	| enum_specifier            {$$.type = $1; $$.sign=-1;}
 	| TYPE_NAME                 {$$.type = (const_Typename_ptr)$1; $$.sign=-1;}
@@ -644,9 +653,9 @@ declaration:
                 if (!$1.hasTYPEDEF) {
                     genDeclare(id->type, id->TACname, symbolStack->next == NULL || $1.hasSTATIC);
                     genInitilize(id->type, id->TACname, i->idecl.init);
-                    if (i->idecl.init && i->idecl.init->addr && id->type->isConst) {
+                    if (i->idecl.init && (i->idecl.init->data.addr || i->idecl.init->data.laddr) && id->type->isConst) {
                         id->isConst = 1;
-                        id->value = i->idecl.init->value;
+                        id->value = i->idecl.init->data.value;
                     }
                     else
                         id->isConst = 0;
@@ -876,10 +885,10 @@ designator: /* not supported */
 	;
 
 initializer:
-	  '{' initializer_list '}'      {$$.lst=$2;$$.addr=NULL;}
-	| '{' initializer_list ',' '}'  {$$.lst=$2;$$.addr=NULL;}
-    | '{' '}'                       {$$.lst=NULL;$$.addr=NULL;}
-	| assignment_expression         {$$.lst=NULL;$$.addr=$1.get_addr(); $$.isConst=$1.isConst; $$.value=$1.value;}
+	  '{' initializer_list '}'      {$$.lst=$2;$$.data.addr=NULL;$$.data.laddr=NULL;}
+	| '{' initializer_list ',' '}'  {$$.lst=$2;$$.data.addr=NULL;$$.data.laddr=NULL;}
+    | '{' '}'                       {$$.lst=NULL;$$.data.addr=NULL;$$.data.laddr=NULL;}
+	| assignment_expression         {$$.lst=NULL;$$.data=$1;}
 	;
 
 initializer_list:
@@ -1151,6 +1160,7 @@ function_definition:
             $<statement_i>$.has_begin=0;
             $<statement_i>$.has_end=0;
         } compound_statement    {
+            gen_return(NULL);
             CounterLeaveFunc();
         }
 	;
