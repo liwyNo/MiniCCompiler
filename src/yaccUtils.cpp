@@ -198,7 +198,7 @@ char *get_TAC_name(char TAC_name_prefix, int TAC_num) //注意，这玩意会内
 }
 
 const char map_name[IDTYPE_NUM][10]={"int1","int2","int4","int8","uint1","uint2","uint4","uint8","float4","float8",
-    "pointer","fpointer","void","array","struct","union","enum"};
+    "ptr","ptr","(error)","(error)","(error)","(error)","(error)"};
 char *get_cast_name(IdType_t goal_type, IdType_t now_type, const char *now_name) //该函数基本不判断合法性
 {
     if(!(goal_type < 12 || goal_type == idt_array)) //这个函数目前仅被用于数字和指针，数组，函数指针之间类型的类型转换

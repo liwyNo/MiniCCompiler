@@ -185,7 +185,7 @@ const_Typename_ptr get_Typename_t(IdType_t type)
     if(type == idt_long)
         return (const_Typename_ptr)LookupSymbol("long long", NULL);
     if(type == idt_ulong)
-        return (const_Typename_ptr)LookupSymbol("unsigned long long", NULL);
+        return (const_Typename_ptr)LookupSymbol("unsigned long", NULL);
     if(type == idt_float)
         return (const_Typename_ptr)LookupSymbol("float", NULL);
     if(type == idt_double)

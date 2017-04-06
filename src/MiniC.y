@@ -273,21 +273,27 @@ postfix_expression:
 	| postfix_expression DEC_OP {
 		postfix_expression_INC_DEC_OP($$,$1,"-");
 	}
-	| '(' type_name ')' '{' initializer_list '}'        /*{
+	| '(' type_name ')' '{' initializer_list comma_or_none '}'        {
             initializer_s_t *tmp = new initializer_s_t;
-            tmp->addr = NULL;
+            tmp->data.addr = tmp->data.laddr = NULL;
             tmp->lst = $5;
             int tv = CreateTempVar();
             char *TACname = strdup(('t' + std::to_string(tv)).c_str());
-            genDeclare($2->type, TACname, false);
-            genInitilize($2->type, TACname, tmp);
+            genDeclare($2, TACname, false);
+            genInitilize($2, TACname, tmp);
             freeInit(tmp);
             $$.isConst = 1;
-            $$.type = $2->type;
+            $$.type = $2;
             $$.addr = TACname;
-        }*/
-	| '(' type_name ')' '{' initializer_list ',' '}'
+            $$.laddr = NULL;
+            $$.lr_value = 1;
+        }
 	;
+
+comma_or_none:
+      ','
+    |
+    ;
 
 argument_expression_list:
 	  assignment_expression
@@ -316,6 +322,7 @@ unary_expression:
 				gen_cpy(loc, $2.laddr);
 			else
 				gen_op1(loc, $2.addr, "&");
+            $$.addr = loc;
 			$$.lr_value = 1;
 			$$.isConst = 0;
 			Typename_t *tmp_type = new Typename_t;
@@ -398,16 +405,18 @@ unary_expression:
 		}
 	}
 	| SIZEOF unary_expression					{
-		$$.laddr = get_TAC_name('c',CreateConstant());
-		gen_const("uint4", $$.laddr, &($2.type -> size));
+		$$.addr = get_TAC_name('c',CreateConstant());
+		gen_const("uint4", $$.addr, &($2.type -> size));
+        $$.laddr = NULL;
 		$$.type = (const_Typename_ptr)LookupSymbol("unsigned int", NULL);
 		$$.lr_value = 1;
 		$$.isConst = 1;
 		//$$.value.vint = $2.type -> size; //unsigned int 不用维护
 	}
 	| SIZEOF '(' type_name ')'					{
-		$$.laddr = get_TAC_name('c',CreateConstant());
-		gen_const("uint4", $$.laddr, &($3 -> size));
+		$$.addr = get_TAC_name('c',CreateConstant());
+		gen_const("uint4", $$.addr, &($3 -> size));
+        $$.laddr = NULL;
 		$$.type = (const_Typename_ptr)LookupSymbol("unsigned int", NULL);
 		$$.lr_value = 1;
 		$$.isConst = 1;
@@ -580,7 +589,7 @@ type_specifier:
 	| FLOAT                     {$$.type = (const_Typename_ptr)LookupSymbol("float", NULL); $$.sign=-1;}
 	| DOUBLE                    {$$.type = (const_Typename_ptr)LookupSymbol("double", NULL); $$.sign=-1;}
 	| SIGNED                    {$$.type = (const_Typename_ptr)LookupSymbol("int", NULL); $$.sign=1;}
-	| UNSIGNED                  {$$.type = (const_Typename_ptr)LookupSymbol("uint", NULL); $$.sign=0;}
+	| UNSIGNED                  {$$.type = (const_Typename_ptr)LookupSymbol("unsigned int", NULL); $$.sign=0;}
 	| struct_or_union_specifier {$$.type = $1; $$.sign=-1;}
 	| enum_specifier            {$$.type = $1; $$.sign=-1;}
 	| TYPE_NAME                 {$$.type = (const_Typename_ptr)$1; $$.sign=-1;}
@@ -854,9 +863,9 @@ designator: /* not supported */
 	;
 
 initializer:
-	  '{' initializer_list '}'      {$$.lst=$2;$$.data.addr=NULL;}
-	| '{' initializer_list ',' '}'  {$$.lst=$2;$$.data.addr=NULL;}
-    | '{' '}'                       {$$.lst=NULL;$$.data.addr=NULL;}
+	  '{' initializer_list '}'      {$$.lst=$2;$$.data.addr=NULL;$$.data.laddr=NULL;}
+	| '{' initializer_list ',' '}'  {$$.lst=$2;$$.data.addr=NULL;$$.data.laddr=NULL;}
+    | '{' '}'                       {$$.lst=NULL;$$.data.addr=NULL;$$.data.laddr=NULL;}
 	| assignment_expression         {$$.lst=NULL;$$.data=$1;}
 	;
 
