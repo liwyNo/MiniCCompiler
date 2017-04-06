@@ -229,7 +229,7 @@ postfix_expression:
 	| postfix_expression '[' expression ']'	{
 		if($3.type -> type < 8) //下标必须是整数
 		{
-			if($1.lr_value == 0 && ($1.type -> type == idt_array || $1.type -> type == idt_pointer))
+			if($1.type -> type == idt_array || $1.type -> type == idt_pointer)
 			{
 				char *tmp_name1, *tmp_name2, *tmp_name3;
 				//直接利用如下函数
@@ -250,15 +250,27 @@ postfix_expression:
 				gen_op2(rel_loc, pf, tmp_name3,"+");
 
 				$$.type = b_type;
-				$$.addr = NULL;
-				$$.laddr = rel_loc;
+				if($$.type -> type == idt_array || check_str_un($$))//数组和struct非常奇葩，它们的位置实际上就是他们的值，要特判一下
+				{
+					$$.addr = rel_loc;
+					$$.laddr = NULL;
+				}
+				else
+				{
+					$$.addr = NULL;
+					$$.laddr = rel_loc;
+				}
 				if($$.type -> type == idt_array) //假如这是个数组，则不能修改，是个右值
 					$$.lr_value = 1;
 				else	
 					$$.lr_value = 0;
 				$$.isConst = 0; //只要是这种带指针的统统不算常量表达式
 			}
-			else yyerror("only the pointer or array can use [] operator !");
+			else
+			{
+				debug($1.type->type);
+				yyerror("only the pointer or array can use [] operator !");
+			}
 		}
 		else yyerror("The subscript must be integer!");
 
@@ -333,14 +345,24 @@ unary_expression:
 			if($2.type -> type == idt_array || $2.type -> type == idt_pointer)
 			{
 				const_Typename_ptr b_type = $2.type -> structure -> pointer.base_type;
-				$$.laddr = get_TAC_name('t',CreateTempVar());
-				gen_var("ptr",$$.laddr);
-				gen_cpy($$.laddr,$2.get_addr());
-				$$.addr = NULL;
+				char *now_loc = get_TAC_name('t',CreateTempVar());
+				gen_var("ptr",now_loc);
+				gen_cpy(now_loc, $2.get_addr());
 				$$.type = b_type;
+				if($$.type -> type == idt_array || check_str_un($$))
+				{
+					$$.addr = now_loc;
+					$$.laddr = NULL;
+				}
+				else
+				{
+					$$.addr = NULL;
+					$$.laddr = now_loc;
+				}
 				$$.lr_value = (b_type -> type) == idt_array ? 1 : 0;
 				$$.isConst = 0; //只要是这种带指针的统统不算常量表达式，是不是常量要看type.isConst!
 			}
+			else yyerror("only array or pointer can use * operator!");
 		}
 		if($1[0] == '+')
 		{

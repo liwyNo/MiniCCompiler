@@ -12,7 +12,11 @@ typedef struct {
     bool lr_value; //left : 0,right :1
     ConstValue_t value; /* only use for constant */
     char *addr; /* 直接有变量名的东西，就用addr存 */
-    char *laddr; /*只能用指针访问的东西，就存它的指针，以上两者一定是不共存的，即一定有一个为NULL*/
+    char *laddr; /*只能用指针访问的东西，就存它的指针，以上两者一定是不共存的，即一定有一个为NULL
+
+    注意：array和struct/union是特例！！！他们没有实体，所以他们的本身的值就是一个地址，所以他们全都统一用addr,没有laddr
+    
+    */
     char *get_addr() const;//得到该表达式的真正的addr
 } expression_s_t;
 

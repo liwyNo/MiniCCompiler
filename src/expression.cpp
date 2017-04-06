@@ -117,15 +117,55 @@ void INC_DEC_OP_unary_expression(expression_s_t &This, const char *op)
     else
         yyerror("you can only use ++ on number or pointer");
 }
-
-expression_s_t __Assign(expression_s_t &A, const expression_s_t &B) //不加类型合法行判断的直接赋值。。。
+expression_s_t make_exp(const expression_s_t &Fth, const SymbolList_t *it)
 {
-    char *addr_b = B.get_addr(), *addr_rel;
-    addr_rel = get_cast_name(A.type->type, B.type->type, addr_b);
-    if (A.addr == NULL)
-        gen_pnt_cpy(A.laddr, addr_b);
+    expression_s_t This;
+    char *offset;
+    char *loc = get_TAC_name('t', CreateTempVar());
+    gen_var("ptr", loc);
+    gen_cpy(loc, Fth.addr);
+    offset = get_TAC_name('c', CreateConstant()); 
+    gen_const("int4", offset, &it->offset);
+    gen_op2(loc, loc, offset, "+");
+
+    This.type = it -> id -> type;
+    if(This.type -> type == idt_array || check_str_un(This))
+    {
+        This.addr = loc;
+        This.laddr = NULL;
+    }
     else
-        gen_cpy(A.get_addr(), addr_rel);
+    {
+        This.addr = NULL;
+        This.laddr = loc;
+    }
+    return This;
+}
+
+expression_s_t __Assign(expression_s_t &A, const expression_s_t &B) //不加类型合法行判断的直接赋值(默认类型一样！)，带递归。。。
+{
+    if(A.type -> type == idt_struct || A.type -> type == idt_union) //struct or union 
+    {
+        for (SymbolList_t *i = A.type ->structure->record, *j = B.type ->structure->record; i!= NULL; i = i->next, j = j->next)
+        {
+            expression_s_t a = make_exp(A, i), b = make_exp(B, i);
+            __Assign(a, b);
+        }
+    }
+    else if(A.type -> type == idt_array) //表层的array 不能赋值，套在struct里的就可以赋值(其实是复制)
+    {
+        #warning "array assignment haven't implemen yet"
+        ;
+    }
+    else //other type
+    {
+        char *addr_b = B.get_addr(), *addr_rel;
+        addr_rel = get_cast_name(A.type->type, B.type->type, addr_b);
+        if (A.addr == NULL)
+            gen_pnt_cpy(A.laddr, addr_b);
+        else
+            gen_cpy(A.addr, addr_rel);
+    }
     return A;
 }
 
@@ -146,7 +186,7 @@ expression_s_t get_assign(expression_s_t &A, const expression_s_t &B)
         else
             yyerror("number can only be assigned with a number or pointer!");
     }
-    if (A.type->type == idt_pointer || A.type->type == idt_fpointer) //指针之间能随便复制，但是减法只有同类型之间可以。指针还能等于整数！类型用sameType函数判断！
+    else if (A.type->type == idt_pointer || A.type->type == idt_fpointer) //指针之间能随便复制，但是减法只有同类型之间可以。指针还能等于整数！类型用sameType函数判断！
     {
         if (check_pointer(B.type->type))
         {
@@ -159,9 +199,11 @@ expression_s_t get_assign(expression_s_t &A, const expression_s_t &B)
         else
             yyerror("pointer and fpointer can only be assigned with a pointer/fpointer/array");
     }
-    if (A.type->type == idt_struct || A.type->type == idt_union)
+    else if (A.type->type == idt_struct || A.type->type == idt_union)
     {
-#warning "haven't implement the assignment of struct'"
+        if(sameType(A.type, B.type))
+            return __Assign(A, B);
+        else yyerror("two struct/union must be same!");
     }
     //array显然是右值，不用考虑
 }

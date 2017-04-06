@@ -4,6 +4,8 @@
 #include "MiniC.tab.hpp"
 #include "symbol.h"
 #include "yaccType.h"
+#include <iostream>
+#define debug(x) std::cerr<<#x<<"="<<x<<std::endl
 
 Typename_t *newEnum(char *, EnumTable_t *);
 Typename_t *newStructUnion(bool, const char *, bool);
@@ -27,11 +29,14 @@ bool check_float(IdType_t now_type);//判断是否为浮点数
 bool check_pointer(IdType_t now_type);//判断是否为指针
 bool check_int(IdType_t now_type);//判断是否为整数
 bool check_number(IdType_t now_type);//判断是否为数字
+bool check_str_un(IdType_t now_type);//判断是否为struct/union
+
 
 bool check_float(expression_s_t now);//判断是否为浮点数
 bool check_pointer(expression_s_t now);//判断是否为指针
 bool check_int(expression_s_t now);//判断是否为整数
 bool check_number(expression_s_t now);//判断是否为数字
+bool check_str_un(expression_s_t now);//判断是否为struct/union
 
 void declareParameter(const SymbolList_t *);
 void genIfGoto(expression_s_t, const char *name2, const char *op, int num);
