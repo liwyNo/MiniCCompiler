@@ -219,6 +219,8 @@ char *get_cast_name(IdType_t goal_type, IdType_t now_type, const char *now_name)
         while (1)
             ;
     }
+    if(goal_type == idt_pointer && check_pointer(now_type))
+        return strdup(now_name); //三种指针类型其实都是ptr的，不用转换
     if (now_type != goal_type)
     {
         char *tmp_name;

@@ -154,7 +154,6 @@ expression_s_t __Assign(expression_s_t &A, const expression_s_t &B) //不加类�
     }
     else if(A.type -> type == idt_array) //表层的array 不能赋值，套在struct里的就可以赋值(其实是复制)
     {
-        #warning "array assignment haven't implemen yet"
         ;
     }
     else //other type
@@ -252,17 +251,20 @@ void get_ADD_SUB_MUL_DIV(expression_s_t &This, const expression_s_t &A, const ex
         }
         else if(check_pointer(A) && check_int(B) && (op[0] == '-' || op[0] =='+'))//第一个是指针，第二个是整数，而且运算是加号或者减号
         {
-            IdType_t rel_type = type_to_type[A.type->type][B.type->type];
+            //IdType_t rel_type = type_to_type[A.type->type][B.type->type];
             char *val_a, *val_b;
-            val_a = get_cast_name(rel_type, A.type->type, A.get_addr());
-            val_b = get_cast_name(rel_type, B.type->type, B.get_addr());
-            char *rel = get_TAC_name('t', CreateTempVar());
-            gen_var(map_name[rel_type], rel);
+            //val_a = get_cast_name(rel_type, A.type->type, A.get_addr()); bug fix:不要转换类型！！！直接就是ptr类型的
+            val_a = A.get_addr();
+            val_b = B.get_addr(); //bug fix:直接取出来数字进行运算                     
             const_Typename_ptr b_type = A.type->structure->pointer.base_type;
             char *b_size = sizeof_type(b_type);
-            gen_op2(rel, val_b, b_size, "*");
-            gen_op2(rel, rel, val_a,op);
-            This.type = get_Typename_t(rel_type);
+            char *offset = get_TAC_name('t',CreateTempVar());
+            gen_var("int",offset);
+            gen_op2(offset, val_b, b_size, "*");
+            char *rel = get_TAC_name('t', CreateTempVar());
+            gen_var("ptr", rel);// 无论什么指针类型，他们的三地址码表示都是ptr类型的！
+            gen_op2(rel, val_a, offset, op);
+            This.type = A.type; //bug fix: 类型不变！
             This.addr = rel;
         }
         else if (op[0] == '-' && check_pointer(A.type->type)&&check_pointer(B.type->type)) //同类型指针之间可以减法,函数指针之间和void*指针之间的减法就是绝对地址的减法，其他指针的减法要除以单位大小！
