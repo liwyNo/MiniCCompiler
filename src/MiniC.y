@@ -330,7 +330,9 @@ unary_expression:
 			
 			char *loc = get_TAC_name('t',CreateTempVar());
 			gen_var("ptr",loc);
-			if($2.addr == NULL)
+			if($2.type -> type == idt_array || check_str_un($2))
+				gen_cpy(loc, $2.addr);
+			else if($2.addr == NULL)
 				gen_cpy(loc, $2.laddr);
 			else
 				gen_op1(loc, $2.addr, "&");

@@ -67,7 +67,8 @@ int main()
     for(k=0;k<3;k++)
     {
         i=ptr[k];
-        rel[i][i]=idt_int;
+        for(int k2 = 0;k2 < 3;k2++)
+            rel[i][ptr[k2]]=idt_int;
         //printf("[%d][%d]=%d,\n",i,i,idt_int);//同类自己的指针其实只能互相减法，得到int
         for(j=idt_char;j<=idt_ulong;j++)
         {
@@ -83,8 +84,8 @@ int main()
         for(j=0;j<IDTYPE_NUM;j++)
         {
             if(j==0)
-                printf("(Idtype_t)%d",rel[i][j]);
-            else printf(",(Idtype_t)%d",rel[i][j]);
+                printf("(IdType_t)%d",rel[i][j]);
+            else printf(",(IdType_t)%d",rel[i][j]);
         }
         if(i==IDTYPE_NUM-1)
             printf("}\n");
