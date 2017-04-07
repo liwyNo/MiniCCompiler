@@ -163,7 +163,7 @@ expression_s_t __Assign(expression_s_t &A, const expression_s_t &B) //不加类�
         char *addr_b = B.get_addr(), *addr_rel;
         addr_rel = get_cast_name(A.type->type, B.type->type, addr_b);
         if (A.addr == NULL)
-            gen_pnt_cpy(A.laddr, addr_b);
+            gen_pnt_cpy(A.laddr, addr_rel);
         else
             gen_cpy(A.addr, addr_rel);
     }

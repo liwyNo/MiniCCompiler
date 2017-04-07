@@ -277,8 +277,45 @@ postfix_expression:
 	}
 	| postfix_expression '(' ')'
 	| postfix_expression '(' argument_expression_list ')'
-	| postfix_expression '.' IDENTIFIER
-	| postfix_expression PTR_OP IDENTIFIER
+	| postfix_expression '.' IDENTIFIER			{
+		if ($$.type->type == idt_struct || $$.type->type == idt_union) //struct or union
+		{
+			int flag = 0;
+			for (SymbolList_t *i = $$.type->structure->record; i != NULL; i = i->next)
+				if(strcmp($3, i -> id -> name) == 0)
+				{
+					$$ = make_exp($1, i);
+					flag = 1;
+					break;
+				}
+			if(flag == 0)
+				yyerror("this struct didn't have this identifier");
+		}
+		else yyerror("only struct/union can use '.' operator");
+	}
+	| postfix_expression PTR_OP IDENTIFIER		{
+		if (($$.type -> type == idt_pointer || $$.type -> type == idt_array) && check_str_un($$.type->structure->pointer.base_type -> type))
+		{
+			expression_s_t This;
+			This.type = $$.type->structure->pointer.base_type;
+			This.lr_value = 1;
+			This.isConst = 0;
+			This.addr = $1.get_addr();
+			This.laddr = NULL;
+			int flag = 0;
+			for (SymbolList_t *i = This.type->structure->record; i != NULL; i = i->next)
+				if(strcmp($3, i -> id -> name) == 0)
+				{
+					$$ = make_exp(This, i);
+					flag = 1;
+					break;
+				}
+			if(flag == 0)
+				yyerror("this struct didn't have this identifier");
+		}
+		else yyerror("only pointer of struct/union can use operator ->");
+	}
+
 	| postfix_expression INC_OP	{
 		postfix_expression_INC_DEC_OP($$,$1,"+");
 	}
