@@ -405,9 +405,17 @@ int CreateParam(Identifier_t *id)
     return varCounter.num_p++;
 }
 
-void CounterLeaveFunc()
+const Identifier_t *now_func = NULL;
+
+void EnterFunc(const Identifier_t *id)
 {
     varCounter.num_p = 0;
+    now_func = id;
+}
+
+void LeaveFunc()
+{
+    now_func = NULL;
 }
 
 int __isIntegerType(IdType_t t)
@@ -420,13 +428,13 @@ int setSign(int sign, const_Typename_ptr *type)
         return 0;
     if (sign == 0) {
         if ((*type)->type == idt_char)
-            *type = (Typename_t *)LookupSymbol("uchar", NULL);
+            *type = (Typename_t *)LookupSymbol("unsigned char", NULL);
         if ((*type)->type == idt_short)
-            *type = (Typename_t *)LookupSymbol("ushort", NULL);
+            *type = (Typename_t *)LookupSymbol("unsigned short", NULL);
         if ((*type)->type == idt_int)
-            *type = (Typename_t *)LookupSymbol("uint", NULL);
+            *type = (Typename_t *)LookupSymbol("unsigned int", NULL);
         if ((*type)->type == idt_long)
-            *type = (Typename_t *)LookupSymbol("ulong", NULL);
+            *type = (Typename_t *)LookupSymbol("unsigned long", NULL);
     }
     else if (sign == 1) {
         if ((*type)->type == idt_uchar)
@@ -443,11 +451,12 @@ int setSign(int sign, const_Typename_ptr *type)
 
 void TypeCombine(int sign1, const_Typename_ptr type1, int *sign2, const_Typename_ptr *type2)
 {
-    if (*sign2 != -1 && *sign2 != sign1) {
+    if (*sign2 != -1 && *sign2 != sign1 && sign1 != -1) {
         yyerror("type combination error (sign)");
         return;
     }
-    *sign2 = sign1;
+    if (sign1 != -1)
+        *sign2 = sign1;
     if (*type2 == NULL)
         *type2 = type1;
     else if (type1 != NULL) {
@@ -470,6 +479,9 @@ void TypeCombine(int sign1, const_Typename_ptr type1, int *sign2, const_Typename
             case idt_long:
             case idt_ulong:
                 *type2 = (Typename_t *)LookupSymbol("long", NULL);
+                break;
+            case idt_int:
+            case idt_uint:
                 break;
             default:
                 yyerror("type combination error");
