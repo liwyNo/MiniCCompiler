@@ -200,17 +200,21 @@ void AddTypename(Typename_t *tp, TypeList_t **tpl)
     *tpl = p;
 }
 
-void StackAddTypename(Typename_t *tp)
+const_Typename_ptr StackAddTypename(Typename_t *tp)
 {
     int stype;
     void *has = StackHasName(symbolStack, tp->name, &stype);
     Typename_t *htp = (Typename_t*)has;
     if (has && (stype != TYPE_NAME || htp->size != -1 || htp->type != tp->type))
         yyerror("Identifier name already exists");
-    if (!has)
+    if (!has) {
         AddTypename(tp, &symbolStack->typeList);
-    else
+        return tp;
+    }
+    else {
         *htp = *tp;
+        return htp;
+    }
 }
 
 void AddEnumTable(EnumTable_t *et, EnumList_t **el)
@@ -409,12 +413,12 @@ const Identifier_t *now_func = NULL;
 
 void EnterFunc(const Identifier_t *id)
 {
-    varCounter.num_p = 0;
     now_func = id;
 }
 
 void LeaveFunc()
 {
+    varCounter.num_p = 0;
     now_func = NULL;
 }
 

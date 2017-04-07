@@ -120,7 +120,7 @@ void AddIdentifier(Identifier_t *, SymbolList_t **);
 void StackAddIdentifier(Identifier_t *);
 void StackAddStaticIdentifier(Identifier_t *);
 void AddTypename(Typename_t *, TypeList_t **);
-void StackAddTypename(Typename_t *);
+const_Typename_ptr StackAddTypename(Typename_t *);
 void AddEnumTable(EnumTable_t *, EnumList_t **);
 void StackAddEnumTable(EnumTable_t *);
 void InitSymbolStack();
