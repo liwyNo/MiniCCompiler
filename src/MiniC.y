@@ -337,6 +337,7 @@ unary_expression:
 			else
 				gen_op1(loc, $2.addr, "&");
             $$.addr = loc;
+            $$.laddr = NULL;
 			$$.lr_value = 1;
 			$$.isConst = 0;
 			Typename_t *tmp_type = new Typename_t;
@@ -701,8 +702,18 @@ struct_or_union_specifier:
         }
 	| struct_or_union IDENTIFIER                                    {
             Typename_t *t = newStructUnion($1.hasSTRUCT, $2, false);
-            StackAddTypename(t);
-            $$ = t;
+            int symbol_type;
+            void *ptr = LookupSymbol(t->name, &symbol_type);
+            if (symbol_type != TYPE_NAME && ptr)
+                yyerror("identifier already exists");
+            if (ptr) {
+                $$ = (const_Typename_ptr)ptr;
+                delete t;
+            }
+            else {
+                StackAddTypename(t);
+                $$ = t;
+            }
         }
 	;
 
@@ -750,7 +761,7 @@ enum_specifier:
 	| ENUM IDENTIFIER                               {
             Typename_t *t = new Typename_t;
             t->type = idt_int; // idt_enum is replaced by idt_int
-            t->name = $2;
+            t->name = strdup((std::string("enum ") + $2).c_str());
             t->structure = NULL;
             StackAddTypename(t);
             t->size = -1;
@@ -1125,8 +1136,21 @@ jump_statement:
                 yyerror("break; error");
             $$.caseList = NULL;
         }
-	| RETURN ';'    { gen_return(NULL); $$.caseList = NULL; }
-	| RETURN expression ';' { gen_return($2.get_addr()); $$.caseList = NULL; }
+	| RETURN ';'    {
+            if (now_func->type->structure->fpointer.type[0]->type != idt_void)
+                yyerror("non-void function return void");
+            gen_return(NULL);
+            $$.caseList = NULL;
+        }
+	| RETURN expression ';' {
+            IdType_t ret_type = now_func->type->structure->fpointer.type[0]->type;
+            if (ret_type == idt_void)
+                yyerror("void function return non-void");
+            char *cast_name = get_cast_name(ret_type, $2.type->type, $2.get_addr());
+            gen_return(cast_name);
+            $$.caseList = NULL;
+            free(cast_name);
+        }
 	;
 
 translation_unit:
@@ -1161,9 +1185,10 @@ function_definition:
                 $<statement_i>$.sblst = NULL;
             $<statement_i>$.has_begin=0;
             $<statement_i>$.has_end=0;
+            EnterFunc(id);
         } compound_statement    {
             gen_return(NULL);
-            CounterLeaveFunc();
+            LeaveFunc();
         }
 	;
 

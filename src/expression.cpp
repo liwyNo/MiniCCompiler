@@ -125,10 +125,10 @@ expression_s_t make_exp(const expression_s_t &Fth, const SymbolList_t *it)
     char *offset;
     char *loc = get_TAC_name('t', CreateTempVar());
     gen_var("ptr", loc);
-    gen_cpy(loc, Fth.addr);
+    //gen_cpy(loc, Fth.addr);
     offset = get_TAC_name('c', CreateConstant());
     gen_const("int4", offset, &it->offset);
-    gen_op2(loc, loc, offset, "+");
+    gen_op2(loc, Fth.addr, offset, "+");
 
     This.type = it->id->type;
     if (This.type->type == idt_array || check_str_un(This))

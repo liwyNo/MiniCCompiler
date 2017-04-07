@@ -15,7 +15,10 @@ Typename_t *newEnum(char *name, EnumTable_t *p)
     Typename_t *t = new Typename_t;
     t->type = idt_int; // idt_enum is replaced by idt_int
     t->size = 4;
-    t->name = NULL;
+    if (name)
+        t->name = strdup((std::string("enum ") + name).c_str());
+    else
+        t->name = NULL;
     t->structure = new IdStructure_t;
     t->structure->enumerate = p;
     StackAddTypename(t);
@@ -26,35 +29,37 @@ Typename_t *newStructUnion(bool hasSTRUCT, const char *name, bool hasSymbol)
 {
     Typename_t *t = new Typename_t;
     t->isConst = 0;
-    if (hasSTRUCT)
-    {
+    if (hasSTRUCT) {
         t->type = idt_struct;
         if (!hasSymbol)
             t->size = -1;
-        else
-        {
+        else {
             if (symbolStack->idList)
                 t->size = symbolStack->idList->offset + symbolStack->idList->id->type->size;
             else
                 t->size = 0;
         }
     }
-    else
-    {
+    else {
         t->type = idt_union;
         if (!hasSymbol)
             t->size = -1;
-        else
-        {
+        else {
             t->size = 0;
             for (SymbolList_t *i = symbolStack->idList; i; i = i->next)
                 if (i->id->type->size > t->size)
                     t->size = i->id->type->size;
         }
     }
-    t->name = name ? strdup(name) : NULL;
-    if (hasSymbol)
-    {
+    if (name) {
+        if (t->type == idt_union)
+            t->name = strdup((std::string("union ") + name).c_str());
+        else
+            t->name = strdup((std::string("struct ") + name).c_str());
+    }
+    else
+        t->name = NULL;
+    if (hasSymbol) {
         t->structure = new IdStructure_t;
         t->structure->record = symbolStack->idList;
     }
@@ -66,8 +71,7 @@ Typename_t *newStructUnion(bool hasSTRUCT, const char *name, bool hasSymbol)
 void genDeclare(const_Typename_ptr type, const char *TACname, bool global)
 {
     auto autogen = global ? gen_gvar : gen_var;
-    switch (type->type)
-    {
+    switch (type->type) {
     case idt_char:
         autogen("int1", TACname, -1);
         break;
@@ -141,8 +145,7 @@ void genInitilize(const_Typename_ptr type, const char *TACname, const initialize
         else
             free(eA.addr);
     }
-    else
-    {
+    else {
         int tnum = CreateTempVar();
         char *tname = strdup(('t' + std::to_string(tnum)).c_str());
         gen_var("ptr", tname);
@@ -158,8 +161,7 @@ void genInitilize(const_Typename_ptr type, const char *TACname, const initialize
         noinit.data.value.vint = 0;
         noinit.data.laddr = NULL;
         char c0[] = "c0";
-        if (type->type == idt_array)
-        {
+        if (type->type == idt_array) {
             gen_cpy(tname, TACname);
             const_Typename_ptr btp = type->structure->pointer.base_type;
             int csize = CreateConstant();
@@ -176,13 +178,11 @@ void genInitilize(const_Typename_ptr type, const char *TACname, const initialize
                 gen_op2(tname, tname, scsize.c_str(), "+");
             }
         }
-        else if (type->type == idt_struct)
-        {
+        else if (type->type == idt_struct) {
             std::vector<SymbolList_t *> vsl;
             for (SymbolList_t *i = type->structure->record; i; i = i->next)
                 vsl.push_back(i);
-            for (auto vsl_it = vsl.rbegin(); vsl_it != vsl.rend(); ++vsl_it)
-            {
+            for (auto vsl_it = vsl.rbegin(); vsl_it != vsl.rend(); ++vsl_it) {
                 int csize = CreateConstant();
                 std::string scsize = 'c' + std::to_string(csize);
                 gen_const("int4", scsize.c_str(), &(*vsl_it)->offset);
@@ -209,20 +209,19 @@ char *get_TAC_name(char TAC_name_prefix, int TAC_num) //注意，这玩意会内
 }
 
 
-const char map_name[IDTYPE_NUM][10]={"int1","int2","int4","int8","uint1","uint2","uint4","uint8","float4","float8",
-    "ptr","ptr","(error)","(error)","(error)","(error)","(error)"};
+const char map_name[IDTYPE_NUM][10] = {"int1", "int2", "int4", "int8", "uint1", "uint2", "uint4", "uint8", "float4", "float8",
+                                       "ptr", "ptr", "(error)", "(error)", "(error)", "(error)", "(error)"
+                                      };
 char *get_cast_name(IdType_t goal_type, IdType_t now_type, const char *now_name) //该函数基本不判断合法性
 {
-    if (!(goal_type < 12 || goal_type == idt_array)) //这个函数目前仅被用于数字和指针，数组，函数指针之间类型的类型转换
-    {
+    if (!(goal_type < 12 || goal_type == idt_array)) { //这个函数目前仅被用于数字和指针，数组，函数指针之间类型的类型转换
         cerr << "wrong use at get_cast_name !" << endl;
         while (1)
             ;
     }
-    if(goal_type == idt_pointer && check_pointer(now_type))
+    if (goal_type == idt_pointer && check_pointer(now_type))
         return strdup(now_name); //三种指针类型其实都是ptr的，不用转换
-    if (now_type != goal_type)
-    {
+    if (now_type != goal_type) {
         char *tmp_name;
         tmp_name = get_TAC_name('t', CreateTempVar());
         gen_var(map_name[goal_type], tmp_name);
@@ -296,8 +295,7 @@ void declareParameter(const SymbolList_t *lst)
     for (auto i = lst; i; i = i->next)
         vid.push_back(i->id);
     std::reverse(vid.begin(), vid.end());
-    for (size_t i = 0; i < vid.size(); ++i)
-    {
+    for (size_t i = 0; i < vid.size(); ++i) {
         Identifier_t *id = vid[i];
         CreateParam(id);
         genDeclare(id->type, id->TACname, false);
