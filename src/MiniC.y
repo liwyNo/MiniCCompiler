@@ -553,16 +553,16 @@ shift_expression:
 
 relational_expression:
 	  shift_expression          {$$ = $1;}
-	| relational_expression '<' shift_expression
-	| relational_expression '>' shift_expression
-	| relational_expression LE_OP shift_expression
-	| relational_expression GE_OP shift_expression
+	| relational_expression '<' shift_expression			{get_relational_equality($$, $1, $3, "<");}
+	| relational_expression '>' shift_expression			{get_relational_equality($$, $1, $3, ">");}
+	| relational_expression LE_OP shift_expression			{get_relational_equality($$, $1, $3, "<=");}
+	| relational_expression GE_OP shift_expression			{get_relational_equality($$, $1, $3, ">=");}
 	;
 
 equality_expression:
 	  relational_expression     {$$ = $1;}
-	| equality_expression EQ_OP relational_expression
-	| equality_expression NE_OP relational_expression
+	| equality_expression EQ_OP relational_expression		{get_relational_equality($$, $1, $3, "==");}
+	| equality_expression NE_OP relational_expression		{get_relational_equality($$, $1, $3, "!=");}
 	;
 
 and_expression:

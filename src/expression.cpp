@@ -427,3 +427,24 @@ void get_MOD_AND_OR_XOR_LEFT_RIGHT(expression_s_t &This, const expression_s_t &A
     else
         yyerror("invalid operands to binary operation(mod,and,or,xor,left/right_shift)");
 }
+
+void get_relational_equality(expression_s_t &This, const expression_s_t &A, const expression_s_t &B, const char *op)//处理大小相等关系,答案放This里
+{
+    if(type_to_type[A.type->type][B.type->type]!=-1) //能否比较，仍然可以利用这个表
+    {
+        IdType_t rel_type = type_to_type[A.type->type][B.type->type];//变成同一类型后比较，且是按照这个表的
+        //例如：一个int的1<<31, 与unsigned int 的 1<<31 是相等的，但是char 192 和unsign char 192 就不一样！
+        char *val_a = get_cast_name(rel_type, A.type->type, A.get_addr());
+        char *val_b = get_cast_name(rel_type, B.type->type, B.get_addr());
+        char *rel = get_TAC_name('t', CreateTempVar());
+        gen_var("int4",rel);
+        gen_op2(rel,val_a,val_b,op);
+        This.addr = rel;
+        This.type = get_Typename_t(idt_int);
+        This.laddr = NULL;
+        This.isConst = 0;
+        This.lr_value = 1;
+    }
+    else yyerror("you can't not use this rel_op on these expression!");
+    //结构体之间是不能判断是否相同的
+}
