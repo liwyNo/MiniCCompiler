@@ -734,29 +734,41 @@ struct_or_union_specifier:
 	  struct_or_union struct_push_symbol_stack '{' struct_declaration_list '}'               {
             Typename_t *t = newStructUnion($1.hasSTRUCT, NULL, true);
             symbolStack = symbolStack->next;
-            StackAddTypename(t);
-            $$ = t;
+            t->serial_number = NextSerialNumber();
+            $$ = StackAddTypename(t);
         }
-	| struct_or_union IDENTIFIER struct_push_symbol_stack '{' struct_declaration_list '}'    {
+	| struct_or_union IDENTIFIER '{' {
+            Typename_t *t = newStructUnion($1.hasSTRUCT, $2, false);
+            int symbol_type;
+            void *ptr = LookupSymbol(t->name, &symbol_type);
+            if (symbol_type != TYPE_NAME && ptr)
+                yyerror("identifier already exists");
+            if (ptr)
+                delete t;
+            else
+                StackAddTypename(t);
+            PushSymbolStack(0);
+        } struct_declaration_list '}'    {
             Typename_t *t = newStructUnion($1.hasSTRUCT, $2, true);
             symbolStack = symbolStack->next;
-            StackAddTypename(t);
-            $$ = t;
+            t->serial_number = NextSerialNumber();
+            $$ = StackAddTypename(t);
         }
     | struct_or_union struct_push_symbol_stack '{' '}'    {
             Typename_t *t = newStructUnion($1.hasSTRUCT, NULL, true);
             symbolStack = symbolStack->next;
-            StackAddTypename(t);
-            $$ = t;
+            t->serial_number = NextSerialNumber();
+            $$ = StackAddTypename(t);
         }
-    | struct_or_union IDENTIFIER struct_push_symbol_stack '{' '}'    {
+    | struct_or_union IDENTIFIER '{' struct_push_symbol_stack '}'    {
             Typename_t *t = newStructUnion($1.hasSTRUCT, $2, true);
             symbolStack = symbolStack->next;
-            StackAddTypename(t);
-            $$ = t;
+            t->serial_number = NextSerialNumber();
+            $$ = StackAddTypename(t);
         }
 	| struct_or_union IDENTIFIER                                    {
             Typename_t *t = newStructUnion($1.hasSTRUCT, $2, false);
+            t->serial_number = -1;
             int symbol_type;
             void *ptr = LookupSymbol(t->name, &symbol_type);
             if (symbol_type != TYPE_NAME && ptr)
@@ -765,10 +777,8 @@ struct_or_union_specifier:
                 $$ = (const_Typename_ptr)ptr;
                 delete t;
             }
-            else {
-                StackAddTypename(t);
-                $$ = t;
-            }
+            else
+                $$ = StackAddTypename(t);
         }
 	;
 
@@ -976,12 +986,8 @@ statement: /* auto convert except expression_statement */
 	;
 
 labeled_statement:
-	  /*IDENTIFIER ':' {
-            int lbnum = CreateLabel();
-            gen_label(lbnum);
-            $<statement_i>$ = $<statement_i>0;
-        } statement*/
-	  CASE constant_expression {gen_label($<vint>$ = CreateLabel());} ':' {$<statement_i>$=$<statement_i>0;} statement   {
+	  IDENTIFIER ':' statement  {yyerror("label not support");}
+	 | CASE constant_expression {gen_label($<vint>$ = CreateLabel());} ':' {$<statement_i>$=$<statement_i>0;} statement   {
             if (!$2.isConst)
                 yyerror("case not constant");
             $$.caseList = new CaseList_t;
@@ -1176,7 +1182,7 @@ for_jumper3:    {
            ;
 
 jump_statement:
-	  /*GOTO IDENTIFIER ';'   {yyerror("no support for goto");}*/
+	  GOTO IDENTIFIER ';'   {yyerror("no support for goto");}
 	  CONTINUE ';'  {
             if ($<statement_i>0.has_begin)
                 gen_goto($<statement_i>0.begin_num);

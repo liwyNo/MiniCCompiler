@@ -58,7 +58,7 @@ void FreeTypeList(TypeList_t *p)
     while (p) {
         TypeList_t *t = p;
         p = p->next;
-        FreeTypename(t->type);
+        //FreeTypename(t->type);  // 加上这句会重复delete某段内存
         delete t;
     }
 }
@@ -200,17 +200,21 @@ void AddTypename(Typename_t *tp, TypeList_t **tpl)
     *tpl = p;
 }
 
-void StackAddTypename(Typename_t *tp)
+const_Typename_ptr StackAddTypename(Typename_t *tp)
 {
     int stype;
     void *has = StackHasName(symbolStack, tp->name, &stype);
     Typename_t *htp = (Typename_t*)has;
     if (has && (stype != TYPE_NAME || htp->size != -1 || htp->type != tp->type))
         yyerror("Identifier name already exists");
-    if (!has)
+    if (!has) {
         AddTypename(tp, &symbolStack->typeList);
-    else
+        return tp;
+    }
+    else {
         *htp = *tp;
+        return htp;
+    }
 }
 
 void AddEnumTable(EnumTable_t *et, EnumList_t **el)
@@ -324,6 +328,9 @@ Identifier_t *StackDeclare(const_Typename_ptr type, int hasSTATIC, int hasTYPEDE
         StackAddTypename(ptype);
         return NULL;
     }
+    if (type->type == idt_union || type->type == idt_struct)
+        if (type->serial_number == -1)
+            yyerror("use incomplete struct/union");
     Identifier_t *id = new Identifier_t;
     id->name = name;
     id->type = type;
@@ -409,12 +416,12 @@ const Identifier_t *now_func = NULL;
 
 void EnterFunc(const Identifier_t *id)
 {
-    varCounter.num_p = 0;
     now_func = id;
 }
 
 void LeaveFunc()
 {
+    varCounter.num_p = 0;
     now_func = NULL;
 }
 
@@ -494,8 +501,16 @@ void TypeCombine(int sign1, const_Typename_ptr type1, int *sign2, const_Typename
     }
 }
 
+int type_serial_number = 0;
+int NextSerialNumber()
+{
+    return type_serial_number++;
+}
+
 bool sameType(const_Typename_ptr p1, const_Typename_ptr p2)
 {
+    if (p1 == p2)
+        return true;
     if (p1->type != p2->type) {
         if (p1->type == idt_fpointer && p2->type == idt_pointer)
             return sameType(p1, p2->structure->pointer.base_type);
@@ -529,7 +544,7 @@ bool sameType(const_Typename_ptr p1, const_Typename_ptr p2)
                 return p1->structure->pointer.length == p2->structure->pointer.length && sameType(p1->structure->pointer.base_type, p2->structure->pointer.base_type);
             case idt_struct:
             case idt_union:
-                for (SymbolList_t *i = p1->structure->record, *j = p2->structure->record;; i = i->next, j = j->next) {
+                /*for (SymbolList_t *i = p1->structure->record, *j = p2->structure->record;; i = i->next, j = j->next) {
                     if (i == NULL && j == NULL)
                         break;
                     if (i == NULL || j == NULL)
@@ -537,7 +552,8 @@ bool sameType(const_Typename_ptr p1, const_Typename_ptr p2)
                     if (!sameType(i->id->type, j->id->type))
                         return false;
                 }
-                return true;
+                return true;*/
+                return p1->serial_number == p2->serial_number;
             default:
                 return false;
         }

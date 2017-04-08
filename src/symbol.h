@@ -77,7 +77,11 @@ typedef struct __Typename_t {
     int isConst; /* whether it is constant */
     IdStructure_t *structure; /* detailed type information */
     int size; /* size of typename */
+    int serial_number; /* only used to distinguish struct/union */
 } Typename_t;
+
+extern int type_serial_number;
+int NextSerialNumber();
 
 typedef struct __Identifier_t {
     char *name; /* name of identifer */
@@ -120,7 +124,7 @@ void AddIdentifier(Identifier_t *, SymbolList_t **);
 void StackAddIdentifier(Identifier_t *);
 void StackAddStaticIdentifier(Identifier_t *);
 void AddTypename(Typename_t *, TypeList_t **);
-void StackAddTypename(Typename_t *);
+const_Typename_ptr StackAddTypename(Typename_t *);
 void AddEnumTable(EnumTable_t *, EnumList_t **);
 void StackAddEnumTable(EnumTable_t *);
 void InitSymbolStack();
