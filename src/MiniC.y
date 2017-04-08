@@ -279,12 +279,13 @@ postfix_expression:
 
 	}
 	| postfix_expression '(' ')'	{
-		argument_expression_list_s_t tmp;
-		tmp.length = 0;
+		argument_expression_list_s_t tmp = new Argument_Expression_List_s_t;
+		tmp->length = 0;
+		tmp->next = tmp;
 		$$ = get_function($1, tmp);
 	}
 	| postfix_expression '(' argument_expression_list ')'	{
-		$$ = get_function($1, $3);
+		$$ = get_function($1, $3->next);
 	}
 	| postfix_expression '.' IDENTIFIER			{
 		if ($$.type->type == idt_struct || $$.type->type == idt_union) //struct or union
@@ -355,14 +356,17 @@ comma_or_none:
 
 argument_expression_list:
 	  assignment_expression		{
-		  $$.now_exp = $1;
-		  $$.length = 1;
-		  $$.next = NULL;
+		  $$ = new Argument_Expression_List_s_t;
+		  $$->now_exp = $1;
+		  $$->length = 1;
+		  $$->next = $$;
 	  }
 	| argument_expression_list ',' assignment_expression	{
-		$$.now_exp = $3;
-		$$.length = $1.length + 1;
-		$$.next = &$1;
+		$$ = new Argument_Expression_List_s_t;
+		$$->now_exp = $3;
+		$1->next -> length ++;
+		$$->next = $1->next;
+		$1->next = $$;
 	}
 	;
 

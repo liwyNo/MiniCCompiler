@@ -46,52 +46,6 @@ char *sizeof_type(const_Typename_ptr b_type) //得到这个type的类型的大�
     return c_name;
 }
 
-expression_s_t __Call_Function(FPtrStructure_t &fp, const char *f_name, argument_expression_list_s_t &arg_list) //翻译函数调用
-{
-    if (fp.argNum == arg_list.length)
-    {
-        expression_s_t This, Exp;
-        argument_expression_list_s_t *it = &arg_list;
-        const_Typename_ptr arg;
-        int n = fp.argNum;
-        for (int i = 1; i <= n; i++, it = it->next)
-        {
-            Exp = it->now_exp;
-            arg = fp.type[i];
-            char *par;
-            if (type_to_type[Exp.type -> type][arg->type] != -1) //普通类型能转化的，用 type_to_type 判即可
-            {
-                par = get_cast_name(arg->type, Exp.type -> type, Exp.get_addr());
-                gen_param(par);
-            }
-            else if(check_str_un(Exp)&&check_str_un(arg->type)) //struct/union
-            {
-                if(sameType(arg, Exp.type))
-                    gen_param(Exp.addr);
-                else
-                    yyerror("argument list's parameter is not in agreement with the function");
-            }
-            else
-                yyerror("argument list's parameter is not in agreement with the function");
-        }
-    }
-    else
-        yyerror("argument list's length is not in agreement with the function");
-}
-
-expression_s_t get_function(const expression_s_t &Exp, argument_expression_list_s_t &arg_list) //翻译函数调用，但只做第一层处理
-{
-    if (Exp.type->type == idt_fpointer)
-        return __Call_Function(Exp.type->structure->fpointer, Exp.addr, arg_list);
-    else if (Exp.type->type == idt_pointer && Exp.type->structure->pointer.base_type->type == idt_fpointer)
-    {
-        const_Typename_ptr b_type = Exp.type->structure->pointer.base_type;
-        return __Call_Function(b_type->structure->fpointer, Exp.get_addr(), arg_list);
-    }
-    else
-        yyerror("only fpointer can use the () operator!");
-}
-
 void postfix_expression_INC_DEC_OP(expression_s_t &This, const expression_s_t &Next, const char *op)
 {
     if (Next.type->isConst == 1)
@@ -253,6 +207,79 @@ expression_s_t get_assign(expression_s_t &A, const expression_s_t &B, bool check
             yyerror("two struct/union must be same!");
     }
     //array显然是右值，不用考虑
+}
+
+expression_s_t __Call_Function(FPtrStructure_t &fp, char *f_name, argument_expression_list_s_t arg_list) //翻译函数调用
+{
+    if (fp.argNum == arg_list->length)
+    {
+        expression_s_t This, Exp;
+        argument_expression_list_s_t it = arg_list;
+        const_Typename_ptr arg;
+        int n = fp.argNum;
+        for (int i = 1; i <= n; i++, it = it->next)
+        {
+            Exp = it->now_exp;
+            arg = fp.type[n - i + 1];
+            char *par;
+            if (type_to_type[Exp.type->type][arg->type] != -1) //普通类型能转化的，用 type_to_type 判即可
+            {
+                par = get_cast_name(arg->type, Exp.type->type, Exp.get_addr());
+                gen_param(par);
+            }
+            else if (check_str_un(Exp) && check_str_un(arg->type)) //struct/union
+            {
+                if (sameType(arg, Exp.type))
+                {
+                    //特判！需要新生成一个struct
+                    expression_s_t tmp;
+                    tmp.type = Exp.type;
+                    tmp.isConst = 0;
+                    tmp.lr_value = 1;
+                    tmp.addr = get_TAC_name('t', CreateTempVar());
+                    tmp.laddr = NULL;
+                    gen_var("ptr", tmp.addr, Exp.type->size);
+                    __Assign(tmp, Exp);
+                    gen_param(tmp.addr);
+                }
+                else
+                    yyerror("argument list's parameter is not in agreement with the function");
+            }
+            else
+                yyerror("argument list's parameter is not in agreement with the function");
+        }
+        This.type = fp.type[0];
+        This.lr_value = 1;
+        This.isConst = 0;
+        if (This.type->type == idt_void)
+        {
+            gen_call(f_name, fp.argNum);
+            This.addr = This.laddr = NULL;
+        }
+        else
+        {
+            This.addr = get_TAC_name('t', CreateTempVar());
+            gen_var(map_name[This.type->type], This.addr);
+            This.laddr = NULL;
+            gen_cpy_call(This.addr, f_name, fp.argNum);
+        }
+        return This;
+    }
+    else
+        yyerror("argument list's length is not in agreement with the function");
+}
+
+expression_s_t get_function(const expression_s_t &Exp, argument_expression_list_s_t arg_list) //翻译函数调用，但只做第一层处理
+{
+    if (Exp.type->type == idt_fpointer)
+        return __Call_Function(Exp.type->structure->fpointer, Exp.addr, arg_list);
+    else if (Exp.type->type == idt_pointer && Exp.type->structure->pointer.base_type->type == idt_fpointer)
+    {
+        const_Typename_ptr b_type = Exp.type->structure->pointer.base_type;
+        return __Call_Function(b_type->structure->fpointer, Exp.get_addr(), arg_list);
+    }
+    else
+        yyerror("only fpointer can use the () operator!");
 }
 
 const_Typename_ptr get_Typename_t(IdType_t type)

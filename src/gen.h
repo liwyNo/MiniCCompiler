@@ -39,9 +39,9 @@ void gen_if_goto(const char *name1, const char *name2, const char *op, int num);
 
 void gen_param(const char *name);
 
-void gen_call(int num, int pnum);
+void gen_call(char *f_name, int pnum);
 
-void gen_cpy_call(const char *name, int num, int pnum);
+void gen_cpy_call(const char *name, char *f_name, int pnum);
 
 void gen_return(const char *name); // name是NULL时表示没有返回值
 

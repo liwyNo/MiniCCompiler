@@ -191,14 +191,14 @@ void gen_param(const char *name)
     printf("param %s\n", name);
 }
 
-void gen_call(int num, int pnum)
+void gen_call(char *f_name, int pnum)
 {
-    printf("call f%d %d\n", num, pnum);
+    printf("call %s %d\n", f_name, pnum);
 }
 
-void gen_cpy_call(const char *name, int num, int pnum)
+void gen_cpy_call(const char *name, char *f_name, int pnum)
 {
-    printf("%s = call f%d %d\n", name, num, pnum);
+    printf("%s = call %s %d\n", name, f_name, pnum);
 }
 
 void gen_return(const char *name)

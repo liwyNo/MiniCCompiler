@@ -20,11 +20,12 @@ typedef struct {
     char *get_addr() const;//得到该表达式的真正的addr
 } expression_s_t;
 
-typedef struct Argument_Expression_List_s_t{
+struct Argument_Expression_List_s_t{
     int length;
     expression_s_t now_exp;
     Argument_Expression_List_s_t *next;
-} argument_expression_list_s_t;
+};
+typedef Argument_Expression_List_s_t *argument_expression_list_s_t;
 
 typedef struct {
     int hasCONST;
