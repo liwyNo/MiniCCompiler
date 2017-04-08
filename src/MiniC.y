@@ -738,7 +738,6 @@ struct_or_union_specifier:
 	  struct_or_union struct_push_symbol_stack '{' struct_declaration_list '}'               {
             Typename_t *t = newStructUnion($1.hasSTRUCT, NULL, true);
             symbolStack = symbolStack->next;
-            t->serial_number = NextSerialNumber();
             $$ = StackAddTypename(t);
         }
 	| struct_or_union IDENTIFIER '{' {
@@ -755,24 +754,20 @@ struct_or_union_specifier:
         } struct_declaration_list '}'    {
             Typename_t *t = newStructUnion($1.hasSTRUCT, $2, true);
             symbolStack = symbolStack->next;
-            t->serial_number = NextSerialNumber();
             $$ = StackAddTypename(t);
         }
     | struct_or_union struct_push_symbol_stack '{' '}'    {
             Typename_t *t = newStructUnion($1.hasSTRUCT, NULL, true);
             symbolStack = symbolStack->next;
-            t->serial_number = NextSerialNumber();
             $$ = StackAddTypename(t);
         }
     | struct_or_union IDENTIFIER '{' struct_push_symbol_stack '}'    {
             Typename_t *t = newStructUnion($1.hasSTRUCT, $2, true);
             symbolStack = symbolStack->next;
-            t->serial_number = NextSerialNumber();
             $$ = StackAddTypename(t);
         }
 	| struct_or_union IDENTIFIER                                    {
             Typename_t *t = newStructUnion($1.hasSTRUCT, $2, false);
-            t->serial_number = -1;
             int symbol_type;
             void *ptr = LookupSymbol(t->name, &symbol_type);
             if (symbol_type != TYPE_NAME && ptr)
@@ -1080,7 +1075,7 @@ selection_statement:
         }
 	;
 
-if_statement_inherit:   {$$=$<statement_i>-4;}
+if_statement_inherit:   {$$=$<statement_i>-5;}
                     ;
 
 jumper: { /* $0 must be an expression */
@@ -1198,7 +1193,7 @@ jump_statement:
             if ($<statement_i>0.has_end)
                 gen_goto($<statement_i>0.end_num);
             else
-                yyerror("break; error");
+                yyerror("break error");
             $$.caseList = NULL;
         }
 	| RETURN ';'    {
