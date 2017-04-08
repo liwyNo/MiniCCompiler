@@ -4,13 +4,12 @@
 #include "yaccUtils.h"
 #include "gen.h"
 
-char* expression_s_t::get_addr() const
+char *expression_s_t::get_addr() const
 {
-    if(addr != NULL)
+    if (addr != NULL)
         return addr;
-    else
-    {
-        char *tvar = get_TAC_name('t',CreateTempVar());
+    else {
+        char *tvar = get_TAC_name('t', CreateTempVar());
         gen_var(map_name[type -> type], tvar);
         gen_op1(tvar, laddr, "*");
         return tvar;
@@ -86,6 +85,8 @@ Typename_t *makeType(const_Typename_ptr type, declarator_s_t decl)
             tmp->structure = new IdStructure_t;
             tmp->structure->pointer.base_type = type;
             tmp->structure->pointer.length = INT_MAX;
+            if (type->type == idt_void || ((type->type == idt_struct || type->type == idt_union) && type->serial_number == -1))
+                yyerror("declare array of incomplete type");
             if (type->type == idt_pointer && type->structure->pointer.length == INT_MAX)
                 yyerror("[] pointer error");
             tmp->size = 4;
@@ -98,6 +99,8 @@ Typename_t *makeType(const_Typename_ptr type, declarator_s_t decl)
             tmp->structure->pointer.base_type = type;
             tmp->structure->pointer.length = decl.dd->data.d4.ce;
             tmp->size = type->size * decl.dd->data.d4.ce;
+            if (type->type == idt_void || ((type->type == idt_struct || type->type == idt_union) && type->serial_number == -1))
+                yyerror("declare array of incomplete type");
             if (type->type == idt_pointer && type->structure->pointer.length == INT_MAX)
                 yyerror("[] pointer error");
             if (type->type == idt_array)
@@ -194,6 +197,8 @@ Typename_t *makeType(const_Typename_ptr type, abstract_declarator_s_t ad)
             tmp->structure = new IdStructure_t;
             tmp->structure->pointer.base_type = type;
             tmp->structure->pointer.length = INT_MAX;
+            if (type->type == idt_void || ((type->type == idt_struct || type->type == idt_union) && type->serial_number == -1))
+                yyerror("declare array of incomplete type");
             if (type->type == idt_pointer && type->structure->pointer.length == INT_MAX)
                 yyerror("[] pointer error");
             tmp->size = 4;
@@ -206,6 +211,8 @@ Typename_t *makeType(const_Typename_ptr type, abstract_declarator_s_t ad)
             tmp->structure->pointer.base_type = type;
             tmp->structure->pointer.length = ad.dad->data.d5.ce;
             tmp->size = type->size * ad.dad->data.d5.ce;
+            if (type->type == idt_void || ((type->type == idt_struct || type->type == idt_union) && type->serial_number == -1))
+                yyerror("declare array of incomplete type");
             if (type->type == idt_pointer && type->structure->pointer.length == INT_MAX)
                 yyerror("[] pointer error");
             if (type->type == idt_array)
@@ -304,8 +311,7 @@ void freeInit(initializer_s_t *p)
 
 void freeIL(initializer_list_s_t *p)
 {
-    while (p)
-    {
+    while (p) {
         initializer_list_s_t *t = p;
         p = p->next;
         freeInit(&t->data);

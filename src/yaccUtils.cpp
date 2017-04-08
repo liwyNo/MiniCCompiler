@@ -62,9 +62,12 @@ Typename_t *newStructUnion(bool hasSTRUCT, const char *name, bool hasSymbol)
     if (hasSymbol) {
         t->structure = new IdStructure_t;
         t->structure->record = symbolStack->idList;
+        t->serial_number = NextSerialNumber();
     }
-    else
+    else {
         t->structure = NULL;
+        t->serial_number = -1;
+    }
     return t;
 }
 
