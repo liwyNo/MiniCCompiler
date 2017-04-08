@@ -20,24 +20,23 @@ typedef enum {
 
 //利用了外部的type_to_type.cpp打的表，生成规则详见type_to_type.cpp
 const IdType_t type_to_type[IDTYPE_NUM][IDTYPE_NUM] =
-    {{(IdType_t)0,(IdType_t)2,(IdType_t)2,(IdType_t)3,(IdType_t)2,(IdType_t)2,(IdType_t)6,(IdType_t)7,(IdType_t)8,(IdType_t)9,(IdType_t)10,(IdType_t)11,(IdType_t)-1,(IdType_t)13,(IdType_t)-1,(IdType_t)-1,(IdType_t)-1},
-{(IdType_t)2,(IdType_t)1,(IdType_t)2,(IdType_t)3,(IdType_t)2,(IdType_t)2,(IdType_t)6,(IdType_t)7,(IdType_t)8,(IdType_t)9,(IdType_t)10,(IdType_t)11,(IdType_t)-1,(IdType_t)13,(IdType_t)-1,(IdType_t)-1,(IdType_t)-1},
-{(IdType_t)2,(IdType_t)2,(IdType_t)2,(IdType_t)3,(IdType_t)2,(IdType_t)2,(IdType_t)6,(IdType_t)7,(IdType_t)8,(IdType_t)9,(IdType_t)10,(IdType_t)11,(IdType_t)-1,(IdType_t)13,(IdType_t)-1,(IdType_t)-1,(IdType_t)-1},
-{(IdType_t)3,(IdType_t)3,(IdType_t)3,(IdType_t)3,(IdType_t)3,(IdType_t)3,(IdType_t)3,(IdType_t)7,(IdType_t)8,(IdType_t)9,(IdType_t)10,(IdType_t)11,(IdType_t)-1,(IdType_t)13,(IdType_t)-1,(IdType_t)-1,(IdType_t)-1},
-{(IdType_t)2,(IdType_t)2,(IdType_t)2,(IdType_t)3,(IdType_t)4,(IdType_t)2,(IdType_t)6,(IdType_t)7,(IdType_t)8,(IdType_t)9,(IdType_t)10,(IdType_t)11,(IdType_t)-1,(IdType_t)13,(IdType_t)-1,(IdType_t)-1,(IdType_t)-1},
-{(IdType_t)2,(IdType_t)2,(IdType_t)2,(IdType_t)3,(IdType_t)2,(IdType_t)5,(IdType_t)6,(IdType_t)7,(IdType_t)8,(IdType_t)9,(IdType_t)10,(IdType_t)11,(IdType_t)-1,(IdType_t)13,(IdType_t)-1,(IdType_t)-1,(IdType_t)-1},
-{(IdType_t)6,(IdType_t)6,(IdType_t)6,(IdType_t)3,(IdType_t)6,(IdType_t)6,(IdType_t)6,(IdType_t)7,(IdType_t)8,(IdType_t)9,(IdType_t)10,(IdType_t)11,(IdType_t)-1,(IdType_t)13,(IdType_t)-1,(IdType_t)-1,(IdType_t)-1},
-{(IdType_t)7,(IdType_t)7,(IdType_t)7,(IdType_t)7,(IdType_t)7,(IdType_t)7,(IdType_t)7,(IdType_t)7,(IdType_t)8,(IdType_t)9,(IdType_t)10,(IdType_t)11,(IdType_t)-1,(IdType_t)13,(IdType_t)-1,(IdType_t)-1,(IdType_t)-1},
-{(IdType_t)8,(IdType_t)8,(IdType_t)8,(IdType_t)8,(IdType_t)8,(IdType_t)8,(IdType_t)8,(IdType_t)8,(IdType_t)8,(IdType_t)9,(IdType_t)-1,(IdType_t)-1,(IdType_t)-1,(IdType_t)-1,(IdType_t)-1,(IdType_t)-1,(IdType_t)-1},
-{(IdType_t)9,(IdType_t)9,(IdType_t)9,(IdType_t)9,(IdType_t)9,(IdType_t)9,(IdType_t)9,(IdType_t)9,(IdType_t)9,(IdType_t)9,(IdType_t)-1,(IdType_t)-1,(IdType_t)-1,(IdType_t)-1,(IdType_t)-1,(IdType_t)-1,(IdType_t)-1},
-{(IdType_t)10,(IdType_t)10,(IdType_t)10,(IdType_t)10,(IdType_t)10,(IdType_t)10,(IdType_t)10,(IdType_t)10,(IdType_t)-1,(IdType_t)-1,(IdType_t)2,(IdType_t)2,(IdType_t)-1,(IdType_t)2,(IdType_t)-1,(IdType_t)-1,(IdType_t)-1},
-{(IdType_t)11,(IdType_t)11,(IdType_t)11,(IdType_t)11,(IdType_t)11,(IdType_t)11,(IdType_t)11,(IdType_t)11,(IdType_t)-1,(IdType_t)-1,(IdType_t)2,(IdType_t)2,(IdType_t)-1,(IdType_t)2,(IdType_t)-1,(IdType_t)-1,(IdType_t)-1},
-{(IdType_t)-1,(IdType_t)-1,(IdType_t)-1,(IdType_t)-1,(IdType_t)-1,(IdType_t)-1,(IdType_t)-1,(IdType_t)-1,(IdType_t)-1,(IdType_t)-1,(IdType_t)-1,(IdType_t)-1,(IdType_t)-1,(IdType_t)-1,(IdType_t)-1,(IdType_t)-1,(IdType_t)-1},
-{(IdType_t)13,(IdType_t)13,(IdType_t)13,(IdType_t)13,(IdType_t)13,(IdType_t)13,(IdType_t)13,(IdType_t)13,(IdType_t)-1,(IdType_t)-1,(IdType_t)2,(IdType_t)2,(IdType_t)-1,(IdType_t)2,(IdType_t)-1,(IdType_t)-1,(IdType_t)-1},
-{(IdType_t)-1,(IdType_t)-1,(IdType_t)-1,(IdType_t)-1,(IdType_t)-1,(IdType_t)-1,(IdType_t)-1,(IdType_t)-1,(IdType_t)-1,(IdType_t)-1,(IdType_t)-1,(IdType_t)-1,(IdType_t)-1,(IdType_t)-1,(IdType_t)-1,(IdType_t)-1,(IdType_t)-1},
-{(IdType_t)-1,(IdType_t)-1,(IdType_t)-1,(IdType_t)-1,(IdType_t)-1,(IdType_t)-1,(IdType_t)-1,(IdType_t)-1,(IdType_t)-1,(IdType_t)-1,(IdType_t)-1,(IdType_t)-1,(IdType_t)-1,(IdType_t)-1,(IdType_t)-1,(IdType_t)-1,(IdType_t)-1},
-{(IdType_t)-1,(IdType_t)-1,(IdType_t)-1,(IdType_t)-1,(IdType_t)-1,(IdType_t)-1,(IdType_t)-1,(IdType_t)-1,(IdType_t)-1,(IdType_t)-1,(IdType_t)-1,(IdType_t)-1,(IdType_t)-1,(IdType_t)-1,(IdType_t)-1,(IdType_t)-1,(IdType_t)-1}
-};
+    {{(IdType_t)0, (IdType_t)2, (IdType_t)2, (IdType_t)3, (IdType_t)2, (IdType_t)2, (IdType_t)6, (IdType_t)7, (IdType_t)8, (IdType_t)9, (IdType_t)10, (IdType_t)11, (IdType_t)-1, (IdType_t)13, (IdType_t)-1, (IdType_t)-1, (IdType_t)-1},
+     {(IdType_t)2, (IdType_t)1, (IdType_t)2, (IdType_t)3, (IdType_t)2, (IdType_t)2, (IdType_t)6, (IdType_t)7, (IdType_t)8, (IdType_t)9, (IdType_t)10, (IdType_t)11, (IdType_t)-1, (IdType_t)13, (IdType_t)-1, (IdType_t)-1, (IdType_t)-1},
+     {(IdType_t)2, (IdType_t)2, (IdType_t)2, (IdType_t)3, (IdType_t)2, (IdType_t)2, (IdType_t)6, (IdType_t)7, (IdType_t)8, (IdType_t)9, (IdType_t)10, (IdType_t)11, (IdType_t)-1, (IdType_t)13, (IdType_t)-1, (IdType_t)-1, (IdType_t)-1},
+     {(IdType_t)3, (IdType_t)3, (IdType_t)3, (IdType_t)3, (IdType_t)3, (IdType_t)3, (IdType_t)3, (IdType_t)7, (IdType_t)8, (IdType_t)9, (IdType_t)10, (IdType_t)11, (IdType_t)-1, (IdType_t)13, (IdType_t)-1, (IdType_t)-1, (IdType_t)-1},
+     {(IdType_t)2, (IdType_t)2, (IdType_t)2, (IdType_t)3, (IdType_t)4, (IdType_t)2, (IdType_t)6, (IdType_t)7, (IdType_t)8, (IdType_t)9, (IdType_t)10, (IdType_t)11, (IdType_t)-1, (IdType_t)13, (IdType_t)-1, (IdType_t)-1, (IdType_t)-1},
+     {(IdType_t)2, (IdType_t)2, (IdType_t)2, (IdType_t)3, (IdType_t)2, (IdType_t)5, (IdType_t)6, (IdType_t)7, (IdType_t)8, (IdType_t)9, (IdType_t)10, (IdType_t)11, (IdType_t)-1, (IdType_t)13, (IdType_t)-1, (IdType_t)-1, (IdType_t)-1},
+     {(IdType_t)6, (IdType_t)6, (IdType_t)6, (IdType_t)3, (IdType_t)6, (IdType_t)6, (IdType_t)6, (IdType_t)7, (IdType_t)8, (IdType_t)9, (IdType_t)10, (IdType_t)11, (IdType_t)-1, (IdType_t)13, (IdType_t)-1, (IdType_t)-1, (IdType_t)-1},
+     {(IdType_t)7, (IdType_t)7, (IdType_t)7, (IdType_t)7, (IdType_t)7, (IdType_t)7, (IdType_t)7, (IdType_t)7, (IdType_t)8, (IdType_t)9, (IdType_t)10, (IdType_t)11, (IdType_t)-1, (IdType_t)13, (IdType_t)-1, (IdType_t)-1, (IdType_t)-1},
+     {(IdType_t)8, (IdType_t)8, (IdType_t)8, (IdType_t)8, (IdType_t)8, (IdType_t)8, (IdType_t)8, (IdType_t)8, (IdType_t)8, (IdType_t)9, (IdType_t)-1, (IdType_t)-1, (IdType_t)-1, (IdType_t)-1, (IdType_t)-1, (IdType_t)-1, (IdType_t)-1},
+     {(IdType_t)9, (IdType_t)9, (IdType_t)9, (IdType_t)9, (IdType_t)9, (IdType_t)9, (IdType_t)9, (IdType_t)9, (IdType_t)9, (IdType_t)9, (IdType_t)-1, (IdType_t)-1, (IdType_t)-1, (IdType_t)-1, (IdType_t)-1, (IdType_t)-1, (IdType_t)-1},
+     {(IdType_t)10, (IdType_t)10, (IdType_t)10, (IdType_t)10, (IdType_t)10, (IdType_t)10, (IdType_t)10, (IdType_t)10, (IdType_t)-1, (IdType_t)-1, (IdType_t)2, (IdType_t)2, (IdType_t)-1, (IdType_t)2, (IdType_t)-1, (IdType_t)-1, (IdType_t)-1},
+     {(IdType_t)11, (IdType_t)11, (IdType_t)11, (IdType_t)11, (IdType_t)11, (IdType_t)11, (IdType_t)11, (IdType_t)11, (IdType_t)-1, (IdType_t)-1, (IdType_t)2, (IdType_t)2, (IdType_t)-1, (IdType_t)2, (IdType_t)-1, (IdType_t)-1, (IdType_t)-1},
+     {(IdType_t)-1, (IdType_t)-1, (IdType_t)-1, (IdType_t)-1, (IdType_t)-1, (IdType_t)-1, (IdType_t)-1, (IdType_t)-1, (IdType_t)-1, (IdType_t)-1, (IdType_t)-1, (IdType_t)-1, (IdType_t)-1, (IdType_t)-1, (IdType_t)-1, (IdType_t)-1, (IdType_t)-1},
+     {(IdType_t)13, (IdType_t)13, (IdType_t)13, (IdType_t)13, (IdType_t)13, (IdType_t)13, (IdType_t)13, (IdType_t)13, (IdType_t)-1, (IdType_t)-1, (IdType_t)2, (IdType_t)2, (IdType_t)-1, (IdType_t)2, (IdType_t)-1, (IdType_t)-1, (IdType_t)-1},
+     {(IdType_t)-1, (IdType_t)-1, (IdType_t)-1, (IdType_t)-1, (IdType_t)-1, (IdType_t)-1, (IdType_t)-1, (IdType_t)-1, (IdType_t)-1, (IdType_t)-1, (IdType_t)-1, (IdType_t)-1, (IdType_t)-1, (IdType_t)-1, (IdType_t)-1, (IdType_t)-1, (IdType_t)-1},
+     {(IdType_t)-1, (IdType_t)-1, (IdType_t)-1, (IdType_t)-1, (IdType_t)-1, (IdType_t)-1, (IdType_t)-1, (IdType_t)-1, (IdType_t)-1, (IdType_t)-1, (IdType_t)-1, (IdType_t)-1, (IdType_t)-1, (IdType_t)-1, (IdType_t)-1, (IdType_t)-1, (IdType_t)-1},
+     {(IdType_t)-1, (IdType_t)-1, (IdType_t)-1, (IdType_t)-1, (IdType_t)-1, (IdType_t)-1, (IdType_t)-1, (IdType_t)-1, (IdType_t)-1, (IdType_t)-1, (IdType_t)-1, (IdType_t)-1, (IdType_t)-1, (IdType_t)-1, (IdType_t)-1, (IdType_t)-1, (IdType_t)-1}};
 char *sizeof_type(const_Typename_ptr b_type) //得到这个type的类型的大小，返回一个三地址码中的c型常量的名字
 {
     if (b_type->type == idt_void) // void* 指针不能这么搞
@@ -45,6 +44,52 @@ char *sizeof_type(const_Typename_ptr b_type) //得到这个type的类型的大�
     char *c_name = get_TAC_name('c', CreateConstant());
     gen_const("int4", c_name, &(b_type->size));
     return c_name;
+}
+
+expression_s_t __Call_Function(FPtrStructure_t &fp, const char *f_name, argument_expression_list_s_t &arg_list) //翻译函数调用
+{
+    if (fp.argNum == arg_list.length)
+    {
+        expression_s_t This, Exp;
+        argument_expression_list_s_t *it = &arg_list;
+        const_Typename_ptr arg;
+        int n = fp.argNum;
+        for (int i = 1; i <= n; i++, it = it->next)
+        {
+            Exp = it->now_exp;
+            arg = fp.type[i];
+            char *par;
+            if (type_to_type[Exp.type -> type][arg->type] != -1) //普通类型能转化的，用 type_to_type 判即可
+            {
+                par = get_cast_name(arg->type, Exp.type -> type, Exp.get_addr());
+                gen_param(par);
+            }
+            else if(check_str_un(Exp)&&check_str_un(arg->type)) //struct/union
+            {
+                if(sameType(arg, Exp.type))
+                    gen_param(Exp.addr);
+                else
+                    yyerror("argument list's parameter is not in agreement with the function");
+            }
+            else
+                yyerror("argument list's parameter is not in agreement with the function");
+        }
+    }
+    else
+        yyerror("argument list's length is not in agreement with the function");
+}
+
+expression_s_t get_function(const expression_s_t &Exp, argument_expression_list_s_t &arg_list) //翻译函数调用，但只做第一层处理
+{
+    if (Exp.type->type == idt_fpointer)
+        return __Call_Function(Exp.type->structure->fpointer, Exp.addr, arg_list);
+    else if (Exp.type->type == idt_pointer && Exp.type->structure->pointer.base_type->type == idt_fpointer)
+    {
+        const_Typename_ptr b_type = Exp.type->structure->pointer.base_type;
+        return __Call_Function(b_type->structure->fpointer, Exp.get_addr(), arg_list);
+    }
+    else
+        yyerror("only fpointer can use the () operator!");
 }
 
 void postfix_expression_INC_DEC_OP(expression_s_t &This, const expression_s_t &Next, const char *op)
@@ -170,7 +215,7 @@ expression_s_t __Assign(expression_s_t &A, const expression_s_t &B) //不加类�
     return A;
 }
 
-expression_s_t get_assign(expression_s_t &A, const expression_s_t &B, bool checkConst)
+expression_s_t get_assign(expression_s_t &A, const expression_s_t &B, bool checkConst) //???除了struct，其他是否合法是不是能直接用 type_to_type 判？
 {
     if (A.lr_value == 1)
         yyerror("lvalue required as left operand of assignment!");
@@ -259,11 +304,16 @@ void get_ADD_SUB_MUL_DIV(expression_s_t &This, const expression_s_t &A, const ex
             //val_a = get_cast_name(rel_type, A.type->type, A.get_addr()); bug fix:不要转换类型！！！直接就是ptr类型的
             val_a = A.get_addr();
             val_b = B.get_addr(); //bug fix:直接取出来数字进行运算
-            const_Typename_ptr b_type = A.type->structure->pointer.base_type;
-            char *b_size = sizeof_type(b_type);
             char *offset = get_TAC_name('t', CreateTempVar());
             gen_var("int", offset);
-            gen_op2(offset, val_b, b_size, "*");
+            if (A.type->type == idt_fpointer || (A.type->type == idt_pointer && A.type->structure->pointer.base_type->type == idt_void))
+                gen_cpy(offset, val_b);
+            else
+            {
+                const_Typename_ptr b_type = A.type->structure->pointer.base_type;
+                char *b_size = sizeof_type(b_type);
+                gen_op2(offset, val_b, b_size, "*");
+            }
             char *rel = get_TAC_name('t', CreateTempVar());
             gen_var("ptr", rel); // 无论什么指针类型，他们的三地址码表示都是ptr类型的！
             gen_op2(rel, val_a, offset, op);

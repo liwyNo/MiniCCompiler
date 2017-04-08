@@ -51,6 +51,7 @@ void yyerror(const char *s);
     statement_s_t statement_s;
     expression_statement_s_t expression_statement_s;
     for_jumper2_s_t for_jumper2_s;
+	argument_expression_list_s_t argument_expression_list_s;
 }
 
 %token <vstr> IDENTIFIER
@@ -91,6 +92,7 @@ void yyerror(const char *s);
 %type <expression_s> assignment_expression
 %type <vint> assignment_operator 
 %type <vchar> unary_operator
+%type <argument_expression_list_s> argument_expression_list
 
 %type <type_qualifier_s> type_qualifier
 %type <storage_class_specifier_s> storage_class_specifier
@@ -140,15 +142,16 @@ primary_expression:
             {
 				Identifier_t *id = (Identifier_t *)sym_ptr;
                 $$.isConst = id -> isConst;
-				#warning "The IDENTIFIER hasn't finished yet!"
-				$$.lr_value = 0;
+				//#warning "The IDENTIFIER hasn't finished yet!"
+				$$.type = id -> type;
+				if($$.type -> type == idt_array || $$.type -> type == idt_fpointer)
+					$$.lr_value = 1;
+				else $$.lr_value = 0;
 				$$.addr = id -> TACname;
 				$$.laddr = NULL;
-				$$.type = id -> type;
 				if($$.isConst)
 					if(type_of_const_exp[$$.type -> type])
 						$$.value.vint = id -> value.vint;
-                
             }
         }
 	| constant		{
@@ -275,8 +278,14 @@ postfix_expression:
 		else yyerror("The subscript must be integer!");
 
 	}
-	| postfix_expression '(' ')'
-	| postfix_expression '(' argument_expression_list ')'
+	| postfix_expression '(' ')'	{
+		argument_expression_list_s_t tmp;
+		tmp.length = 0;
+		$$ = get_function($1, tmp);
+	}
+	| postfix_expression '(' argument_expression_list ')'	{
+		$$ = get_function($1, $3);
+	}
 	| postfix_expression '.' IDENTIFIER			{
 		if ($$.type->type == idt_struct || $$.type->type == idt_union) //struct or union
 		{
@@ -345,8 +354,16 @@ comma_or_none:
     ;
 
 argument_expression_list:
-	  assignment_expression
-	| argument_expression_list ',' assignment_expression
+	  assignment_expression		{
+		  $$.now_exp = $1;
+		  $$.length = 1;
+		  $$.next = NULL;
+	  }
+	| argument_expression_list ',' assignment_expression	{
+		$$.now_exp = $3;
+		$$.length = $1.length + 1;
+		$$.next = &$1;
+	}
 	;
 
 unary_expression:
@@ -367,7 +384,7 @@ unary_expression:
 			
 			char *loc = get_TAC_name('t',CreateTempVar());
 			gen_var("ptr",loc);
-			if($2.type -> type == idt_array || check_str_un($2))
+			if($2.type -> type == idt_array || $2.type -> type == idt_fpointer || check_str_un($2)) //fpointer 也是奇葩的类型，取&也是直接取地址
 				gen_cpy(loc, $2.addr);
 			else if($2.addr == NULL)
 				gen_cpy(loc, $2.laddr);
@@ -498,7 +515,8 @@ unary_operator:
 cast_expression:
 	  unary_expression			{$$ = $1;}
 	| '(' type_name ')' cast_expression	{
-		if(type_to_type[$2->type][$4.type->type]==-1) //可以直接利用这个表来判断强制转换的合法性
+		#warning "can not cast struct yet!";
+		if(type_to_type[$2->type][$4.type->type]==-1) //可以直接利用这个表来判断强制转换的合法性,暂时不允许同样结构体的强转
 			yyerror("invalid cast!");
 		$$.addr = get_cast_name($2->type, $4.type -> type, $4.get_addr());
 		$$.laddr = NULL;

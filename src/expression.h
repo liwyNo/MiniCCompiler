@@ -5,6 +5,7 @@
 extern const IdType_t type_to_type[IDTYPE_NUM][IDTYPE_NUM];
 
 char *sizeof_type(const_Typename_ptr b_type);//得到这个type的类型的大小，返回一个三地址码中的c型常量的名字,顺便判了void
+expression_s_t get_function(const expression_s_t &exp, argument_expression_list_s_t  &arg_list); //翻译函数调用
 void postfix_expression_INC_DEC_OP(expression_s_t &This, const expression_s_t &Next, const char *op);
 void INC_DEC_OP_unary_expression(expression_s_t &This, const char *op);
 expression_s_t make_exp(const expression_s_t &Fth, const SymbolList_t *it);
