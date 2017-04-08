@@ -58,7 +58,7 @@ void FreeTypeList(TypeList_t *p)
     while (p) {
         TypeList_t *t = p;
         p = p->next;
-        FreeTypename(t->type);
+        //FreeTypename(t->type);  // 加上这句会重复delete某段内存
         delete t;
     }
 }
@@ -328,6 +328,9 @@ Identifier_t *StackDeclare(const_Typename_ptr type, int hasSTATIC, int hasTYPEDE
         StackAddTypename(ptype);
         return NULL;
     }
+    if (type->type == idt_union || type->type == idt_struct)
+        if (type->serial_number == -1)
+            yyerror("use incomplete struct/union");
     Identifier_t *id = new Identifier_t;
     id->name = name;
     id->type = type;
@@ -498,8 +501,16 @@ void TypeCombine(int sign1, const_Typename_ptr type1, int *sign2, const_Typename
     }
 }
 
+int type_serial_number = 0;
+int NextSerialNumber()
+{
+    return type_serial_number++;
+}
+
 bool sameType(const_Typename_ptr p1, const_Typename_ptr p2)
 {
+    if (p1 == p2)
+        return true;
     if (p1->type != p2->type) {
         if (p1->type == idt_fpointer && p2->type == idt_pointer)
             return sameType(p1, p2->structure->pointer.base_type);
@@ -533,7 +544,7 @@ bool sameType(const_Typename_ptr p1, const_Typename_ptr p2)
                 return p1->structure->pointer.length == p2->structure->pointer.length && sameType(p1->structure->pointer.base_type, p2->structure->pointer.base_type);
             case idt_struct:
             case idt_union:
-                for (SymbolList_t *i = p1->structure->record, *j = p2->structure->record;; i = i->next, j = j->next) {
+                /*for (SymbolList_t *i = p1->structure->record, *j = p2->structure->record;; i = i->next, j = j->next) {
                     if (i == NULL && j == NULL)
                         break;
                     if (i == NULL || j == NULL)
@@ -541,7 +552,8 @@ bool sameType(const_Typename_ptr p1, const_Typename_ptr p2)
                     if (!sameType(i->id->type, j->id->type))
                         return false;
                 }
-                return true;
+                return true;*/
+                return p1->serial_number == p2->serial_number;
             default:
                 return false;
         }

@@ -77,7 +77,11 @@ typedef struct __Typename_t {
     int isConst; /* whether it is constant */
     IdStructure_t *structure; /* detailed type information */
     int size; /* size of typename */
+    int serial_number; /* only used to distinguish struct/union */
 } Typename_t;
+
+extern int type_serial_number;
+int NextSerialNumber();
 
 typedef struct __Identifier_t {
     char *name; /* name of identifer */
