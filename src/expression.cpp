@@ -448,3 +448,18 @@ void get_relational_equality(expression_s_t &This, const expression_s_t &A, cons
     else yyerror("you can't not use this rel_op on these expression!");
     //结构体之间是不能判断是否相同的
 }
+
+void get_AND_OR(expression_s_t &This, const expression_s_t &A, const expression_s_t &B, const char *op)//处理 AND/OR 的计算
+{
+    expression_s_t rel1, rel2, C0 = get_c0_c1_exp("c0");
+	get_relational_equality(rel1, A, C0, "!="); //这里判断是否为0是直接与整数0判断是否相同
+	get_relational_equality(rel2, B, C0, "!=");		
+    char *rel = get_TAC_name('t',CreateTempVar());
+    gen_var("int4", rel);
+    gen_op2(rel, rel1.addr, rel2.addr, op);
+    This.addr = rel;
+    This.type = get_Typename_t(idt_int);
+    This.laddr = NULL;
+    This.isConst = 0;
+    This.lr_value = 1;
+}

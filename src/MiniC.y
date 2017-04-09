@@ -62,7 +62,8 @@ void yyerror(const char *s);
 %token <vdouble> DOUBLE_CONSTANT
 %token SIZEOF
 %token PTR_OP INC_OP DEC_OP LEFT_OP RIGHT_OP LE_OP GE_OP EQ_OP NE_OP
-%token AND_OP OR_OP MUL_ASSIGN DIV_ASSIGN MOD_ASSIGN ADD_ASSIGN SUB_ASSIGN LEFT_ASSIGN RIGHT_ASSIGN AND_ASSIGN XOR_ASSIGN OR_ASSIGN
+%token <vint> AND_OP OR_OP 
+%token MUL_ASSIGN DIV_ASSIGN MOD_ASSIGN ADD_ASSIGN SUB_ASSIGN LEFT_ASSIGN RIGHT_ASSIGN AND_ASSIGN XOR_ASSIGN OR_ASSIGN
 %token <vptr> TYPE_NAME
 %token TYPEDEF
 %token STATIC
@@ -116,7 +117,7 @@ void yyerror(const char *s);
 %type <initializer_s> initializer
 %type <init_declarator_s> init_declarator
 %type <init_declarator_list_s> init_declarator_list
-%type <vint> jumper for_jumper1
+%type <vint> jumper for_jumper1 logical_jumper
 %type <for_jumper2_s> for_jumper2
 %type <expression_statement_s> expression_statement
 %type <statement_s> statement labeled_statement compound_statement selection_statement iteration_statement jump_statement
@@ -582,18 +583,36 @@ inclusive_or_expression:
 
 logical_and_expression:
 	  inclusive_or_expression   {$$ = $1;}
-	| logical_and_expression AND_OP inclusive_or_expression	
+	| logical_and_expression AND_OP logical_jumper inclusive_or_expression	{
+		gen_label($3);
+		get_AND_OR($$,$1,$4,"&&");
+	}
 	;
 
 logical_or_expression:
 	  logical_and_expression    {$$ = $1;}
-	| logical_or_expression OR_OP logical_and_expression
+	| logical_or_expression OR_OP logical_jumper logical_and_expression		{
+		gen_label($3);
+		get_AND_OR($$,$1,$4,"||");		
+	}
 	;
 
 conditional_expression:
 	  logical_or_expression     {$$ = $1;}
-	| logical_or_expression '?' expression ':' conditional_expression
+	| logical_or_expression '?' expression ':' conditional_expression		{
+		//????? 这玩意类型不确定啊。。。没法翻译啊 答：没问题，编译器会自动把他们转成 type_to_type 类型的！
+	}
 	;
+
+logical_jumper:
+		{
+			//需要根据前一个逻辑运算符是什么，来决定怎么跳转
+			$$ = CreateLabel();
+			if($<vint>0 == 0) //0 表示 &&， 1表示 ||
+				genIfGoto($<expression_s>-1, "c0", "==", $$);
+			else genIfGoto($<expression_s>-1, "c1", "==", $$);
+		}
+	;  
 
 assignment_expression:
 	  conditional_expression    {$$ = $1;}

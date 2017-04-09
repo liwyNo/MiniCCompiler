@@ -307,8 +307,24 @@ void declareParameter(const SymbolList_t *lst)
     }
 }
 
-void genIfGoto(expression_s_t expr, const char *name2, const char *op, int num)
+expression_s_t get_c0_c1_exp(const char *name) //用来生成一个addr为c0或者c1的expression
 {
+    expression_s_t This;
+    This.type = get_Typename_t(idt_int);
+    This.lr_value = 0;
+    This.isConst = 1;
+    This.value.vint = 1;
+    This.addr = strdup(name);
+    This.laddr = NULL;
+    return This;
+}
+
+void genIfGoto(expression_s_t expr, const char *name2, const char *op, int num) //name2必须为c0/c1
+{
+    expression_s_t cint = get_c0_c1_exp(name2), rel;
+    get_relational_equality(rel, expr, cint, op); //写的略有些麻烦，先得到该逻辑表达式的值，然后判断是否为真
+    gen_if_goto(rel.addr, "c1", "==", num); //???是否可以改进一下三地址码，允许直接对一个0或者1的变量 goto，不用非得表达式？
+    /*
 #warning "need be changed to call expression functions"
     printf("(!!) if %s %s %s goto l%d\n", expr.get_addr(), op, name2, num);
     /*switch (expr.type->type) {

@@ -132,8 +132,8 @@ int check_type(void);
 "++"					{ return INC_OP; }
 "--"					{ return DEC_OP; }
 "->"					{ return PTR_OP; }
-"&&"					{ return AND_OP; }
-"||"					{ return OR_OP; }
+"&&"					{ yylval.vint = 0; return AND_OP; }
+"||"					{ yylval.vint = 1; return OR_OP; }
 "<="					{ return LE_OP; }
 ">="					{ return GE_OP; }
 "=="					{ return EQ_OP; }
