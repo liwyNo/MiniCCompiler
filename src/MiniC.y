@@ -295,7 +295,7 @@ postfix_expression:
 			for (SymbolList_t *i = $$.type->structure->record; i != NULL; i = i->next)
 				if(strcmp($3, i -> id -> name) == 0)
 				{
-					$$ = make_exp($1, i);
+					$$ = __make_exp($1.addr, i->offset, i->id->type);
 					flag = 1;
 					break;
 				}
@@ -317,7 +317,7 @@ postfix_expression:
 			for (SymbolList_t *i = This.type->structure->record; i != NULL; i = i->next)
 				if(strcmp($3, i -> id -> name) == 0)
 				{
-					$$ = make_exp(This, i);
+					$$ = __make_exp(This.addr, i->offset, i->id->type);
 					flag = 1;
 					break;
 				}
@@ -523,13 +523,7 @@ cast_expression:
 		#warning "can not cast struct yet!";
 		if(type_to_type[$2->type][$4.type->type]==-1) //可以直接利用这个表来判断强制转换的合法性,暂时不允许同样结构体的强转
 			yyerror("invalid cast!");
-		$$.addr = get_cast_name($2->type, $4.type -> type, $4.get_addr());
-		$$.laddr = NULL;
-		$$.type = $2;
-		$$.lr_value = 1;//这东西一定是产生右值
-		$$.isConst = $4.isConst;
-		if($$.isConst)
-			$$.value.vint = $4.value.vint;
+		get_cast_exp($$, $2, $4);
 	}
 	;
 
@@ -599,8 +593,52 @@ logical_or_expression:
 
 conditional_expression:
 	  logical_or_expression     {$$ = $1;}
-	| logical_or_expression '?' expression ':' conditional_expression		{
+	| logical_or_expression jumper '?' expression { $<vint>$ = CreateLabel(); gen_goto($<vint>$); gen_label($<vint>2);} ':' conditional_expression		{
 		//????? 这玩意类型不确定啊。。。没法翻译啊 答：没问题，编译器会自动把他们转成 type_to_type 类型的！
+		/*应该不用再次跳转了
+		//
+		*/
+		gen_label($<vint>5);
+		int lab1 = CreateLabel(), lab2 = CreateLabel();
+		
+		if(type_to_type[$4.type->type][$7.type->type]==-1)
+			if(check_str_un($4) && check_str_un($7))
+			{
+				if(!sameType($4.type, $7.type))
+					yyerror("two expression in the conditional_expression must have semilar type");
+			}
+			else yyerror("two expression in the conditional_expression must have semilar type");
+		
+		$$.addr = get_TAC_name('t',CreateTempVar());
+		if(check_str_un($4))
+		{
+			$$.type = $4.type;
+			gen_var("ptr",$$.addr);
+		}
+		else
+		{
+			$$.type = get_Typename_t(type_to_type[$4.type->type][$7.type->type]);
+			gen_var(map_name[type_to_type[$4.type->type][$7.type->type]], $$.addr);
+		}
+		$$.lr_value = 1;//变成右值！
+		$$.isConst = 0;
+		$$.laddr = NULL;
+		
+		genIfGoto($1, "c0", "==", lab2); //等于0就要跳到后面去
+
+		//下面这段是逻辑表达式值为1的时候执行的语句
+		if(check_str_un($4))
+			gen_cpy($$.addr, $4.addr);
+		else 
+			gen_cpy($$.addr, get_cast_name(type_to_type[$4.type->type][$7.type->type], $4.type->type, $4.get_addr()));
+		gen_goto(lab1);
+
+		gen_label(lab2);
+		if(check_str_un($7))
+			gen_cpy($$.addr, $7.addr);
+		else 
+			gen_cpy($$.addr, get_cast_name(type_to_type[$4.type->type][$7.type->type], $7.type->type, $7.get_addr()));
+		gen_label(lab1);
 	}
 	;
 

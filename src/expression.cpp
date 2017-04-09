@@ -118,7 +118,8 @@ void INC_DEC_OP_unary_expression(expression_s_t &This, const char *op)
     else
         yyerror("you can only use ++ on number or pointer");
 }
-expression_s_t make_exp(const expression_s_t &Fth, const SymbolList_t *it)
+expression_s_t __make_exp(const char *start_loc, const int Offset, const_Typename_ptr type)//给出起始地址，距离起始地址的距离，和这个变量的类型，返回这个变量的exp
+//其实应该也可以用于数组的翻译
 {
     expression_s_t This;
     char *offset;
@@ -126,10 +127,10 @@ expression_s_t make_exp(const expression_s_t &Fth, const SymbolList_t *it)
     gen_var("ptr", loc);
     //gen_cpy(loc, Fth.addr);
     offset = get_TAC_name('c', CreateConstant());
-    gen_const("int4", offset, &it->offset);
-    gen_op2(loc, Fth.addr, offset, "+");
+    gen_const("int4", offset, &Offset);
+    gen_op2(loc, start_loc, offset, "+");
 
-    This.type = it->id->type;
+    This.type = type;
     if (This.type->type == idt_array || check_str_un(This))
     {
         This.addr = loc;
@@ -140,6 +141,8 @@ expression_s_t make_exp(const expression_s_t &Fth, const SymbolList_t *it)
         This.addr = NULL;
         This.laddr = loc;
     }
+    This.isConst = 0;
+    This.lr_value = 0;
     return This;
 }
 
@@ -149,13 +152,20 @@ expression_s_t __Assign(expression_s_t &A, const expression_s_t &B) //不加类�
     {
         for (SymbolList_t *i = A.type->structure->record, *j = B.type->structure->record; i != NULL; i = i->next, j = j->next)
         {
-            expression_s_t a = make_exp(A, i), b = make_exp(B, i);
+            expression_s_t a = __make_exp(A.addr, i->offset, i->id->type), b = __make_exp(B.addr, i->offset, i->id->type);
             __Assign(a, b);
         }
     }
     else if (A.type->type == idt_array) //表层的array 不能赋值，套在struct里的就可以赋值(其实是复制)
     {
-#warning "need to complete array copy"
+//#warning "need to complete array copy"
+        const_Typename_ptr b_type = A.type -> structure -> pointer.base_type;
+
+        for (int i = 0; i < A.type -> structure -> pointer.length; i++)
+        {
+            expression_s_t a = __make_exp(A.addr, b_type -> size * i, b_type), b = __make_exp(B.addr, b_type -> size * i, b_type);
+            __Assign(a, b);
+        }
     }
     else //other type
     {
@@ -207,6 +217,19 @@ expression_s_t get_assign(expression_s_t &A, const expression_s_t &B, bool check
             yyerror("two struct/union must be same!");
     }
     //array显然是右值，不用考虑
+}
+
+void get_cast_exp(expression_s_t &This, const_Typename_ptr type, const expression_s_t &Fth)//把Fth转成 type 类型的，不检查合法性，只管数字指针之间的
+{
+    This.addr = get_TAC_name('t', CreateTempVar());
+    genDeclare(type, This.addr, 0);
+    gen_cpy(This.addr, get_cast_name(type->type, Fth.type -> type, Fth.get_addr()));
+	This.laddr = NULL;
+	This.type = type;
+	This.lr_value = 1;//这东西一定是产生右值
+    This.isConst = Fth.isConst;
+    if(This.isConst)
+        This.value.vint = Fth.value.vint;
 }
 
 expression_s_t __Call_Function(FPtrStructure_t &fp, char *f_name, argument_expression_list_s_t arg_list) //翻译函数调用
