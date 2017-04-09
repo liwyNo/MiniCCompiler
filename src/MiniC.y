@@ -986,7 +986,7 @@ statement: /* auto convert except expression_statement */
 
 labeled_statement:
 	  IDENTIFIER ':' statement  {yyerror("label not support");}
-	 | CASE constant_expression {gen_label($<vint>$ = CreateLabel());} ':' {$<statement_i>$=$<statement_i>0;} statement   {
+	| CASE constant_expression {gen_label($<vint>$ = CreateLabel());} ':' {$<statement_i>$=$<statement_i>0;} statement   {
             if (!$2.isConst)
                 yyerror("case not constant");
             $$.caseList = new CaseList_t;
@@ -1182,7 +1182,7 @@ for_jumper3:    {
 
 jump_statement:
 	  GOTO IDENTIFIER ';'   {yyerror("no support for goto");}
-	  CONTINUE ';'  {
+	| CONTINUE ';'  {
             if ($<statement_i>0.has_begin)
                 gen_goto($<statement_i>0.begin_num);
             else

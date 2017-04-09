@@ -134,6 +134,35 @@ void genInitilize(const_Typename_ptr type, const char *TACname, const initialize
     if (type == NULL || TACname == NULL)
         yyerror("no id for initilization");
     if (init->data.addr || init->data.laddr) {
+        if (init->data.type->type == idt_array && init->data.type->structure->pointer.base_type->type == idt_char
+            && type->type == idt_array && type->structure->pointer.base_type->type == idt_char) { /* assign for string */
+            int tnum1 = CreateTempVar(), tnum2 = CreateTempVar();
+            char *tname1 = strdup(('t' + std::to_string(tnum1)).c_str());
+            char *tname2 = strdup(('t' + std::to_string(tnum2)).c_str());
+            gen_var("ptr", tname1);
+            gen_var("ptr", tname2);
+            gen_cpy(tname1, TACname);
+            gen_cpy(tname2, init->data.addr);
+            int tnum3 = CreateTempVar();
+            char *tname3 = strdup(('t' + std::to_string(tnum3)).c_str());
+            gen_var("int1", tname3);
+            int slen = init->data.type->structure->pointer.length;
+            for (int i = 0; i < slen; ++i) {
+                gen_op1(tname3, tname2, "*");
+                gen_pnt_cpy(tname1, tname3);
+                gen_op2(tname1, tname1, "c1", "+");
+                gen_op2(tname2, tname2, "c1", "+");
+            }
+            gen_cast(tname3, "c0", "int1");
+            for (int i = slen; i < type->structure->pointer.length; ++i) {
+                gen_pnt_cpy(tname1, tname3);
+                gen_op2(tname1, tname1, "c1", "+");
+            }
+            free(tname1);
+            free(tname2);
+            free(tname3);
+            return;
+        }
         expression_s_t eA;
         eA.isConst = 0;
         eA.type = type;

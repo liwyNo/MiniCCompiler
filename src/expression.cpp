@@ -155,7 +155,7 @@ expression_s_t __Assign(expression_s_t &A, const expression_s_t &B) //不加类�
     }
     else if (A.type->type == idt_array) //表层的array 不能赋值，套在struct里的就可以赋值(其实是复制)
     {
-        ;
+#warning "need to complete array copy"
     }
     else //other type
     {
