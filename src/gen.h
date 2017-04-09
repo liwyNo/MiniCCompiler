@@ -5,7 +5,7 @@ void set_output(const char *s);
 
 //int count_byte(int x);
 
-void gen_func(int num);
+void gen_func(/*int num, */const char *name);
 
 void gen_label(int num);
 

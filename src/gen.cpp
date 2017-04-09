@@ -20,9 +20,9 @@ int count_byte(int x)
     return cnt;
 }
 */
-void gen_func(int num)
+void gen_func(/*int num, */const char *name)
 {
-    printf("f%d:\n", num);
+    printf("f_%s:\n", name);
     //now_byte += 3 + count_byte(num);
 }
 
