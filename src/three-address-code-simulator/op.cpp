@@ -7,15 +7,12 @@
 using namespace std;
 
 extern unordered_map<string, Var> symbol_table;
-extern string * type_cstr;
 extern unordered_map<string, TypeName> type_table;
 
 TypeName getType(string src1);
 void setVal(string &s1, TypeName t1, string val);
 TypeName getType(string src1);
 string toString(string src);
-
-const int type_len[] = {1, 2, 4, 8, 1, 2, 4, 8, 4, 8, sizeof(void *)};
 
 template <typename T> void exe1_op2(string &des, string &op, T val1, T val2) {
     TypeName t1 = getType(des);
@@ -141,13 +138,20 @@ void s_op1(string &des, string &op, string &src1) {
         setVal(des, TypeName::Pointer,
                to_string((unsigned long long)&symbol_table[src1].value));
         break;
-    case '-':
-        setVal(des, t1, string("-") + toString(src1));
+    case '-':{
+        string val = toString(src1);
+        if(val[0] == '-')
+            val = val.substr(1);
+        else
+            val = "-" + val;
+        setVal(des, t1, val);
         break;
+    }
     case '!':
         setVal(des, TypeName::Int4, to_string(!symbol_table[src1].value.uint8));
         break;
     case '~':
+    //TODO: Need to verify
         setVal(des, t1, to_string(~symbol_table[src1].value.uint8));
         break;
     }
