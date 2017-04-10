@@ -554,6 +554,8 @@ bool initialize(ifstream &in) {
 }
 
 stack<Var> argStack;
+stack<Var> backupStack;
+stack<size_t> argSizeStack;
 stack<size_t> pcStack;
 stack<string> rValStack;
 void help() {exit(0);}
@@ -608,6 +610,10 @@ void execute(int pc_l) {
     case 11:
         // call f1 3
         pcStack.push(pc);
+        for(int i = argSizeStack.top(); i > 0; i--){
+            backupStack.push(symbol_table[string("p") + to_string(i - 1)]);
+        }
+        argSizeStack.push(stoi(get<2>(t_ins));
         pc = (unsigned long long)symbol_table[get<1>(t_ins)].value.ptr;
         for (int i = stoi(get<2>(t_ins)); i > 0; --i) {
             string var_name = string("p") + to_string(i);
@@ -624,10 +630,19 @@ void execute(int pc_l) {
             rValStack.pop();
             s_cpy(r_val, get<1>(t_ins));
         }
+        argSizeStack.pop();
+        for(int i = 0; !argSizeStack.empty() && i < argSizeStack.top(); i++){
+            symbol_table[string("p") + to_string(i)] = backupStack.top();
+            backupStack.pop();
+        }
         return;
     case 13:
         pcStack.push(pc);
         rValStack.push(get<1>(t_ins));
+        for(int i = argSizeStack.top(); i > 0; i--){
+            backupStack.push(string("p") + to_string(i - 1));
+        }
+        argSizeStack.push(stoi(get<3>(t_ins));
         pc = (unsigned long long)symbol_table[get<2>(t_ins)].value.ptr;
         for (int i = stoi(get<3>(t_ins)); i > 0; --i) {
             string var_name = string("p") + to_string(i);
