@@ -150,6 +150,14 @@ void setVal(string &s1, TypeName t1, string val) {
 }
 
 void printVar(ostream &os, string &v) {
+    if(v == "pc"){
+        os << "pc: "<< pc << endl;
+        return;
+    }
+    if(symbol_table.find(v) == symbol_table.end()){
+        os << "No symbol: " << v << endl;
+        return;
+    }
     os << v << " " << type_cstr[int(symbol_table[v].type)] << " "
        << symbol_table[v].length << " " << toString(v) << endl;
 }
@@ -577,18 +585,22 @@ stack<Var> backupStack;
 stack<size_t> argSizeStack;
 stack<size_t> pcStack;
 stack<string> rValStack;
-void help() {exit(0);}
+
+bool debugMode = false;
+void help(const char * path) {
+    cout << "Usage: " << path << " [-d] <filename>" << endl;
+}
 
 void executeBuildinFunc(string func, string des){
     if(func == "f_getchar"){
-        char tmp = getchar();
+        char tmp = cin.get();
         setVal(des, TypeName::Int1, to_string(tmp));
         return;
     }
     if(func == "f_putchar"){
         Var t = argStack.top();
         argStack.pop();
-        putchar(t.value.int1);
+        cout.put(t.value.int1);
         return;
     }
     if(func == "f_getint"){
@@ -714,12 +726,81 @@ void execute(int pc_l) {
         return;
     }
 }
-
-int main(int argv, char **argc) {
-    if (argv != 2)
-        help();
-    ifstream is(argc[1]);
+static int debugMod = 1;
+static size_t debugCount = 0;
+void intoDebug(){
+    string tmp;
+    while(1){
+        cout << "> ";
+        cin >> tmp;
+        if(tmp == "p"){
+            // Print symbol
+            cin >> tmp;
+            printVar(cout, tmp);
+            continue;
+        }
+        if(tmp == "s"){
+            // Step in
+            int nStep = 0;
+            cin >> nStep;
+            debugMod = 1;
+            debugCount = nStep;
+            return;
+        }
+        if(tmp == "u"){
+            // Until
+            cin >> tmp;
+            debugMod = 2;
+            if(tmp[0] == 'f'){
+                debugCount = symbol_table[tmp].value.uint8;
+            }
+            else{
+                debugCount = stoull(tmp);
+            }
+            return;
+        }
+        if(tmp == "r"){
+            //Run
+            debugMode = false;
+            return;
+        }
+    }
+}
+void debugFunc(){
+    //debugMod: 1. run n step
+    //          2. run until pc equal debugCount
+    if(debugMod == 1){
+        if(debugCount)
+            debugCount --;
+        else{
+            intoDebug();
+            if(debugMod == 1)
+                debugCount--;
+            return;
+        }
+    }
+    else if(debugMod == 2){
+        if(debugCount == pc){
+            intoDebug();
+        }
+    }
+}
+int main(int argc, char **argv) {
+    ifstream is;
+    if(argc == 2){
+        is.open(argv[1]);
+    }
+    else if(argc == 3 && argv[1] == string("-d")){
+        debugMode = true;
+        is.open(argv[2]);
+    }
+    else{
+        help(argv[0]);
+        exit(-1);
+    }
     initialize(is);
+
+
     pc = (unsigned long long)symbol_table["f_main"].value.ptr;
     pcStack.push(-1);
     argSizeStack.push(0);
@@ -727,7 +808,12 @@ int main(int argv, char **argc) {
     cout << "BEGIN PROGRAM" << endl;
 #endif
     while (pc != (unsigned long long)-1) {
+        if(debugMode)
+            debugFunc();
         execute(pc);
     }
+#ifdef DEBUG
+    cout << "EXIT NORMALLY" << endl;
+#endif
     return 0;
 }
