@@ -393,14 +393,10 @@ int CreateLabel()
     return varCounter.num_l++;
 }
 
-int CreateFunc(Identifier_t *id)
+char* CreateFunc(Identifier_t *id)
 {
-    int nu = id->name && strcmp(id->name, "main") == 0 ? 0 : varCounter.num_f++;
-    char tmp[10];
-    sprintf(tmp, "f%d", nu);
-    id->TACname = strdup(tmp);
-    //StackAddIdentifier(id);
-    return nu;
+    id->TACname = strdup(("f_" + std::string(id->name)).c_str());
+    return id->TACname;
 }
 
 int CreateParam(Identifier_t *id)

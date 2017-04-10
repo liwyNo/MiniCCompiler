@@ -146,7 +146,7 @@ int CreateConstant();
 int CreateTempVar();
 int CreateNativeVar(Identifier_t *, SymbolStack_t *);
 int CreateLabel();
-int CreateFunc(Identifier_t *);
+char* CreateFunc(Identifier_t *);
 int CreateParam(Identifier_t *);
 extern const Identifier_t *now_func;
 void EnterFunc(const Identifier_t *);

@@ -22,7 +22,7 @@ int count_byte(int x)
 */
 void gen_func(/*int num, */const char *name)
 {
-    printf("f_%s:\n", name);
+    printf("%s:\n", name);
     //now_byte += 3 + count_byte(num);
 }
 

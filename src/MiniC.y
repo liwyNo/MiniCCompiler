@@ -1295,7 +1295,7 @@ function_definition:
             Identifier_t *id = StackDeclare(makeType(tmptype, $2), 0, 0, getDeclaratorName(&$2));
             if (id->type->type != idt_fpointer || ($2.dd->type != 5 && $2.dd->type != 6))
                 yyerror("function declaration error");
-            gen_func(id->name);
+            gen_func(id->TACname);
             if ($2.dd->type == 5)
                 $<statement_i>$.sblst = $2.dd->data.d5.pl->idList;
             else
