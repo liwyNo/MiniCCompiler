@@ -72,6 +72,8 @@ vector<string> ins;
 unordered_map<string, TypeName> type_table;
 // Map the symbol type to value and Var
 unordered_map<string, Var> symbol_table;
+//
+unordered_map<string, int> funcMap;
 // Store compiled instruction
 vector<tuple<int, string, string, string, string>> c_ins;
 
@@ -182,6 +184,15 @@ void build_label_table() {
              << toString(x.first) << endl;
 #endif
 }
+void buildInFuncList(){
+    funcMap["f_getchar"] = 0;
+    funcMap["f_putchar"] = 1;
+    funcMap["f_getint"] = 0;
+    funcMap["f_putint"] = 1;
+}
+bool buildInFunc(string func){
+    return funcMap.find(func) != funcMap.end();
+}
 bool insert_symbol_table(string &&name_str, string &&type_str,
                          string &&length_str, string &&value_str) {
     if (length_str == "")
@@ -263,8 +274,6 @@ void compile_ins() {
     auto exist = [](string &&v) {
         return symbol_table.find(v) != symbol_table.end();
     };
-
-    auto buildInFunc = [](string &&v) { return false; };
     // compile the instruction
     size_t lineCounter = 0;
     for (auto x : ins) {
@@ -547,11 +556,21 @@ bool initialize(ifstream &in) {
     }
 
     build_label_table();
-    // Initialize the symbol table
+
+    buildInFuncList();
 
     compile_ins();
+
+    symbol_table["tmp"] = Var();
     return true;
 }
+
+//---------------------------------------------------------------------------//
+//---------------------------------------------------------------------------//
+//---------------------------------------------------------------------------//
+//---------------------------------------------------------------------------//
+//---------------------------------------------------------------------------//
+//---------------------------------------------------------------------------//
 
 stack<Var> argStack;
 stack<Var> backupStack;
@@ -559,6 +578,46 @@ stack<size_t> argSizeStack;
 stack<size_t> pcStack;
 stack<string> rValStack;
 void help() {exit(0);}
+
+void executeBuildinFunc(string func, string des){
+    if(func == "f_getchar"){
+        char tmp = getchar();
+        setVal(des, TypeName::Int1, to_string(tmp));
+        return;
+    }
+    if(func == "f_putchar"){
+        Var t = argStack.top();
+        argStack.pop();
+        putchar(t.value.int1);
+        return;
+    }
+    if(func == "f_getint"){
+        int tmp;
+        cin >> tmp;
+        setVal(des, TypeName::Int4, to_string(tmp));
+        return;
+    }
+    if(func == "f_putint"){
+        Var t = argStack.top();
+        argStack.pop();
+        cout << t.value.int4;
+        return;
+    }
+}
+
+void call_exe(string func, size_t argc){
+    pcStack.push(pc);
+    for(int i = argSizeStack.top(); i > 0; i--){
+        backupStack.push(symbol_table[string("p") + to_string(i - 1)]);
+    }
+    argSizeStack.push(argc);
+    pc = (unsigned long long)symbol_table[func].value.ptr;
+    for (size_t i = argc; i > 0; --i) {
+        string var_name = string("p") + to_string(i);
+        symbol_table[var_name] = argStack.top();
+        argStack.pop();
+    }
+}
 
 void execute(int pc_l) {
 #ifdef DEBUG
@@ -609,21 +668,22 @@ void execute(int pc_l) {
         return;
     case 11:
         // call f1 3
-        pcStack.push(pc);
-        for(int i = argSizeStack.top(); i > 0; i--){
-            backupStack.push(symbol_table[string("p") + to_string(i - 1)]);
+        if(buildInFunc(get<1>(t_ins))){
+            if(stoi(get<2>(t_ins)) != funcMap[get<1>(t_ins)]){
+                cerr << "BuildinFunc call fail -- wrong size of arguments" << endl;
+                exit(-1);
+            }
+            executeBuildinFunc(get<1>(t_ins), "tmp");
+            return;
         }
-        argSizeStack.push(stoi(get<2>(t_ins));
-        pc = (unsigned long long)symbol_table[get<1>(t_ins)].value.ptr;
-        for (int i = stoi(get<2>(t_ins)); i > 0; --i) {
-            string var_name = string("p") + to_string(i);
-            symbol_table[var_name] = argStack.top();
-            argStack.pop();
-        }
+        call_exe(get<1>(t_ins), stoull(get<2>(t_ins)));
         return;
     case 12:
         // return
         pc = pcStack.top();
+        // pc == -1 mean that the program has exit the main function.
+        if(pc == (unsigned long long) -1)
+            return;
         pcStack.pop();
         if (get<1>(t_ins) != "") {
             string r_val = rValStack.top();
@@ -637,18 +697,16 @@ void execute(int pc_l) {
         }
         return;
     case 13:
-        pcStack.push(pc);
+        if(buildInFunc(get<2>(t_ins))){
+            if(stoi(get<3>(t_ins)) != funcMap[get<2>(t_ins)]){
+                cerr << "BuildinFunc call fail -- wrong size of arguments" << endl;
+                exit(-1);
+            }
+            executeBuildinFunc(get<2>(t_ins), get<1>(t_ins));
+            return;
+        }
         rValStack.push(get<1>(t_ins));
-        for(int i = argSizeStack.top(); i > 0; i--){
-            backupStack.push(string("p") + to_string(i - 1));
-        }
-        argSizeStack.push(stoi(get<3>(t_ins));
-        pc = (unsigned long long)symbol_table[get<2>(t_ins)].value.ptr;
-        for (int i = stoi(get<3>(t_ins)); i > 0; --i) {
-            string var_name = string("p") + to_string(i);
-            symbol_table[var_name] = argStack.top();
-            argStack.pop();
-        }
+        call_exe(get<2>(t_ins), stoull(get<3>(t_ins)));
         return;
     case 14:
         if(symbol_table[get<1>(t_ins)].value.uint8)
@@ -656,13 +714,15 @@ void execute(int pc_l) {
         return;
     }
 }
+
 int main(int argv, char **argc) {
     if (argv != 2)
         help();
     ifstream is(argc[1]);
     initialize(is);
-    pc = (unsigned long long)symbol_table["f0"].value.ptr;
+    pc = (unsigned long long)symbol_table["f_main"].value.ptr;
     pcStack.push(-1);
+    argSizeStack.push(0);
 #ifdef DEBUG
     cout << "BEGIN PROGRAM" << endl;
 #endif
