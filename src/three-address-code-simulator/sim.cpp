@@ -54,7 +54,7 @@ regex if2_regex(
     R"(^\s*if\s+([Ttpc]\d+)\s+goto\s+([l]\d+|f_[a-zA-Z_][a-zA-Z_0-9]*)\s*(?:\/\/.*)?$)");
 // param t1
 regex param_regex(
-    R"(^\s*param\s+([l]\d+|f_[a-zA-Z_][a-zA-Z_0-9]*)\s*(?:\/\/.*)?$)");
+    R"(^\s*param\s+([Ttpc]\d+)\s*(?:\/\/.*)?$)");
 // call f 3
 regex call_regex(
     R"(^\s*call\s+([l]\d+|f_[a-zA-Z_][a-zA-Z_0-9]*)\s+(\d+)\s*(?:\/\/.*)?$)");
@@ -556,7 +556,7 @@ bool initialize(ifstream &in) {
 stack<Var> argStack;
 stack<size_t> pcStack;
 stack<string> rValStack;
-void help() {}
+void help() {exit(0);}
 
 void execute(int pc_l) {
 #ifdef DEBUG
