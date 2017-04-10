@@ -1,0 +1,18 @@
+Usage ./sim [-d] <filename>
+
+- e.g. ./sim -d test.in
+
+出现"> "提示符表示进入debug模式，支持如下指令： 
+
++ p <pc/symbol/label/funciton name>     
+    - e.g. p pc, p c1, p t1
+    - Print the value of the symbol
++ s <number>
+    - e.g. s 10
+    - Run n Step
++ u <number/function/label>
+    - e.g. u 10, u f_g, u l1
+    - Run until pc equal to number or until the function or label.
++ r
+    - e.g. r
+    - Disable the debug mode and run until the program exit.
