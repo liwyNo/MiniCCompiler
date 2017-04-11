@@ -751,7 +751,7 @@ void intoDebug(){
             // Until
             cin >> tmp;
             debugMod = 2;
-            if(tmp[0] == 'f'){
+            if(tmp[0] == 'f' || tmp[0] == 'l'){
                 debugCount = symbol_table[tmp].value.uint8;
             }
             else{
