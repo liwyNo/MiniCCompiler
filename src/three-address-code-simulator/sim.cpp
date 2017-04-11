@@ -456,7 +456,7 @@ void compile_ins() {
                     exit(-1);
                 }
                 if (getType(match_result[1].str()) !=
-                    getType(match_result[2].str())) {
+                    getType(match_result[3].str())) {
                     cerr << "Type check fail (Line" << lineCounter
                          << "): " << x;
                     exit(-1);
