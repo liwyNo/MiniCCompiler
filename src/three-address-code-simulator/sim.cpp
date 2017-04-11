@@ -231,6 +231,13 @@ bool insert_symbol_table(string &&name_str, string &&type_str,
         t.type = TypeName::Pointer;
         break;
     }
+    case TypeName::Pointer:{
+        if(length_str != "0")
+            t.value.ptr = new char [t.length];
+        else
+            setVal(name_str, t.type, value_str);
+        break;
+    }
     default:
         setVal(name_str, t.type, value_str);
     }
