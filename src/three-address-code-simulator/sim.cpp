@@ -334,7 +334,7 @@ void compile_ins() {
                          << "): " << x;
                     exit(-1);
                 }
-                if (typeCheck(match_result[1].str(), match_result[2].str(),
+                if (!typeCheck(match_result[1].str(), match_result[2].str(),
                               match_result[3].str())) {
                     cerr << "Type check fail (Line" << lineCounter
                          << "): " << x;
