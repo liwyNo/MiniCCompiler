@@ -184,7 +184,7 @@ void s_pnt_cpy(string &ptr, string &src) {
     cout << "In s_arr_cpy:\t" << ptr << "\t" << src << endl;
 #endif
     size_t cpy_size = type_len[(int)getType(src)];
-    memcpy((void *)&symbol_table[ptr].value, (void *)&symbol_table[src].value,
+    memcpy(symbol_table[ptr].value.ptr, (void *)&symbol_table[src].value,
            cpy_size);
 }
 void s_cpy_arr(string &des, string &ptr, string offset) {
