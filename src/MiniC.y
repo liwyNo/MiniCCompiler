@@ -1305,6 +1305,7 @@ function_definition:
             EnterFunc(id);
         } compound_statement    {
             gen_return(NULL);
+            gen_endfunc(now_func->TACname);
             LeaveFunc();
         }
 	;

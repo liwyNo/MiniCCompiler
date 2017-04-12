@@ -26,6 +26,11 @@ void gen_func(/*int num, */const char *name)
     //now_byte += 3 + count_byte(num);
 }
 
+void gen_endfunc(const char *name)
+{
+    printf("end %s\n",name);
+}
+
 void gen_label(int num)
 {
     printf("l%d:\n", num);
