@@ -1292,9 +1292,14 @@ function_definition:
                 tmp->isConst = 1;
                 tmptype = tmp;
             }
-            Identifier_t *id = StackDeclare(makeType(tmptype, $2), 0, 0, getDeclaratorName(&$2));
+            char *dname = getDeclaratorName(&$2);
+            Identifier_t *id2 = (Identifier_t*)LookupSymbol(dname, NULL);
+            if (id2 != NULL && id2->type->structure->fpointer.implemented)
+                yyerror("identifier already exists");
+            Identifier_t *id = StackDeclare(makeType(tmptype, $2), 0, 0, dname);
             if (id->type->type != idt_fpointer || ($2.dd->type != 5 && $2.dd->type != 6))
                 yyerror("function declaration error");
+            id->type->structure->fpointer.implemented = 1;
             gen_func(id->TACname);
             if ($2.dd->type == 5)
                 $<statement_i>$.sblst = $2.dd->data.d5.pl->idList;

@@ -359,6 +359,7 @@ Identifier_t *StackDeclare(const_Typename_ptr type, int hasSTATIC, int hasTYPEDE
             }
             else
                 id = id2;
+            id->type->structure->fpointer.implemented = 0;
         }
     }
     id->isConst = 0;

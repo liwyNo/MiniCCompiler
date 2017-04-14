@@ -51,6 +51,7 @@ typedef struct {
     /* the following pointer is arrays with length argNum+1 ,
        index 0 is used specially for return type */
     const_Typename_ptr *type;
+    int implemented; /* whether the function has been implemented */
 } FPtrStructure_t;
 
 typedef struct __EnumTable_t {
