@@ -10,6 +10,9 @@ Usage ./sim [-d] <filename>
 + s <number>
     - e.g. s 10
     - Run n Step
++ n
+    - e.g. n
+    - Run 1 Step
 + u <number/function/label>
     - e.g. u 10, u f_g, u l1
     - Run until pc equal to number or until the function or label.

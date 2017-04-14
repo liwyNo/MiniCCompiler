@@ -771,6 +771,12 @@ void intoDebug(){
             debugCount = nStep;
             return;
         }
+        if(tmp == "n"){
+            //next step
+            debugMod = 1;
+            debugCount = 1;
+            return;
+        }
         if(tmp == "u"){
             // Until
             cin >> tmp;
