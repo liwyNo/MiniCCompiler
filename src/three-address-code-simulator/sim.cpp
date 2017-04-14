@@ -117,13 +117,13 @@ void setVal(string &s1, TypeName t1, string val) {
     symbol_table[s1].value.uint8 = 0;
     switch (t1) {
     case TypeName::Int1:
-        symbol_table[s1].value.int1 = stoi(val);
+        symbol_table[s1].value.int1 = stoll(val);
         break;
     case TypeName::Int2:
-        symbol_table[s1].value.int2 = stoi(val);
+        symbol_table[s1].value.int2 = stoll(val);
         break;
     case TypeName::Int4:
-        symbol_table[s1].value.int4 = stoi(val);
+        symbol_table[s1].value.int4 = stoll(val);
         break;
     case TypeName::Int8:
         symbol_table[s1].value.int8 = stoll(val);
