@@ -1,4 +1,4 @@
-mini-C语法定义
+MiniC语法定义
 加(*)表示可选扩展
 
 宏处理：
@@ -33,7 +33,7 @@ mini-C语法定义
     循环语句：
         while
         for (*)
-        do-while (*)
+        do-while
     跳转语句：
         swith-case-default (*)
         break
@@ -47,15 +47,15 @@ mini-C语法定义
     ?: (*)
 
 库函数：
-    read和write函数可以直接使用
-    //课程提供scanf和printf的源码实现
-    需要的再加
+    int getint();
+    void putint(int);
+    char getchar();
+    void putchar(char);
 
 一些关键字：
     sizeof
     typedef
-    const
-    static (*)
+    const (*)
 
 注释：
     单行 //

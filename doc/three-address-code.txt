@@ -1,10 +1,10 @@
 变量名：
-常量 c1 c2 c3 ...
-原生变量 T1 T2 T3 ...
-中间变量 t1 t2 t3 ...
-函数参数 p1 p2 p3 ...
-函数 f0 f1 f2 f3 ... (f0是main函数)      gen_func(int num)
-标号 l1 l2 l3 ...                     gen_label(int num)
+常量 c0 c1 c2 c3 ...
+原生变量 T0 T1 T2 T3 ...
+中间变量 t0 t1 t2 t3 ...
+函数参数 p0 p1 p2 p3 ...
+函数 f_xxx ... (f_main是main函数)
+标号 l0 l1 l2 l3 ...
 
 变量类型：
 integer : int1 int2 int4 int8 uint1 uint2 uint4 uint8
@@ -16,8 +16,8 @@ const str c1 65 67 78 0 最后一定有0的
 
 声明：
 const <type> <name> <value>
-var <type> [length] <name>  gen_var(const char *type,const char *name, int length=-1)
-gvar <type> [length] <name> gen_gval(const char *type,const char *name, int length=-1)
+var <type> [length] <name>
+gvar <type> [length] <name>
 当<type>是ptr，且该变量作为数组或struct/union时，需要指定[length]=sizeof(<name>)
 其他情况不用指定[length]
 
@@ -28,25 +28,25 @@ gvar <type> [length] <name> gen_gval(const char *type,const char *name, int leng
 
 赋值语句：
 除了类型转换语句，其他赋值语句等号两边类型必须匹配
-t1 = t1 <op>/<relop> t2             gen_op2(const char *name1, const char *name2, const char *name3, const char *op)
-t1 = <op> t2                        gen_op1(const char *name1,const char *name2, const char *op)
-t1 = <type> t2 (类型转换)              gen_cast(const char *name1, char* name2, const char *type)
-t1 = t2                     gen_cpy(const char *name1, const char *name2)
-t1 [ t2 ] = t3              gen_arr_cpy(const char *name1, const char *name2, const char *name3)
-* t1 = t2                   gen_pnt_cpy(const char *name1, const char *name2)
-t1 = t2 [ t3 ]              gen_cpy_arr(const char *name1, const char *name2, const char *name3)
+t1 = t1 <op>/<relop> t2
+t1 = <op> t2
+t1 = <type> t2 (类型转换)
+t1 = t2
+t1 [ t2 ] = t3
+* t1 = t2
+t1 = t2 [ t3 ]
 
 跳转语句：
-goto l1                     void gen_goto(int num), int gen_b_goto
-if t1 <relop> T2 goto l2    void gen_if_goto(const char *name1, char* name2, const char *op, int num)
-                            int gen_if_b_goto(const char *name1, char* name2, const char *op)
-
+goto l1
+if t1 <relop> T2 goto l2
+if t0 goto l0
 
 函数调用：
-param t1                    gen_param(const char *name)
-param t2
-call f1 1                   gen_call(int num, int pnum)
-t1 = call f2 1              gen_cpy_call(const char *name, int num, int pnum)
-return t1                   gen_return(const char *name)
+param t0
+param t1
+call f_xxx 1
+t1 = call f_xxx 1
+return t1
+函数结束处：end f_xxx
 
 struct/union 访问方式类似数组，保存头指针和offset
