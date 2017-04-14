@@ -14,6 +14,8 @@ using namespace std;
 
 // l1, l2, l3...
 regex label_regex(R"(^\s*([l]\d|f_[a-zA-Z_][a-zA-Z_0-9]*)+:\s*(?:\/\/.*)?$)");
+//function
+regex function_regex(R"(^\s*(f_[a-zA-Z_][a-zA-Z_0-9]*)+:\s*(?:\/\/.*)?$)");
 // var/gvar <type> [length] <name>
 regex dec_regex(
     R"(^\s*g?var\s+(u?int[1248]|float[48]|ptr)\s+(?:([1-9]\d*)\s+)?([Ttp]\d+)\s*(?:\/\/.*)?$)");
@@ -63,6 +65,8 @@ regex call2_regex(
     R"(^\s*([tTp]\d+)\s*=\s*call\s+([l]\d+|f_[a-zA-Z_][a-zA-Z_0-9]*)\s+(\d+)\s*(?:\/\/.*)?$)");
 // return [t1]
 regex return_regex(R"(^\s*return(?:\s+([Ttcp]\d+))?\s*(?:\/\/.*)?$)");
+
+regex end_regex(R"(^\s*end\s+(f_[a-zA-Z_][_0-9a-zA-Z]*)\s*(?:\/\/.*)?$)");
 
 // Next instruction
 size_t pc;
@@ -291,14 +295,24 @@ void compile_ins() {
     };
     // compile the instruction
     size_t lineCounter = 0;
+    string env = "";
     for (auto x : ins) {
         lineCounter++;
         int match_count = 0, match_type = 0;
         do {
             // comment / label / declaration
-            if ((x == "") | regex_match(x, comment_regex) |
-                regex_match(x, label_regex))
+            if ((x == "") || regex_match(x, comment_regex) ||
+                regex_match(x, label_regex)){
+                if(regex_match(x, match_result, function_regex)){
+                    env = match_result[1].str();
+                }
                 break;
+            }
+            // end f_xxx
+            if(regex_match(x, end_regex)){
+                env = "";
+                break;
+            }
             // gvar / var
             if (regex_match(x, match_result, dec_regex)) {
                 insert_symbol_table(match_result[3].str(),
@@ -549,6 +563,9 @@ void compile_ins() {
             c_ins.emplace_back(match_type, match_str[0], match_str[1],
                                match_str[2], match_str[3]);
         }
+        void execute(int);
+        if(env == "")
+            execute(lineCounter - 1);
     }
 #ifdef DEBUG
     cout << "\tInstruction table" << endl;
@@ -752,6 +769,12 @@ void intoDebug(){
             cin >> nStep;
             debugMod = 1;
             debugCount = nStep;
+            return;
+        }
+        if(tmp == "n"){
+            //next step
+            debugMod = 1;
+            debugCount = 1;
             return;
         }
         if(tmp == "u"){
