@@ -201,6 +201,8 @@ void buildInFuncList(){
     funcMap["f_putchar"] = 1;
     funcMap["f_getint"] = 0;
     funcMap["f_putint"] = 1;
+    funcMap["f_malloc"] = 1;
+    funcMap["f_free"] = 1;
 }
 bool buildInFunc(string func){
     return funcMap.find(func) != funcMap.end();
@@ -638,6 +640,17 @@ void executeBuildinFunc(string func, string des){
         argStack.pop();
         cout << t.value.int4;
         return;
+    }
+    if(func == "f_malloc"){
+        Var t = argStack.top();
+        argStack.pop();
+        setVal(des, TypeName::Pointer, to_string((unsigned long long)malloc(t.value.uint8)));
+        return;
+    }
+    if(func == "f_free"){
+        Var t = argStack.top();
+        argStack.pop();
+        free(t.value.ptr);
     }
 }
 
