@@ -56,7 +56,7 @@ regex if2_regex(
     R"(^\s*if\s+([Ttpc]\d+)\s+goto\s+([l]\d+|f_[a-zA-Z_][a-zA-Z_0-9]*)\s*(?:\/\/.*)?$)");
 // param t1
 regex param_regex(
-    R"(^\s*param\s+([Ttpc]\d+)\s*(?:\/\/.*)?$)");
+    R"(^\s*param\s+([Ttpc]\d+|f_[a-zA-Z_][a-zA-Z0-9_]*)\s*(?:\/\/.*)?$)");
 // call f 3
 regex call_regex(
     R"(^\s*call\s+([lTcpt]\d+|f_[a-zA-Z_][a-zA-Z_0-9]*)\s+(\d+)\s*(?:\/\/.*)?$)");
