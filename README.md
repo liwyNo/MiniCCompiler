@@ -1,4 +1,4 @@
-# MiniC Complier
+# MiniC Compiler
 
 ## 运行环境
 Linux操作系统
