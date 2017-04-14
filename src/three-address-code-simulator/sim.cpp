@@ -13,7 +13,7 @@
 using namespace std;
 
 // l1, l2, l3...
-regex label_regex(R"(^\s*([l]\d|f_[a-zA-Z_][a-zA-Z_0-9]*)+:\s*(?:\/\/.*)?$)");
+regex label_regex(R"(^\s*([l]\d+|f_[a-zA-Z_][a-zA-Z_0-9]*)+:\s*(?:\/\/.*)?$)");
 //function
 regex function_regex(R"(^\s*(f_[a-zA-Z_][a-zA-Z_0-9]*)+:\s*(?:\/\/.*)?$)");
 // var/gvar <type> [length] <name>
@@ -657,7 +657,7 @@ void call_exe(string func, size_t argc){
 
 void execute(int pc_l) {
 #ifdef DEBUG
-    cout << "pc: " << pc_l << endl;
+    cout << "pc_l: " << pc_l << endl;
 #endif
     auto t_ins = c_ins[pc_l];
     pc++;
