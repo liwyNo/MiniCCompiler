@@ -762,11 +762,7 @@ declaration:
             if ($1.hasTYPEDEF && $1.hasSTATIC) yyerror("typedef with static");
             const_Typename_ptr tmptype = $1.type;
             if ($1.hasCONST)
-            {
-                Typename_t *tmp = memDup($1.type);
-                tmp->isConst = 1;
-                tmptype = tmp;
-            }
+                tmptype = addConst($1.type);
             for (init_declarator_list_s_t *i = $2; i; i = i->next) {
                 Identifier_t *id = StackDeclare(makeType(tmptype, i->idecl.decl), $1.hasSTATIC, $1.hasTYPEDEF, getDeclaratorName(&(i->idecl.decl)));
                 if (!$1.hasTYPEDEF) {
@@ -858,11 +854,7 @@ struct_declaration:
             if ($1.type==NULL)yyerror("struct declaration error");
             const_Typename_ptr tmptype = $1.type;
             if ($1.hasCONST)
-            {
-                Typename_t *tmp = memDup($1.type);
-                tmp->isConst = 1;
-                tmptype = tmp;
-            }
+                tmptype = addConst($1.type);
             for (struct_declarator_list_s_t *i = $2; i; i = i->next)
                 StackDeclare(makeType(tmptype, i->decl), 0, 0, getDeclaratorName(&(i->decl)));
             freeSDL($2);
@@ -933,8 +925,7 @@ parameter_declaration:
             if ($1.hasTYPEDEF || $1.hasSTATIC)
                 yyerror("typedef/static in parameter");
             if ($1.hasCONST) {
-                Typename_t *p = memDup($1.type);
-                p->isConst = 1;
+                const_Typename_ptr p = addConst($1.type);
                 StackDeclare(makeType(p, $2), $1.hasSTATIC, $1.hasTYPEDEF, getDeclaratorName(&$2));
             }
             else
@@ -944,8 +935,7 @@ parameter_declaration:
             if ($1.hasTYPEDEF || $1.hasSTATIC)
                 yyerror("typedef/static in parameter");
             if ($1.hasCONST) {
-                Typename_t *p = memDup($1.type);
-                p->isConst = 1;
+                const_Typename_ptr p = addConst($1.type);
                 StackDeclare(makeType(p, $2), $1.hasSTATIC, $1.hasTYPEDEF, NULL);
             }
             else
@@ -955,8 +945,7 @@ parameter_declaration:
             if ($1.hasTYPEDEF || $1.hasSTATIC)
                 yyerror("typedef/static in parameter");
             if ($1.hasCONST) {
-                Typename_t *p = memDup($1.type);
-                p->isConst = 1;
+                const_Typename_ptr p = addConst($1.type);
                 StackDeclare(p, $1.hasSTATIC, $1.hasTYPEDEF, NULL);
             }
             else
@@ -976,20 +965,14 @@ identifier_list: /* not support */
 
 type_name:
 	  specifier_qualifier_list abstract_declarator  {
-            if ($1.hasCONST) {
-                Typename_t *p = memDup($1.type);
-                p->isConst = 1;
-                $$ = makeType(p, $2);
-            }
+            if ($1.hasCONST)
+                $$ = makeType(addConst($1.type), $2);
             else
                 $$ = makeType($1.type, $2);
         }
 	| specifier_qualifier_list                      {
-            if ($1.hasCONST) {
-                Typename_t *p = memDup($1.type);
-                p->isConst = 1;
-                $$ = p;
-            }
+            if ($1.hasCONST)
+                $$ = addConst($1.type);
             else
                 $$ = $1.type;
         }
@@ -1287,11 +1270,7 @@ function_definition:
             if ($1.hasTYPEDEF) yyerror("funtion typedef");
             const_Typename_ptr tmptype = $1.type;
             if ($1.hasCONST)
-            {
-                Typename_t *tmp = memDup($1.type);
-                tmp->isConst = 1;
-                tmptype = tmp;
-            }
+                tmptype = addConst($1.type);
             char *dname = getDeclaratorName(&$2);
             Identifier_t *id2 = (Identifier_t*)LookupSymbol(dname, NULL);
             if (id2 != NULL && id2->type->structure->fpointer.implemented)

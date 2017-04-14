@@ -354,7 +354,7 @@ void genIfGoto(expression_s_t expr, const char *name2, const char *op, int num) 
     get_relational_equality(rel, expr, cint, op); //写的略有些麻烦，先得到该逻辑表达式的值，然后判断是否为真
     gen_if_goto(rel.addr, "c1", "==", num); //???是否可以改进一下三地址码，允许直接对一个0或者1的变量 goto，不用非得表达式？
     /*
-#warning "need be changed to call expression functions"
+    #warning "need be changed to call expression functions"
     printf("(!!) if %s %s %s goto l%d\n", expr.get_addr(), op, name2, num);
     /*switch (expr.type->type) {
     case idt_struct:
@@ -369,4 +369,31 @@ void genIfGoto(expression_s_t expr, const char *name2, const char *op, int num) 
         gen_cast(stmp.c_str(), name2, "int4");
         gen_if_goto(stmp.c_str(), name2, op, num);
     }*/
+}
+
+const_Typename_ptr addConst(const_Typename_ptr type)
+{
+    if (type->type != idt_union && type->type != idt_struct && type->isConst)
+        return type;
+    Typename_t *ans = new Typename_t;
+    *ans = *type;
+    ans->isConst = 1;
+    if (type->type == idt_union || type->type == idt_struct) {
+        SymbolList_t *nlst = NULL, *tail = NULL;
+        for (SymbolList_t *i = type->structure->record; i; i = i->next) {
+            SymbolList_t *tmp = new SymbolList_t;
+            tmp->offset = i->offset;
+            tmp->id = memDup(i->id);
+            tmp->id->type = addConst(i->id->type);
+            tmp->next = NULL;
+            if (nlst == NULL)
+                nlst = tail = tmp;
+            else {
+                tail->next = tmp;
+                tail = tmp;
+            }
+        }
+        ans->structure->record = nlst;
+    }
+    return ans;
 }

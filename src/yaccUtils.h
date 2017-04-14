@@ -43,4 +43,6 @@ void declareParameter(const SymbolList_t *);
 expression_s_t get_c0_c1_exp(const char *name); //用来生成一个addr为c0或者c1的expression
 void genIfGoto(expression_s_t, const char *name2, const char *op, int num);
 
+const_Typename_ptr addConst(const_Typename_ptr type);
+
 #endif
