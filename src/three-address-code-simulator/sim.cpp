@@ -13,15 +13,15 @@
 using namespace std;
 
 // l1, l2, l3...
-regex label_regex(R"(^\s*([l]\d+|f_[a-zA-Z_][a-zA-Z_0-9]*)+:\s*(?:\/\/.*)?$)");
+regex label_regex(R"(^\s*([l]\d+|f_[a-zA-Z_][a-zA-Z_0-9]*):\s*(?:\/\/.*)?$)");
 //function
-regex function_regex(R"(^\s*(f_[a-zA-Z_][a-zA-Z_0-9]*)+:\s*(?:\/\/.*)?$)");
+regex function_regex(R"(^\s*(f_[a-zA-Z_][a-zA-Z_0-9]*):\s*(?:\/\/.*)?$)");
 // var/gvar <type> [length] <name>
 regex dec_regex(
     R"(^\s*g?var\s+(u?int[1248]|float[48]|ptr)\s+(?:([1-9]\d*)\s+)?([Ttp]\d+)\s*(?:\/\/.*)?$)");
 // const <type> <name>(c1, c2...) <val>
 regex const_dec_regex(
-    R"(^\s*const\s+(u?int[1248]|float[48]|ptr|str)\s+(c\d+)\s+(".*"|.*)\s*(?:\/\/.*)?$)");
+    R"(^\s*const\s+(u?int[1248]|float[48]|ptr|str)\s+(c\d+)\s+([ 0-9.]*)\s*(?:\/\/.*)?$)");
 // comment
 regex comment_regex(R"(^\s*\/\/.*$)");
 // t1 = t1 <op> t2
@@ -59,10 +59,10 @@ regex param_regex(
     R"(^\s*param\s+([Ttpc]\d+)\s*(?:\/\/.*)?$)");
 // call f 3
 regex call_regex(
-    R"(^\s*call\s+([l]\d+|f_[a-zA-Z_][a-zA-Z_0-9]*)\s+(\d+)\s*(?:\/\/.*)?$)");
+    R"(^\s*call\s+([lTcpt]\d+|f_[a-zA-Z_][a-zA-Z_0-9]*)\s+(\d+)\s*(?:\/\/.*)?$)");
 // t1 = call f 3
 regex call2_regex(
-    R"(^\s*([tTp]\d+)\s*=\s*call\s+([l]\d+|f_[a-zA-Z_][a-zA-Z_0-9]*)\s+(\d+)\s*(?:\/\/.*)?$)");
+    R"(^\s*([tTp]\d+)\s*=\s*call\s+([lTcpt]\d+|f_[a-zA-Z_][a-zA-Z_0-9]*)\s+(\d+)\s*(?:\/\/.*)?$)");
 // return [t1]
 regex return_regex(R"(^\s*return(?:\s+([Ttcp]\d+))?\s*(?:\/\/.*)?$)");
 
@@ -649,7 +649,7 @@ void call_exe(string func, size_t argc){
     argSizeStack.push(argc);
     pc = (unsigned long long)symbol_table[func].value.ptr;
     for (size_t i = argc; i > 0; --i) {
-        string var_name = string("p") + to_string(i);
+        string var_name = string("p") + to_string(i - 1);
         symbol_table[var_name] = argStack.top();
         argStack.pop();
     }
@@ -755,6 +755,7 @@ static size_t debugCount = 0;
 void intoDebug(){
     string tmp;
     while(1){
+        cout << "PC: " << pc << " " << ins[pc] << endl;
         cout << "> ";
         cin >> tmp;
         if(tmp == "p"){
