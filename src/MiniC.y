@@ -145,9 +145,9 @@ primary_expression:
                 $$.isConst = id -> isConst;
 				//#warning "The IDENTIFIER hasn't finished yet!"
 				$$.type = id -> type;
-				if($$.type -> type == idt_array || $$.type -> type == idt_fpointer)
-					$$.lr_value = 1;
-				else $$.lr_value = 0;
+				//if($$.type -> type == idt_fpointer)
+					//$$.lr_value = 1;
+				$$.lr_value = 0;
 				$$.addr = id -> TACname;
 				$$.laddr = NULL;
 				if($$.isConst)

@@ -50,7 +50,7 @@ void postfix_expression_INC_DEC_OP(expression_s_t &This, const expression_s_t &N
 {
     if (Next.type->isConst == 1)
         yyerror("can't use ++/-- on read-only variable!");
-    if (Next.lr_value == 0)
+    if (Next.lr_value == 0 || Next.type -> type == idt_array || Next.type -> type == idt_fpointer)
     {
         if (Next.type->type < 10 || Next.type->type == idt_pointer || Next.type->type == idt_fpointer) //数字 or pointer or fpointer
         {
@@ -84,15 +84,15 @@ void postfix_expression_INC_DEC_OP(expression_s_t &This, const expression_s_t &N
             yyerror("you can only use ++ on number or pointer");
     }
     else
-        yyerror("Can't use ++ operator on right value!");
+        yyerror("Can't use ++ operator on right value! And can't use on array/fpointer");
 }
 
 void INC_DEC_OP_unary_expression(expression_s_t &This, const char *op)
 {
     if (This.type->isConst == 1)
         yyerror("can't use ++/-- on read-only variable!");
-    if (This.lr_value == 1)
-        yyerror("Can't use ++ operator on right value!");
+    if (This.lr_value == 1 || This.type -> type == idt_array || This.type -> type == idt_fpointer)
+        yyerror("Can't use ++ operator on right value  And can't use on array/fpointer!");
 
     if (This.type->type < 10 || This.type->type == idt_pointer || This.type->type == idt_fpointer) //数字 or pointer or fpointer
     {
@@ -181,8 +181,8 @@ expression_s_t __Assign(expression_s_t &A, const expression_s_t &B) //不加类�
 
 expression_s_t get_assign(expression_s_t &A, const expression_s_t &B, bool checkConst) //???除了struct，其他是否合法是不是能直接用 type_to_type 判？
 {
-    if (A.lr_value == 1)
-        yyerror("lvalue required as left operand of assignment!");
+    if (A.lr_value == 1 || A.type -> type == idt_array || A.type -> type == idt_fpointer)
+        yyerror("lvalue required as left operand of assignment! And can't use on array/fpointer");
     if (A.type->isConst == 1 && checkConst)
         yyerror("assignment of read-only variable!");
     if (A.type->type < 10) //数字可以赋成数字和指针和array和函数指针。然而在c++中，就只有数字可以！注意:不存在enum类型的变量！
