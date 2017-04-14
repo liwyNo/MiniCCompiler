@@ -1,0 +1,29 @@
+const int4 c0 0
+const int4 c1 1
+f_f:
+var int4 p0
+return
+end f_f
+const int4 c2 10
+gvar int4 T0
+T0 = c2
+f_g:
+var int4 p0
+return p0
+return
+end f_g
+f_main:
+const int4 c3 1
+param c3
+call f_f 1
+const int4 c4 2
+param c4
+var int4 t0
+t0 = call f_g 1
+param T0
+var int4 t1
+t1 = call f_putint 1
+const int4 c5 0
+return c5
+return
+end f_main
