@@ -68,6 +68,9 @@ regex return_regex(R"(^\s*return(?:\s+([Ttcp]\d+))?\s*(?:\/\/.*)?$)");
 
 regex end_regex(R"(^\s*end\s+(f_[a-zA-Z_][_0-9a-zA-Z]*)\s*(?:\/\/.*)?$)");
 
+regex push_regex(R"(^\s*push\s+([Ttcp]\d+)\s*(?:\/\/.*)?$)");
+
+regex pop_regex(R"(^\s*pop\s+([Ttcp]\d+)\s*(?:\/\/.*)?$)");
 // Next instruction
 size_t pc;
 // To store all instruction
@@ -546,6 +549,28 @@ void compile_ins() {
                 match_type = 14;
                 break;
             }
+            //push
+            if(regex_match(x, match_result, push_regex)){
+                if(!exist(match_result[1].str())){
+                    cerr << "Undefined symbol (Line " << lineCounter
+                         << "): " << x;
+                    exit(-1);
+                }
+                match_count = 1;
+                match_type = 15;
+                break;
+            }
+            //pop
+            if(regex_match(x, match_result, pop_regex)){
+                if(!exist(match_result[1].str())){
+                    cerr << "Undefined symbol (Line " << lineCounter
+                         << "): " << x;
+                    exit(-1);
+                }
+                match_count = 1;
+                match_type = 16;
+                break;
+            }
             // Error no Var match!
             cerr << "Ins (Line " << lineCounter << "):\"" << x
                  << "\" can't compile." << endl;
@@ -760,6 +785,14 @@ void execute(int pc_l) {
     case 14:
         if(symbol_table[get<1>(t_ins)].value.uint8)
             goto_exe(get<2>(t_ins), pc);
+        return;
+    case 15:
+        //push
+        backupStack.push(symbol_table[get<1>(t_ins)]);
+        return;
+    case 16:
+        symbol_table[get<1>(t_ins)] = backupStack.top();
+        backupStack.pop();
         return;
     }
 }
