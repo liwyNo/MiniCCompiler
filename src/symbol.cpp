@@ -1,10 +1,12 @@
 #include "symbol.h"
+#include "gen.h"
 #include "yaccType.h"
 #include "yaccUtils.h"
 #include "MiniC.tab.hpp"
 #include <cstring>
 #include <cstdio>
 #include <cstdlib>
+#include <stack>
 
 SymbolStack_t *symbolStack = NULL;
 
@@ -375,6 +377,8 @@ int CreateConstant()
 
 int CreateTempVar()
 {
+    if (now_func)
+        symbol_save.push_back(StackSymbolSave_t('t', varCounter.num_t));
     return varCounter.num_t++;
 }
 
@@ -406,10 +410,13 @@ int CreateParam(Identifier_t *id)
     sprintf(tmp, "p%d", varCounter.num_p);
     id->TACname = strdup(tmp);
     StackAddIdentifier(id);
+    symbol_save.push_back(StackSymbolSave_t('p', varCounter.num_p));
     return varCounter.num_p++;
 }
 
 const Identifier_t *now_func = NULL;
+std::vector<StackSymbolSave_t> symbol_save;
+std::stack<StackSymbolSave_t> symbol_save_real;
 
 void EnterFunc(const Identifier_t *id)
 {
@@ -418,8 +425,26 @@ void EnterFunc(const Identifier_t *id)
 
 void LeaveFunc()
 {
-    varCounter.num_p = 0;
     now_func = NULL;
+    varCounter.num_p = 0;
+    symbol_save.clear();
+}
+
+void PushSymbolSave()
+{
+    for (auto i : symbol_save) {
+        gen_push((i.type + std::to_string(i.num)).c_str());
+        symbol_save_real.push(i);
+    }
+}
+
+void PopSymbolSave()
+{
+    while (!symbol_save_real.empty()) {
+        auto i = symbol_save_real.top();
+        symbol_save_real.pop();
+        gen_pop((i.type + std::to_string(i.num)).c_str());
+    }
 }
 
 int __isIntegerType(IdType_t t)

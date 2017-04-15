@@ -46,4 +46,8 @@ void gen_cpy_call(const char *name, char *f_name, int pnum);
 
 void gen_return(const char *name); // name是NULL时表示没有返回值
 
+void gen_push(const char *name);
+
+void gen_pop(const char *name);
+
 #endif
