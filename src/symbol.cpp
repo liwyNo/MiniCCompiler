@@ -390,6 +390,8 @@ int CreateNativeVar(Identifier_t *id, SymbolStack_t *ss)
     if (StackHasName(ss, id->name, NULL))
         yyerror("Identifier name already exists");
     AddIdentifier(id, &ss->idList);
+    if (now_func)
+        symbol_save.push_back(StackSymbolSave_t('T', varCounter.num_T));
     return varCounter.num_T++;
 }
 
