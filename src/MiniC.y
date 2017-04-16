@@ -403,7 +403,7 @@ unary_expression:
 			tmp_type -> type = idt_pointer;
 			tmp_type -> name = NULL;
 			tmp_type -> isConst = 0;
-			tmp_type -> size = 4;
+			tmp_type -> size = POINTER_SIZE;
 			tmp_type -> structure = new IdStructure_t;
 			tmp_type -> structure -> pointer.base_type = $2.type;
 			$$.type = tmp_type;

@@ -30,6 +30,8 @@ typedef enum {
 
 extern int type_of_const_exp[IDTYPE_NUM]; //若该类型为 int 的子集，则该值为1
 
+#define POINTER_SIZE 8
+
 struct __Identifier_t;
 union __IdStructure_t;
 struct __Typename_t;
