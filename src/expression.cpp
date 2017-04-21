@@ -353,7 +353,7 @@ void get_ADD_SUB_MUL_DIV(expression_s_t &This, const expression_s_t &A, const ex
             char *val_a, *val_b;
             //val_a = get_cast_name(rel_type, A.type->type, A.get_addr()); bug fix:不要转换类型！！！直接就是ptr类型的
             val_a = A.get_addr();
-            val_b = B.get_addr(); //bug fix:直接取出来数字进行运算
+            val_b = get_cast_name(idt_int, B.type->type, B.get_addr()); //bug fix:直接取出来数字进行运算
             char *offset = get_TAC_name('t', CreateTempVar());
             gen_var("int4", offset);
             if (A.type->type == idt_fpointer || (A.type->type == idt_pointer && A.type->structure->pointer.base_type->type == idt_void))
