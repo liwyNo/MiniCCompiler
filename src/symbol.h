@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <climits>
+#include <vector>
 
 typedef union {
     int vint;
@@ -28,6 +29,8 @@ typedef enum {
 } IdType_t;
 
 extern int type_of_const_exp[IDTYPE_NUM]; //若该类型为 int 的子集，则该值为1
+
+#define POINTER_SIZE 4
 
 struct __Identifier_t;
 union __IdStructure_t;
@@ -149,9 +152,19 @@ int CreateNativeVar(Identifier_t *, SymbolStack_t *);
 int CreateLabel();
 char* CreateFunc(Identifier_t *);
 int CreateParam(Identifier_t *);
+
 extern const Identifier_t *now_func;
+struct StackSymbolSave_t {
+    char type;
+    int num;
+    StackSymbolSave_t(char _type, int _num) : type(_type), num(_num) {}
+};
+extern std::vector<StackSymbolSave_t> symbol_save; /* save symbols need to push when call another function */
+
 void EnterFunc(const Identifier_t *);
 void LeaveFunc();
+void PushSymbolSave();
+void PopSymbolSave();
 
 int setSign(int, const_Typename_ptr *);
 void TypeCombine(int sign1, const_Typename_ptr type1, int *sign2, const_Typename_ptr *type2);

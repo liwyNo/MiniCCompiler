@@ -248,8 +248,7 @@ char *get_cast_name(IdType_t goal_type, IdType_t now_type, const char *now_name)
 {
     if (!(goal_type < 12 || goal_type == idt_array)) { //这个函数目前仅被用于数字和指针，数组，函数指针之间类型的类型转换
         cerr << "wrong use at get_cast_name !" << endl;
-        while (1)
-            ;
+        exit(-1);
     }
     if (goal_type == idt_pointer && check_pointer(now_type))
         return strdup(now_name); //三种指针类型其实都是ptr的，不用转换

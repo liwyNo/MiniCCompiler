@@ -274,6 +274,7 @@ expression_s_t __Call_Function(FPtrStructure_t &fp, char *f_name, argument_expre
         This.type = fp.type[0];
         This.lr_value = 1;
         This.isConst = 0;
+        PushSymbolSave();
         if (This.type->type == idt_void)
         {
             gen_call(f_name, fp.argNum);
@@ -286,6 +287,7 @@ expression_s_t __Call_Function(FPtrStructure_t &fp, char *f_name, argument_expre
             This.laddr = NULL;
             gen_cpy_call(This.addr, f_name, fp.argNum);
         }
+        PopSymbolSave();
         return This;
     }
     else

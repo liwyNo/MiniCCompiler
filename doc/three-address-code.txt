@@ -47,6 +47,8 @@ param t1
 call f_xxx 1
 t1 = call f_xxx 1
 return t1
+push t0
+pop t0
 函数结束处：end f_xxx
 
 struct/union 访问方式类似数组，保存头指针和offset

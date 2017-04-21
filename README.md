@@ -1,7 +1,7 @@
 # MiniC Compiler
 
 ## 运行环境
-Linux操作系统
+64位Linux操作系统
 
 ## 编译方法：
 依赖的软件：

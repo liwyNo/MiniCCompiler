@@ -64,7 +64,7 @@ Typename_t *makeType(const_Typename_ptr type, declarator_s_t decl)
         tmp->structure = new IdStructure_t;
         tmp->structure->pointer.base_type = type;
         tmp->structure->pointer.length = -1;
-        tmp->size = 4;
+        tmp->size = POINTER_SIZE;
         tmp->name = NULL;
         decl2.ptr = decl.ptr->next;
         decl2.dd = decl.dd;
@@ -89,7 +89,7 @@ Typename_t *makeType(const_Typename_ptr type, declarator_s_t decl)
                 yyerror("declare array of incomplete type");
             if (type->type == idt_pointer && type->structure->pointer.length == INT_MAX)
                 yyerror("[] pointer error");
-            tmp->size = 4;
+            tmp->size = POINTER_SIZE;
             decl2.ptr = NULL;
             decl2.dd = decl.dd->data.d3;
             return makeType(tmp, decl2);
@@ -123,7 +123,7 @@ Typename_t *makeType(const_Typename_ptr type, declarator_s_t decl)
             argNum = 1;
             for (SymbolList_t *i = decl.dd->data.d5.pl->idList; i; i = i->next)
                 tmp->structure->fpointer.type[argNum++] = i->id->type;
-            tmp->size = 4;
+            tmp->size = POINTER_SIZE;
             decl2.ptr = NULL;
             decl2.dd = decl.dd->data.d5.dd;
             return makeType(tmp, decl2);
@@ -134,7 +134,7 @@ Typename_t *makeType(const_Typename_ptr type, declarator_s_t decl)
             tmp->structure = new IdStructure_t;
             tmp->structure->fpointer.argNum = 0;
             tmp->structure->fpointer.type = new const_Typename_ptr[1] {type};
-            tmp->size = 4;
+            tmp->size = POINTER_SIZE;
             decl2.ptr = NULL;
             decl2.dd = decl.dd->data.d6;
             return makeType(tmp, decl2);
@@ -153,7 +153,7 @@ Typename_t *makeType(const_Typename_ptr type, abstract_declarator_s_t ad)
         tmp->structure = new IdStructure_t;
         tmp->structure->pointer.base_type = type;
         tmp->structure->pointer.length = -1;
-        tmp->size = 4;
+        tmp->size = POINTER_SIZE;
         tmp->name = NULL;
         ad2.ptr = ad.ptr->next;
         ad2.dad = ad.dad;
@@ -177,7 +177,7 @@ Typename_t *makeType(const_Typename_ptr type, abstract_declarator_s_t ad)
             tmp->structure->pointer.length = INT_MAX;
             if (type->type == idt_pointer && type->structure->pointer.length == INT_MAX)
                 yyerror("[] pointer error");
-            tmp->size = 4;
+            tmp->size = POINTER_SIZE;
             return tmp;
         case 3:
             tmp->type = idt_array;
@@ -201,7 +201,7 @@ Typename_t *makeType(const_Typename_ptr type, abstract_declarator_s_t ad)
                 yyerror("declare array of incomplete type");
             if (type->type == idt_pointer && type->structure->pointer.length == INT_MAX)
                 yyerror("[] pointer error");
-            tmp->size = 4;
+            tmp->size = POINTER_SIZE;
             ad2.ptr = NULL;
             ad2.dad = ad.dad->data.d4;
             return makeType(tmp, ad2);
@@ -229,7 +229,7 @@ Typename_t *makeType(const_Typename_ptr type, abstract_declarator_s_t ad)
             tmp->structure = new IdStructure_t;
             tmp->structure->fpointer.argNum = 0;
             tmp->structure->fpointer.type = new const_Typename_ptr[1] {type};
-            tmp->size = 4;
+            tmp->size = POINTER_SIZE;
             return tmp;
         case 7:
             if (type->type == idt_fpointer)
@@ -244,7 +244,7 @@ Typename_t *makeType(const_Typename_ptr type, abstract_declarator_s_t ad)
             argNum = 1;
             for (SymbolList_t *i = ad.dad->data.d7->idList; i; i = i->next)
                 tmp->structure->fpointer.type[argNum++] = i->id->type;
-            tmp->size = 4;
+            tmp->size = POINTER_SIZE;
             return tmp;
         case 8:
             if (type->type == idt_fpointer)
@@ -253,7 +253,7 @@ Typename_t *makeType(const_Typename_ptr type, abstract_declarator_s_t ad)
             tmp->structure = new IdStructure_t;
             tmp->structure->fpointer.argNum = 0;
             tmp->structure->fpointer.type = new const_Typename_ptr[1] {type};
-            tmp->size = 4;
+            tmp->size = POINTER_SIZE;
             ad2.ptr = NULL;
             ad2.dad = ad.dad->data.d8;
             return makeType(tmp, ad2);
@@ -270,7 +270,7 @@ Typename_t *makeType(const_Typename_ptr type, abstract_declarator_s_t ad)
             argNum = 1;
             for (SymbolList_t *i = ad.dad->data.d9.pl->idList; i; i = i->next)
                 tmp->structure->fpointer.type[argNum++] = i->id->type;
-            tmp->size = 4;
+            tmp->size = POINTER_SIZE;
             ad2.ptr = NULL;
             ad2.dad = ad.dad->data.d9.dad;
             return makeType(tmp, ad2);

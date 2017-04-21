@@ -403,7 +403,7 @@ unary_expression:
 			tmp_type -> type = idt_pointer;
 			tmp_type -> name = NULL;
 			tmp_type -> isConst = 0;
-			tmp_type -> size = 4;
+			tmp_type -> size = POINTER_SIZE;
 			tmp_type -> structure = new IdStructure_t;
 			tmp_type -> structure -> pointer.base_type = $2.type;
 			$$.type = tmp_type;
@@ -1246,6 +1246,8 @@ jump_statement:
             IdType_t ret_type = now_func->type->structure->fpointer.type[0]->type;
             if (ret_type == idt_void)
                 yyerror("void function return non-void");
+            if (ret_type == idt_union || ret_type == idt_struct)
+                yyerror("return union/struct is not support yet");
             char *cast_name = get_cast_name(ret_type, $2.type->type, $2.get_addr());
             gen_return(cast_name);
             $$.caseList = NULL;

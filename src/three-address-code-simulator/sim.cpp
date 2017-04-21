@@ -68,6 +68,9 @@ regex return_regex(R"(^\s*return(?:\s+([Ttcp]\d+))?\s*(?:\/\/.*)?$)");
 
 regex end_regex(R"(^\s*end\s+(f_[a-zA-Z_][_0-9a-zA-Z]*)\s*(?:\/\/.*)?$)");
 
+regex push_regex(R"(^\s*push\s+([Ttcp]\d+)\s*(?:\/\/.*)?$)");
+
+regex pop_regex(R"(^\s*pop\s+([Ttcp]\d+)\s*(?:\/\/.*)?$)");
 // Next instruction
 size_t pc;
 // To store all instruction
@@ -108,7 +111,7 @@ string toString(string src) {
     case TypeName::Double:
         return to_string(t.value.d);
     case TypeName::Pointer:
-        return to_string((unsigned long long)t.value.ptr);
+        return to_string((unsigned long)t.value.ptr);
     default:
         return "";
     }
@@ -546,6 +549,28 @@ void compile_ins() {
                 match_type = 14;
                 break;
             }
+            //push
+            if(regex_match(x, match_result, push_regex)){
+                if(!exist(match_result[1].str())){
+                    cerr << "Undefined symbol (Line " << lineCounter
+                         << "): " << x;
+                    exit(-1);
+                }
+                match_count = 1;
+                match_type = 15;
+                break;
+            }
+            //pop
+            if(regex_match(x, match_result, pop_regex)){
+                if(!exist(match_result[1].str())){
+                    cerr << "Undefined symbol (Line " << lineCounter
+                         << "): " << x;
+                    exit(-1);
+                }
+                match_count = 1;
+                match_type = 16;
+                break;
+            }
             // Error no Var match!
             cerr << "Ins (Line " << lineCounter << "):\"" << x
                  << "\" can't compile." << endl;
@@ -644,7 +669,7 @@ void executeBuildinFunc(string func, string des){
     if(func == "f_malloc"){
         Var t = argStack.top();
         argStack.pop();
-        setVal(des, TypeName::Pointer, to_string((unsigned long long)malloc(t.value.uint8)));
+        setVal(des, TypeName::Pointer, to_string((unsigned long)malloc(t.value.uint8)));
         return;
     }
     if(func == "f_free"){
@@ -660,7 +685,7 @@ void call_exe(string func, size_t argc){
         backupStack.push(symbol_table[string("p") + to_string(i - 1)]);
     }
     argSizeStack.push(argc);
-    pc = (unsigned long long)symbol_table[func].value.ptr;
+    pc = (unsigned long)symbol_table[func].value.ptr;
     for (size_t i = argc; i > 0; --i) {
         string var_name = string("p") + to_string(i - 1);
         symbol_table[var_name] = argStack.top();
@@ -707,7 +732,7 @@ void execute(int pc_l) {
         symbol_table[tmp].value.int4 = 0;
         s_op2(tmp, get<1>(t_ins), get<2>(t_ins), get<3>(t_ins));
         if (symbol_table["tmp"].value.int4) {
-            pc = (unsigned long long)symbol_table[get<4>(t_ins)].value.ptr;
+            pc = (unsigned long)symbol_table[get<4>(t_ins)].value.ptr;
         }
         return;
     }
@@ -731,7 +756,7 @@ void execute(int pc_l) {
         // return
         pc = pcStack.top();
         // pc == -1 mean that the program has exit the main function.
-        if(pc == (unsigned long long) -1)
+        if(pc == (unsigned long) -1)
             return;
         pcStack.pop();
         if (get<1>(t_ins) != "") {
@@ -760,6 +785,14 @@ void execute(int pc_l) {
     case 14:
         if(symbol_table[get<1>(t_ins)].value.uint8)
             goto_exe(get<2>(t_ins), pc);
+        return;
+    case 15:
+        //push
+        backupStack.push(symbol_table[get<1>(t_ins)]);
+        return;
+    case 16:
+        symbol_table[get<1>(t_ins)] = backupStack.top();
+        backupStack.pop();
         return;
     }
 }
@@ -845,13 +878,13 @@ int main(int argc, char **argv) {
     initialize(is);
 
 
-    pc = (unsigned long long)symbol_table["f_main"].value.ptr;
+    pc = (unsigned long)symbol_table["f_main"].value.ptr;
     pcStack.push(-1);
     argSizeStack.push(0);
 #ifdef DEBUG
     cout << "BEGIN PROGRAM" << endl;
 #endif
-    while (pc != (unsigned long long)-1) {
+    while (pc != (unsigned long)-1) {
         if(debugMode)
             debugFunc();
         execute(pc);

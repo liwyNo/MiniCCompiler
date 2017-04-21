@@ -213,3 +213,13 @@ void gen_return(const char *name)
     else
         printf("return\n");
 }
+
+void gen_push(const char *name)
+{
+    printf("push %s\n", name);
+}
+
+void gen_pop(const char *name)
+{
+    printf("pop %s\n", name);
+}
