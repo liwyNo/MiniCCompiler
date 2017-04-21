@@ -1246,6 +1246,8 @@ jump_statement:
             IdType_t ret_type = now_func->type->structure->fpointer.type[0]->type;
             if (ret_type == idt_void)
                 yyerror("void function return non-void");
+            if (ret_type == idt_union || ret_type == idt_struct)
+                yyerror("return union/struct is not support yet");
             char *cast_name = get_cast_name(ret_type, $2.type->type, $2.get_addr());
             gen_return(cast_name);
             $$.caseList = NULL;

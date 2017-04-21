@@ -377,6 +377,7 @@ int CreateConstant()
 
 int CreateTempVar()
 {
+    // no need to push t\d*
     if (now_func)
         symbol_save.push_back(StackSymbolSave_t('t', varCounter.num_t));
     return varCounter.num_t++;

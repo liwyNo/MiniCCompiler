@@ -7,22 +7,22 @@ MiniC语法定义
 数据类型：
     基础数据类型：
         整数：
-            char(1)
-            short(2)
+            char(1) (*)
+            short(2) (*)
             int(4)
-            long(8)
-            unsigned/signed XXX
+            long(8) (*)
+            unsigned/signed XXX (*)
         浮点数：
             float(4) (*)
             double(8) (*)
         指针：
-            数据指针
+            数据指针 (*)
             函数指针 (*)
         空：
-            void
+            void (*)
     结构类型：
-        数组
-        struct
+        数组 一维 多维(*)
+        struct (*)
         enum (*)
         union (*)
 
@@ -33,18 +33,19 @@ MiniC语法定义
     循环语句：
         while
         for (*)
-        do-while
+        do-while (*)
     跳转语句：
         swith-case-default (*)
-        break
+        break (*)
         continue (*)
         goto (*)
     函数调用：
         只支持有限参数个数的函数调用
 
 表达式：
+    || && < > != == ! + - * / []
     与C的表达式和运算符优先级相同
-    ?: (*)
+    其它 (*)
 
 库函数：
     int getint();
@@ -53,8 +54,8 @@ MiniC语法定义
     void putchar(char);
 
 一些关键字：
-    sizeof
-    typedef
+    sizeof (*)
+    typedef (*)
     const (*)
 
 注释：
