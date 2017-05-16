@@ -1,0 +1,47 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage[nounderscore]{syntax}
+\AtBeginDocument{\catcode`\_=8 }
+\title{BNF}
+
+\begin{document}
+\setlength{\grammarindent}{8em} % increase separation between LHS/RHS 
+\begin{grammar}
+
+<Declaration> ::= 'var' <LENGTH>? Variable
+
+<FunctionDecl> ::= Function ':' '\textbackslash n' ((Expression | Declaration)'\textbackslash n')* 'end' Function
+%t1 = t1 <op>/<relop> t2
+%t1 = <op> t2
+%t1 = <type> t2 (类型转换)
+%t1 = t2
+%t1 [ t2 ] = t3
+%* t1 = t2
+%t1 = t2 [ t3 ]
+
+<RightValue> ::= Varibale | <INTEGER>
+
+<Expression>	::=	Variable '=' RightValue OP2 RightValue
+\alt Variable '=' OP1 RightValue
+\alt Variable '=' RightValue
+\alt Variable '[' RightValue ']' = RightValue
+\alt Variable = Variable '[' RightValue ']'
+\alt 'if' RightValue LogicalOP RightValue 'goto' Label
+\alt 'goto' Label
+\alt Label ':'
+\alt 'param' RightValue
+\alt Variable '=' 'call' Function <INTEGER>
+\alt 'return' RightValue
+
+
+<Identifier>	::=	<IDENTIFIER>
+
+<Variable> ::= <VARIABLE>
+
+<Label> ::= <LABEL>
+
+<Function> ::= <FUNCTION>
+
+\end{grammar}
+
+\end{document}

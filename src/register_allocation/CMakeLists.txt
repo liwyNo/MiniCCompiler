@@ -1,0 +1,7 @@
+find_package(FLEX REQUIRED)
+find_package(BISON REQUIRED)
+include_directories(${CMAKE_CURRENT_BINARY_DIR})
+BISON_TARGET(regallocParser regalloc.y ${CMAKE_CURRENT_BINARY_DIR}/regalloc.tab.cpp)
+FLEX_TARGET(regallocLexer regalloc.l ${CMAKE_CURRENT_BINARY_DIR}/regalloc.yy.cpp)
+ADD_FLEX_BISON_DEPENDENCY(regallocLexer regallocParser)
+ADD_EXECUTABLE(regalloc ${BISON_regallocParser_OUTPUT_SOURCE} ${FLEX_regallocLexer_OUTPUTS} reg.cpp)
