@@ -68,6 +68,7 @@ variable: PARAVAR
         ;
 
 %%
+
 void yyerror(const char *s)
 {
     puts(s);
