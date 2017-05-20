@@ -50,6 +50,16 @@ void stmt_assign_op2::run()
     ++pc;
 }
 
+void stmt_assign_op2i::run()
+{
+    static std::map<std::string, std::function<int(int, int)>> op2{
+        {"+", [](int a, int b) {return a + b;}},
+        {"<", [](int a, int b) {return a < b;}}
+    };
+    reg[dest] = op2[op](reg[src1], value);
+    ++pc;
+}
+
 void stmt_assign_op1::run()
 {
     static std::map<std::string, std::function<int(int)>> op1{
@@ -79,6 +89,7 @@ void stmt_assign_ridx::run()
 {
     char *ptr = (char *)reg[src];
     reg[dest] = *(int *)(ptr + idx);
+    ++pc;
 }
 
 void stmt_if_goto::run()
@@ -93,7 +104,7 @@ void stmt_if_goto::run()
         {"!=", [](int a, int b) {return a != b;}},
         {"==", [](int a, int b) {return a == b;}}
     };
-    if (rop[op](src1, src2))
+    if (rop[op](reg[src1], reg[src2]))
         pc = labels[lnum];
     else
         ++pc;
@@ -152,7 +163,7 @@ void stmt_store_local::run()
         printf("stack memery access error\n");
         exit(-1);
     }
-    reg[rnum] = stackmem[stackmem.size() - ssp + snum];
+    stackmem[stackmem.size() - ssp + snum] = reg[rnum];
     ++pc;
 }
 
@@ -162,7 +173,7 @@ void stmt_store_global::run()
         printf("heap memery access error\n");
         exit(-1);
     }
-    reg[rnum] = gvars[xnum];
+    gvars[xnum] = reg[rnum];
     ++pc;
 }
 
@@ -172,7 +183,7 @@ void stmt_load_local::run()
         printf("stack memery access error\n");
         exit(-1);
     }
-    stackmem[stackmem.size() - ssp + snum] = reg[rnum];
+    reg[rnum] = stackmem[stackmem.size() - ssp + snum];
     ++pc;
 }
 
@@ -182,6 +193,6 @@ void stmt_load_global::run()
         printf("heap memery access error\n");
         exit(-1);
     }
-    gvars[xnum] = reg[rnum];
+    reg[rnum] = gvars[xnum];
     ++pc;
 }

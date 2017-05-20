@@ -5,9 +5,10 @@
 #include <cstring>
 #include "tigger.h"
 
-bool check_op2(const char *s);
-bool check_op1(const char *s);
-bool check_rop(const char *s);
+void check_op2(const char *s);
+void check_op2i(const char *s);
+void check_op1(const char *s);
+void check_rop(const char *s);
 
 struct statement_t {
     virtual void run() = 0;
@@ -39,6 +40,15 @@ struct stmt_assign_op2: public statement_t {
     int src1, src2;
     std::string op;
     stmt_assign_op2(int _dest, int _src1, const char *_op, int _src2): dest(_dest), src1(_src1), src2(_src2), op(_op) {}
+    void run();
+};
+
+struct stmt_assign_op2i: public statement_t {
+    int dest;
+    int src1;
+    int value;
+    std::string op;
+    stmt_assign_op2i(int _dest, int _src1, const char *_op, int _value): dest(_dest), src1(_src1), value(_value), op(_op) {}
     void run();
 };
 
@@ -138,5 +148,8 @@ void add_func_begin(const std::string &fname, int argNum, int stackSlotNum);
 void add_label(int lnum);
 void add_gvar_int(int xnum, int value);
 void add_gvar_array(int xnum, int size);
+
+void check_zero_written(int rnum);
+void check_gvar(int xnum);
 
 #endif
