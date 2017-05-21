@@ -5,9 +5,9 @@
 
 void stmt_func_begin::run()
 {
-    sp = stackmem.size();
     ssp = stackSlotNum;
-    stackmem.resize(sp + ssp);
+    sp += stackSlotNum;
+    stackmem.resize(stackmem.size() + stackSlotNum);
     ++pc;
 }
 
@@ -146,7 +146,7 @@ void stmt_label::run()
     ++pc;
 }
 
-void stmt_malloc::run()
+/*void stmt_malloc::run()
 {
     if (sp + size / 4 > stackmem.size()) {
         printf("stack memery access error\n");
@@ -155,15 +155,11 @@ void stmt_malloc::run()
     reg[rnum] = (int)&stackmem[sp];
     sp = sp + size / 4;
     ++pc;
-}
+}*/
 
 void stmt_store_local::run()
 {
-    if (snum > ssp) {
-        printf("stack memery access error\n");
-        exit(-1);
-    }
-    stackmem[stackmem.size() - ssp + snum] = reg[rnum];
+    stackmem[sp - ssp + snum] = reg[rnum];
     ++pc;
 }
 
@@ -179,11 +175,7 @@ void stmt_store_global::run()
 
 void stmt_load_local::run()
 {
-    if (snum > ssp) {
-        printf("stack memery access error\n");
-        exit(-1);
-    }
-    reg[rnum] = stackmem[stackmem.size() - ssp + snum];
+    reg[rnum] = stackmem[sp - ssp + snum];
     ++pc;
 }
 
@@ -194,5 +186,11 @@ void stmt_load_global::run()
         exit(-1);
     }
     reg[rnum] = gvars[xnum];
+    ++pc;
+}
+
+void stmt_loadaddr::run()
+{
+    reg[rnum] = (int)&stackmem[sp - ssp + snum];
     ++pc;
 }

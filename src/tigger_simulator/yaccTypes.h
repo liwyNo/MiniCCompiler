@@ -10,7 +10,11 @@ void check_op2i(const char *s);
 void check_op1(const char *s);
 void check_rop(const char *s);
 
+extern int yylineno;
+
 struct statement_t {
+    int line;
+    statement_t(): line(yylineno) {}
     virtual void run() = 0;
 };
 
@@ -137,10 +141,17 @@ struct stmt_load_global: public statement_t {
     void run();
 };
 
-struct stmt_malloc: public statement_t {
+/*struct stmt_malloc: public statement_t {
     int rnum;
     int size;
     stmt_malloc(int _rnum, int _size): rnum(_rnum), size(_size) {}
+    void run();
+};*/
+
+struct stmt_loadaddr: public statement_t {
+    int snum;
+    int rnum;
+    stmt_loadaddr(int _snum, int _rnum): snum(_snum), rnum(_rnum) {}
     void run();
 };
 

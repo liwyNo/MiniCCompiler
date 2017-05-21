@@ -7,7 +7,7 @@
 #include <stack>
 #include "tigger.tab.hpp"
 
-class statement_t;
+struct statement_t;
 
 extern std::vector<int> stackmem;
 extern int reg[REGNUM];
@@ -21,7 +21,7 @@ extern int pc, sp, ssp;
 struct CallStack_t {
     int pc; /* program counter */
     int sp; /* stack pointer */
-    int ssp; /* total stack space to use */
+    int ssp; /* stack space to use */
     CallStack_t(int _pc, int _sp, int _ssp): pc(_pc), sp(_sp), ssp(_ssp) {}
 };
 extern std::stack<CallStack_t> callstack;

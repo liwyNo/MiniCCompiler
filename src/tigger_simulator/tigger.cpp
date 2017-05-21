@@ -1,4 +1,5 @@
 #include "yaccTypes.h"
+#include "dbg.h"
 
 std::vector<int> stackmem;
 int reg[REGNUM];
@@ -23,9 +24,14 @@ int find_reg(const char *s)
 int main(int argc, char *argv[])
 {
     if (argc == 1) {
-        puts("usage: tigger <file>");
+        puts("usage: tigger <file> [-d]");
         return 0;
     }
+    if (argc == 3 && strcmp(argv[2], "-d") == 0)
+        debug = true;
+    else
+        debug = false;
+
     extern FILE *yyin;
     yyin = fopen(argv[1], "r");
     yyparse();
@@ -36,7 +42,9 @@ int main(int argc, char *argv[])
 
     pc = funcs["main"];
     sp = 0;
-    while (1)
+    while (1) {
+        debug_wait();
         stmts[pc]->run();
+    }
     return 0;
 }

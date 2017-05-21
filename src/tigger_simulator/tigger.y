@@ -20,7 +20,7 @@ extern const char *str_reg[REGNUM];
 
 %token <vint> INT_CONSTANT GVAR LABEL REGISTER
 %token <vstr> FUNCTION
-%token END IF GOTO CALL LOAD STORE MALLOC
+%token END IF GOTO CALL LOAD STORE MALLOC LOADADDR
 %token GE LE AND OR NE EQ
 
 %type <vint> integer
@@ -86,9 +86,10 @@ expression: REGISTER '=' integer   {check_zero_written($1); stmts.push_back(new 
           | CALL FUNCTION   {stmts.push_back(new stmt_call($2));}
           | STORE REGISTER INT_CONSTANT {stmts.push_back(new stmt_store_local($2, $3));}
           | STORE REGISTER GVAR {check_gvar($3); stmts.push_back(new stmt_store_global($2, gvar_name[$3]));}
-          | LOAD INT_CONSTANT REGISTER  {stmts.push_back(new stmt_load_local($2, $3));}
-          | LOAD GVAR REGISTER  {check_gvar($3); stmts.push_back(new stmt_load_global($2, gvar_name[$3]));}
-          | REGISTER '=' MALLOC INT_CONSTANT {if ($4 % 4 != 0 || $4 == 0) yyerror("what do you mean by this mallocing size?"); stmts.push_back(new stmt_malloc($1, $4));}
+          | LOAD INT_CONSTANT REGISTER  {check_zero_written($3); stmts.push_back(new stmt_load_local($2, $3));}
+          | LOAD GVAR REGISTER  {check_gvar($3); stmts.push_back(new stmt_load_global(gvar_name[$2], $3));}
+          | LOADADDR INT_CONSTANT REGISTER {check_zero_written($3); stmts.push_back(new stmt_loadaddr($2, $3));}
+          /*| REGISTER '=' MALLOC INT_CONSTANT {if ($4 % 4 != 0 || $4 == 0) yyerror("what do you mean by this mallocing size?"); stmts.push_back(new stmt_malloc($1, $4));}*/
           ;
 
 %%
