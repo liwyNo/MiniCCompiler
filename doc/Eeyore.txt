@@ -1,6 +1,6 @@
-Usage ./sim [-d] <filename>
+Usage ./Eeyore [-d] <filename>
 
-- e.g. ./sim -d test.in
+- e.g. ./Eeyore -d test.in
 
 出现"> "提示符表示进入debug模式，支持如下指令： 
 

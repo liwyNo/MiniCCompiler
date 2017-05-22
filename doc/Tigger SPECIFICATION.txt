@@ -1,0 +1,53 @@
+Tigger SPECIFICATION
+
+Tigger is a RISC-V-oriented language.
+
+1) Tigger supports C-style comments.
+
+2) Labels now have global rather than local scope.
+
+3) Instead of an unbounded number of temporaries with local scope,
+   Tigger has 27 global machine registers with global scope.  The
+   registers s0-s11 and t0-t6 can be allocated for general use.
+   Registers a0-a7 are reserved to pass arguments to a procedure call.
+   Registers a0-a1 are also used to return a result from a procedure call.
+
+4) Values can be loaded from and stored to the stack with the Load
+   and Store instructions, where (Load i) denotes the ith value
+   on the stack, with the first value at (Load 0).  For example:
+
+   Load 0 s3
+
+   loads the second value from the stack into register s3.
+
+5) A procedure body is a StmtList. The return value should be put in register a0-a1.
+
+6) Call is now a statement.  As mentioned above, the "a" registers are
+   used to send arguments.  If there are more than 8 arguments to the
+   call, you need to use the PASSARG stmt, which saves the extra args
+   to the stack.  For whatever reason, 'Store' starts at 1, but
+   'Load' starts at 0, so in general an argument passed as
+   (Store i) is accessed in the body of the procedure as (Load i-1).
+
+   Here's an example.  Consider a call to some procedure with label P and
+   arguments stored in registers t1, t2, t3, t4, and t5, and where the return
+   value should go in t6.
+
+     t1 = a0   // first move 4 args to the "a" registers
+     t2 = a1  
+     t3 = a2 
+     t4 = a3
+     PASSARG 1 t5  // if there are more args save them to the stack.
+                           // note that PASSARG is 1-based, not 0-based!
+     CALL P
+     a0 = t6    // the return value is in a0
+
+7) A procedure has three integers in its header, for example:    
+    procA [5] [3]
+
+   The first integer is represented the number of args taken by the procedure.
+
+   The second integer is for the number of stack slots that the
+   procedure requires.  This is the total number, including space for
+   arguments (if necessary), space for any spilled temps, and space for
+   any registers that have to be saved.
