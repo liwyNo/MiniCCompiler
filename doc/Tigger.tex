@@ -1,0 +1,67 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage[nounderscore]{syntax}
+\AtBeginDocument{\catcode`\_=8 }
+\title{BNF of Tigger}
+
+\begin{document}
+\setlength{\grammarindent}{8em} % increase separation between LHS/RHS 
+\begin{grammar}
+
+<FunctionDecl> ::= Function '['<INTEGER>']' '['<INTERGER>']' ':' '\textbackslash n' (Expression'\textbackslash n')* 'end' Function
+%t1 = t1 <op>/<relop> t2
+%t1 = <op> t2
+%t1 = <type> t2 (类型转换)
+%t1 = t2
+%t1 [ t2 ] = t3
+%* t1 = t2
+%t1 = t2 [ t3 ]
+
+
+<Expression>	::=	Variable '=' Reg OP2 Reg
+\alt Reg '=' OP1 Reg
+\alt Reg '=' Reg
+\alt Reg '[' <INTEGER> ']' = Reg
+\alt Reg = Reg '[' <INTEGER> ']'
+\alt 'if' Reg LogicalOP Reg 'goto' Label
+\alt 'goto' Label
+\alt Label ':'
+\alt 'call' Function
+\alt Store Reg <INTEGER>
+\alt Load <INTEGER> Reg
+
+<Reg> ::= 's0'
+\alt 's1'
+\alt 's2'
+\alt 's3'
+\alt 's4'
+\alt 's5'
+\alt 's6'
+\alt 's7'
+\alt 's8'
+\alt 's9'
+\alt 's10'
+\alt 's11'
+\alt 'a0'
+\alt 'a1'
+\alt 'a2'
+\alt 'a3'
+\alt 'a4'
+\alt 'a5'
+\alt 'a6'
+\alt 'a7'
+\alt 't0'
+\alt 't1'
+\alt 't2'
+\alt 't3'
+\alt 't4'
+\alt 't5'
+\alt 't6'
+
+<Label> ::= <LABEL>
+
+<Function> ::= <FUNCTION>
+
+\end{grammar}
+
+\end{document}
