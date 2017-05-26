@@ -5,7 +5,7 @@ void set_output(const char *s);
 
 //int count_byte(int x);
 
-void gen_func(/*int num, */const char *name);
+void gen_func(const char *name, int num);
 void gen_endfunc(const char *name);
 
 void gen_label(int num);
@@ -40,9 +40,9 @@ void gen_if_goto(const char *name1, const char *name2, const char *op, int num);
 
 void gen_param(const char *name);
 
-void gen_call(char *f_name, int pnum);
+void gen_call(char *f_name);
 
-void gen_cpy_call(const char *name, char *f_name, int pnum);
+void gen_cpy_call(const char *name, char *f_name);
 
 void gen_return(const char *name); // name是NULL时表示没有返回值
 

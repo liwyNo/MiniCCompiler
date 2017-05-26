@@ -370,15 +370,16 @@ Identifier_t *StackDeclare(const_Typename_ptr type, int hasSTATIC, int hasTYPEDE
 
 VarCounter_t varCounter;
 
-int CreateConstant()
+/*int CreateConstant()
 {
     return varCounter.num_c++;
-}
+}*/
 
 int CreateTempVar()
 {
-    if (now_func)
+    /*if (now_func)
         symbol_save.push_back(StackSymbolSave_t('t', varCounter.num_t));
+        */
     return varCounter.num_t++;
 }
 
@@ -390,8 +391,9 @@ int CreateNativeVar(Identifier_t *id, SymbolStack_t *ss)
     if (StackHasName(ss, id->name, NULL))
         yyerror("Identifier name already exists");
     AddIdentifier(id, &ss->idList);
-    if (now_func)
+    /*if (now_func)
         symbol_save.push_back(StackSymbolSave_t('T', varCounter.num_T));
+        */
     return varCounter.num_T++;
 }
 
@@ -412,13 +414,13 @@ int CreateParam(Identifier_t *id)
     sprintf(tmp, "p%d", varCounter.num_p);
     id->TACname = strdup(tmp);
     StackAddIdentifier(id);
-    symbol_save.push_back(StackSymbolSave_t('p', varCounter.num_p));
+    //symbol_save.push_back(StackSymbolSave_t('p', varCounter.num_p));
     return varCounter.num_p++;
 }
 
 const Identifier_t *now_func = NULL;
-std::vector<StackSymbolSave_t> symbol_save;
-std::stack<StackSymbolSave_t> symbol_save_real;
+//std::vector<StackSymbolSave_t> symbol_save;
+//std::stack<StackSymbolSave_t> symbol_save_real;
 
 void EnterFunc(const Identifier_t *id)
 {
@@ -429,10 +431,10 @@ void LeaveFunc()
 {
     now_func = NULL;
     varCounter.num_p = 0;
-    symbol_save.clear();
+    //symbol_save.clear();
 }
 
-void PushSymbolSave()
+/*void PushSymbolSave()
 {
     for (auto i : symbol_save) {
         gen_push((i.type + std::to_string(i.num)).c_str());
@@ -447,7 +449,7 @@ void PopSymbolSave()
         symbol_save_real.pop();
         gen_pop((i.type + std::to_string(i.num)).c_str());
     }
-}
+}*/
 
 int __isIntegerType(IdType_t t)
 {

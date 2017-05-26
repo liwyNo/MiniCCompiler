@@ -146,7 +146,7 @@ typedef struct {
 
 extern VarCounter_t varCounter;
 
-int CreateConstant();
+//int CreateConstant();
 int CreateTempVar();
 int CreateNativeVar(Identifier_t *, SymbolStack_t *);
 int CreateLabel();
@@ -159,12 +159,12 @@ struct StackSymbolSave_t {
     int num;
     StackSymbolSave_t(char _type, int _num) : type(_type), num(_num) {}
 };
-extern std::vector<StackSymbolSave_t> symbol_save; /* save symbols need to push when call another function */
+//extern std::vector<StackSymbolSave_t> symbol_save; /* save symbols need to push when call another function */
 
 void EnterFunc(const Identifier_t *);
 void LeaveFunc();
-void PushSymbolSave();
-void PopSymbolSave();
+//void PushSymbolSave();
+//void PopSymbolSave();
 
 int setSign(int, const_Typename_ptr *);
 void TypeCombine(int sign1, const_Typename_ptr type1, int *sign2, const_Typename_ptr *type2);
