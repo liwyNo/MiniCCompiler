@@ -38,10 +38,10 @@ block: function_declare
      | block global_var_declare
      ;
 
-function_declare: FUNCTION '[' INT_CONSTANT ']' '[' INT_CONSTANT ']' ':' {
+function_declare: FUNCTION '[' INT_CONSTANT ']' '[' INT_CONSTANT ']' {
                         add_func_begin($1, $3, $6);
                     } expression_list END FUNCTION {
-                        if (strcmp($1, $12) != 0)
+                        if (strcmp($1, $11) != 0)
                             yyerror("function declare name not match");
                         stmts.push_back(new stmt_func_end($1));
                     }

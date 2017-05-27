@@ -8,6 +8,9 @@
 \usepackage{minted}
 \definecolor{bg}{rgb}{0.85,0.85,0.85}
 \usepackage{makecell}
+\usepackage{listings}
+\usepackage{geometry}
+\geometry{left=3.0cm, right=3.0cm, top=2.0cm, bottom=2.0cm}
 
 \title{Eeyore相关说明}
 \date{}
@@ -22,6 +25,8 @@
 Eeyore是一种三地址码，用作MiniC语法分析后的输出格式。Eeyore的设计同样遵循简洁的原则，使代码易读易调试。
 
 为配合编译原理课程，Eeyore语法实际是龙书中使用的三地址码的扩展版本。
+
+Eeyore在MiniC编译器中的地位，对应着MiniJava编译器中使用到的Piglet和SPiglet两种中间语言。
 
 Eeyore这个名字与Piglet取自同一部动画。
 
@@ -68,6 +73,8 @@ Eeyore表达式支持的单目运算符有\texttt{'!','-'}
 
 数组操作语句形如\texttt{T0 [t0] = t1}和\texttt{t0 = T0 [t1]}。
 
+注意！因为MiniC的base语法集只有int和int数组类型，数组操作语句中括号内的数应当是4的倍数。
+
 注意！如果\texttt{T0}是数组，那\texttt{t0 = T0 + 4}这样的语句实际上是指针运算，\texttt{t0}的类型是int不是数组。
 
 \subsection{函数}
@@ -88,6 +95,7 @@ Eeyore中的标号以小写字母\texttt{'l'}开头，后接整数编号，编�
 
 不允许跨函数跳转。
 
+\newpage
 \section{BNF}
 \begin{typewriterfont}
 \setlength{\grammarindent}{8em} % increase separation between LHS/RHS 
@@ -129,7 +137,7 @@ Eeyore中的标号以小写字母\texttt{'l'}开头，后接整数编号，编�
 
 \end{grammar}
 \end{typewriterfont}
-
+\newpage
 \section{示例}
 \begin{table}[H]
     \centering
@@ -201,4 +209,33 @@ end f\_main
     \end{typewriterfont}
 \end{table}
 
+\newpage
+\section{Eeyore模拟器使用方式}
+\begin{typewriterfont}
+\begin{lstlisting}
+Usage ./Eeyore [-d] <filename>
+
+-d : enable debug mode
+
+- e.g. ./Eeyore -d test.in
+
+出现"> "提示符表示进入debug模式，支持如下指令： 
+
++ p <pc/symbol/label/funciton name>     
+    - e.g. p pc, p c1, p t1
+    - Print the value of the symbol
++ s <number>
+    - e.g. s 10
+    - Run n Step
++ n
+    - e.g. n
+    - Run 1 Step
++ u <number/function/label>
+    - e.g. u 10, u f_g, u l1
+    - Run until pc equal to number or until the function or label.
++ r
+    - e.g. r
+    - Disable the debug mode and run until the program exit.
+\end{lstlisting}
+\end{typewriterfont}
 \end{document}

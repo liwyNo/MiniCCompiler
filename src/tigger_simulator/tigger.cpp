@@ -24,16 +24,16 @@ int find_reg(const char *s)
 int main(int argc, char *argv[])
 {
     if (argc == 1) {
-        puts("usage: tigger <file> [-d]");
+        puts("usage: tigger [-d] <filename>");
         return 0;
     }
-    if (argc == 3 && strcmp(argv[2], "-d") == 0)
+    if (argc == 3 && strcmp(argv[1], "-d") == 0)
         debug = true;
     else
         debug = false;
 
     extern FILE *yyin;
-    yyin = fopen(argv[1], "r");
+    yyin = fopen(argv[2], "r");
     yyparse();
     fclose(yyin);
 

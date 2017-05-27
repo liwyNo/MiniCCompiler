@@ -6,6 +6,8 @@
 \newenvironment{typewriterfont}{\ttfamily}{\par}
 \usepackage{minted}
 \usepackage{amssymb}
+\usepackage{geometry}
+\geometry{left=3.0cm, right=3.0cm, top=2.0cm, bottom=2.0cm}
 
 \title{MiniC相关说明}
 \date{}
@@ -43,6 +45,7 @@ MiniC中函数返回值只有int，参数可以是int或int数组，程序从mai
 
 MiniC程序中允许C风格的单行注释和多行注释。
 
+\newpage
 \section{BNF}
 \setlength{\grammarindent}{8em} % increase separation between LHS/RHS 
 \begin{typewriterfont}
@@ -82,6 +85,7 @@ MiniC程序中允许C风格的单行注释和多行注释。
 \end{grammar}
 \end{typewriterfont}
 
+\newpage
 \section{示例}
 \small
 \begin{minted}[linenos]{c}
@@ -123,7 +127,8 @@ int main() {
     return 0;
 }
 \end{minted}
-
+\newpage
+\normalsize
 \section{MiniC语法扩展}
 MiniC设计者们亲身实践了MiniC大部分语法扩展，深切体会到实现一些复杂语法扩展的不宜。
 
