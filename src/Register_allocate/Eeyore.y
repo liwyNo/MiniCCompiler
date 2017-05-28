@@ -1,9 +1,11 @@
 %{
-#include <stdio.h>
+#include <cstdio>
 #include "typedef.h"
 #include <vector>
 #include <string>
+#include <cstring>
 #include <map>
+//#include "Eeyore.tab.hpp"
 using namespace std;
 
 int yylex(void);
@@ -11,14 +13,19 @@ extern int yylineno;
 void yyerror(char*);
 
 bool isGlobal = true;
+Function *now_fun;
 extern vector<ins> com_ins;
 extern map<string, unsigned> label_table;
-extern vector<int> global_ins;
+extern map<string, int> func_table;
+extern map<std::string,Variable*> var_table;
+
+//extern vector<int> global_ins;
 inline void checkGlobal(unsigned long i);
 %}
 
 %union {
     char *vstr;
+	//std::string vstring;
     int vint;
 }
 
@@ -40,6 +47,8 @@ inline void checkGlobal(unsigned long i);
 
 %type <vstr>RightValue
 %type <vstr>OP2
+%type <vstr> FunctionName
+%type <vstr> FunctionEnd
 
 %%
 Program
@@ -50,19 +59,28 @@ Program
 ;
 FunctionDecl
 	:	FunctionName Statement FunctionEnd
+		{
+			//已重写
+			if(strcmp($1,$3)!=0)
+				yyerror("FunctionName should equal to FunctionEnd!");
+		}
 ;
 
 FunctionName
-	:	FUNCTION ':' EOL	{
+	:	FUNCTION '[' NUM ']' EOL	{
+		//已重写
 		isGlobal = false;
 		com_ins[yylineno - 1] = ins(iNOOP);
-		label_table[$1] = yylineno - 1;
+		$$ = $1;
+		new_Function($1, stoi(string($3)));
 	}
 ;
 FunctionEnd
 	:	ENDT FUNCTION EOL 	{
+		//已重写
 		isGlobal = true;
 		com_ins[yylineno - 1] = ins(iNOOP);
+		$$ = $2;
 	}
 ;
 Statement
@@ -114,12 +132,12 @@ Expression
 	|	PARAM SYMBOL EOL {
 			com_ins[yylineno - 1] = ins(iPARAM, $2);
 		}  
-	|	CALL FUNCTION NUM EOL {
+	|	CALL FUNCTION EOL {
 			checkGlobal(yylineno);
-			com_ins[yylineno - 1] = ins(iCALLVOID, $2, $3);
+			com_ins[yylineno - 1] = ins(iCALLVOID, $2);
 		} 
-	|	SYMBOL '=' CALL FUNCTION NUM EOL {
-			com_ins[yylineno - 1] = ins(iCALL, $1, $4, $5);
+	|	SYMBOL '=' CALL FUNCTION EOL {
+			com_ins[yylineno - 1] = ins(iCALL, $1, $4);
 		}
 	|	RETURN RightValue EOL  {
 			com_ins[yylineno - 1] = ins(iRETURN, $2);
@@ -128,8 +146,16 @@ Expression
 			com_ins[yylineno - 1] = ins(iRETURN);
 		}
 	|	VAR SYMBOL {
-			checkGlobal(yylineno);
-			com_ins[yylineno - 1] = ins(iVAR, $2);
+			if(isGlobal)
+			{
+				new_Var($2,isGlobal);
+				com_ins[yylineno - 1] = ins(iVAR, $2);
+			}
+			else
+			{
+				new_Var($2,isGlobal);
+				com_ins[yylineno - 1] = ins(iGVAR, $2);
+			}
 		}
 	|	VAR NUM SYMBOL {
 			checkGlobal(yylineno);
@@ -144,6 +170,7 @@ void yyerror(char *s) {
 	printf("%s\n", s);
 }
 inline void checkGlobal(unsigned long i){
-	if(isGlobal)
-		global_ins.push_back(i);
+	;
+	//if(isGlobal)
+		//global_ins.push_back(i);
 }

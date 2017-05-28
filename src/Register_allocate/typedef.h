@@ -1,3 +1,6 @@
+#ifndef TYPEDEF_H
+#define TYPEDEF_H
+
 #define iOP2	1
 #define iOP1	2
 #define iASS	3
@@ -10,12 +13,14 @@
 #define iCALL 	10
 #define iRETURN	11
 #define iVAR	12
+#define iGVAR   13
 #define iNOOP	0
 
 #include <string>
 #include <vector>
 #include <map>
-
+#include "Eeyore.tab.hpp"
+void yyerror(char *);
 struct ins{
 	int type;
 	std::string arg1, arg2, arg3, arg4;
@@ -28,12 +33,24 @@ struct ins{
 		
 };
 
+struct Function
+{
+	int arg_num;
+	int stack_size;
+	std::string f_name;
+	Function(std::string _name, int _num);
+};
+Function* new_Function(std::string fun_name, int arg_num);
+Function* get_Fun(std::string fun_name);
+
 struct Variable
 {
 	bool isGlobal;
 	bool isArray;//array变量不能修改。。。
-	std::string name;//假如是全局变量，就给分配个新名字
+	std::string v_name;//假如是全局变量，就给分配个新名字
 	int spill_loc;//假如是局部变量，则有一个溢出到栈的对应位置
 };
+Variable* new_Var(std::string var_name, int isGlobal);
+Variable* get_Var(std::string var_name);
 
-
+#endif

@@ -5,10 +5,10 @@
 #include <iostream>
 #include <cstdio>
 #include <fstream>
-//#include "MiniC.tab.hpp"
+#include "Eeyore.tab.hpp"
 using namespace std;
 
-//int yyparse (void);
+int yyparse (void);
 extern FILE * yyin;
 
 void help(const char * path) {
@@ -17,8 +17,7 @@ void help(const char * path) {
 
 vector<string> ori_ins;
 vector<ins> com_ins;
-map<string, unsigned> label_table;
-map<string, int> var_table;
+
 
 
 int main(int argc, char** argv){

@@ -1,6 +1,6 @@
 add_compile_options(-std=c++11)
 add_subdirectory(parser)
-add_subdirectory(three-address-code-simulator)
+add_subdirectory(Eeyore_simulator)
 add_subdirectory(tigger_simulator)
-add_subdirectory(register_allocation)
 add_subdirectory(judge)
+add_subdirectory(Register_allocate)
