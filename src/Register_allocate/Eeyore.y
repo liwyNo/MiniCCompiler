@@ -23,9 +23,14 @@ extern map<std::string,Variable*> var_table;
 inline void checkGlobal(unsigned long i);
 %}
 
+%code requires {
+#include "typedef.h"
+}
+
 %union {
     char *vstr;
 	//std::string vstring;
+	RightValue_s_t RightValue_s;
     int vint;
 }
 
@@ -45,7 +50,7 @@ inline void checkGlobal(unsigned long i);
 %token <vstr>OP
 %token <vstr>LOGIOP
 
-%type <vstr>RightValue
+%type <RightValue_s> RightValue
 %type <vstr>OP2
 %type <vstr> FunctionName
 %type <vstr> FunctionEnd
@@ -72,15 +77,17 @@ FunctionName
 		isGlobal = false;
 		com_ins[yylineno - 1] = ins(iNOOP);
 		$$ = $1;
-		new_Function($1, stoi(string($3)));
+		now_fun = new_Function($1, stoi(string($3)));
 	}
 ;
 FunctionEnd
 	:	ENDT FUNCTION EOL 	{
 		//已重写
 		isGlobal = true;
+		now_fun = nullptr;
 		com_ins[yylineno - 1] = ins(iNOOP);
 		$$ = $2;
+
 	}
 ;
 Statement
@@ -89,8 +96,8 @@ Statement
 ;
 
 RightValue
-	:	SYMBOL	{$$ = $1;}
-	|	NUM	{$$ = $1;}
+	:	SYMBOL	{$$.str_name = $1; $$.Num_or_Symbol = 1;}
+	|	NUM	{$$.str_name = $1; $$.Num_or_Symbol = 0; $$.real_num = stoi(string($1));}
 ;
 
 OP2
@@ -143,25 +150,41 @@ Expression
 			com_ins[yylineno - 1] = ins(iRETURN, $2);
 		}
 	|	RETURN EOL {
-			com_ins[yylineno - 1] = ins(iRETURN);
+			//已重写
+			com_ins[yylineno - 1] = ins(iNOOP);
 		}
 	|	VAR SYMBOL {
+			//已重写
+			if($2[2]=='p')
+				yyerror("pxx can not be declare!");
 			if(isGlobal)
 			{
-				new_Var($2,isGlobal);
-				com_ins[yylineno - 1] = ins(iVAR, $2);
+				new_Var($2,isGlobal, now_fun);
+				com_ins[yylineno - 1] = ins(iGVAR, $2);
 			}
 			else
 			{
-				new_Var($2,isGlobal);
-				com_ins[yylineno - 1] = ins(iGVAR, $2);
+				new_Var($2,isGlobal, now_fun);
+				com_ins[yylineno - 1] = ins(iVAR, $2);
 			}
 		}
 	|	VAR NUM SYMBOL {
-			checkGlobal(yylineno);
-			com_ins[yylineno - 1] = ins(iVAR, $3, $2);
+			//已重写
+			if($2[2]=='p')
+				yyerror("pxx can not be declare!");
+			if(isGlobal)
+			{
+				new_Var_Arr($2,isGlobal, stoi(string($2)), now_fun);
+				com_ins[yylineno - 1] = ins(iGVAR, $3, $2);
+			}
+			else
+			{
+				new_Var_Arr($2,isGlobal, stoi(string($2)), now_fun);
+				com_ins[yylineno - 1] = ins(iVAR, $3, $2);
+			}
 		}
 	|	EOL	{
+			//已重写
 			com_ins[yylineno - 1] = ins(iNOOP);
 		}
 ;

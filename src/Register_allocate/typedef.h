@@ -19,8 +19,8 @@
 #include <string>
 #include <vector>
 #include <map>
-#include "Eeyore.tab.hpp"
 void yyerror(char *);
+
 struct ins{
 	int type;
 	std::string arg1, arg2, arg3, arg4;
@@ -33,11 +33,26 @@ struct ins{
 		
 };
 
+struct RightValue_s_t
+{
+	char *str_name;
+	int real_num;//假如是个数字，那么就存下来值
+	bool Num_or_Symbol; //0 表示是数字，否则是变量
+	operator std::string()
+	{
+		return std::string(str_name);
+	}
+};
+
+std::string extend_p_name(std::string p_name, std::string f_name);
+
+struct Variable;
 struct Function
 {
 	int arg_num;
 	int stack_size;
 	std::string f_name;
+	std::vector<Variable *> local_var;
 	Function(std::string _name, int _num);
 };
 Function* new_Function(std::string fun_name, int arg_num);
@@ -47,10 +62,17 @@ struct Variable
 {
 	bool isGlobal;
 	bool isArray;//array变量不能修改。。。
+	int arr_size;//若是数组，则该值为数组大小
+	std::string s_name;//该变量原先的名字
 	std::string v_name;//假如是全局变量，就给分配个新名字
 	int spill_loc;//假如是局部变量，则有一个溢出到栈的对应位置
+	Function *fa_func; //假如是局部变量，则存一下它在哪个函数里面
+
+	Variable(bool _isGlobal, std::string _s_name, bool _isArray);
 };
-Variable* new_Var(std::string var_name, int isGlobal);
+Variable* new_Var(std::string var_name, int isGlobal, Function* now_fun);
+Variable* new_Var_Arr(std::string var_name, int isGlobal, int size, Function* now_fun);
 Variable* get_Var(std::string var_name);
+Variable* get_Var_in_Func(std::string var_name, Function *now_fun);
 
 #endif
