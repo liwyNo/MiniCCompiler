@@ -1,7 +1,7 @@
 int getint();
 int putchar(int x);
 int putint(int x);
-int a[100];
+int a[100000];
 int n;
 int qsort(int L, int R)
 {

@@ -1,3 +1,4 @@
+int getint();
 int putint(int _);
 int putchar(int _0);
 int __(){int _();_();}
@@ -16,14 +17,15 @@ int main()
     a = 1;
     {
         int a;
+        __();
         a = 2;
         {
             int a;
             a = -3;
-            putint(a);
+            putint(a+getint());
             putchar(10);
         }
-        putint(a);
+        putint(a+getint());
         putchar(10);
     }
     putint(a);
