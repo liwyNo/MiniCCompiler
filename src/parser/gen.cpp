@@ -135,7 +135,10 @@ void gen_op2(const char *name1, const char *name2, const char *name3, const char
 
 void gen_op1(const char *name1, const char *name2, const char *op)
 {
-    printf("%s = %s %s\n", name1, op, name2);
+    if (strcmp(op, "*") == 0)
+        printf("%s = %s [0]\n", name1, name2);
+    else
+        printf("%s = %s %s\n", name1, op, name2);
 }
 
 void gen_cast(const char *name1, const char *name2, const char *type)
@@ -155,7 +158,8 @@ void gen_arr_cpy(const char *name1, const char *name2, const char *name3)
 
 void gen_pnt_cpy(const char *name1, const char *name2)
 {
-    printf("* %s = %s\n", name1, name2);
+    //printf("* %s = %s\n", name1, name2);
+    printf("%s [0] = %s\n", name1, name2);
 }
 
 void gen_cpy_arr(const char *name1, const char *name2, const char *name3)
