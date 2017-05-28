@@ -37,7 +37,7 @@ MiniC中函数返回值只有int，参数可以是int或int数组，程序从mai
 
 单目运算符有\texttt{'!'}和\texttt{'-'}
 
-双目运算符有\texttt{'+','-','*','/','\&\&','||','\textless','\textgreater','==','!='}
+双目运算符有\texttt{'+','-','*','/','\%','\&\&','||','\textless','\textgreater','==','!='}
 
 合法的表达式参考BNF。
 
@@ -71,7 +71,7 @@ MiniC程序中允许C风格的单行注释和多行注释。
 \alt VarDecl
 \alt 'return' Expression ';'
 
-<Expression>	::=	Expression ( '+' | '-' | '*' | '/' ) Expression
+<Expression>	::=	Expression ( '+' | '-' | '*' | '/' | '\%' ) Expression
 \alt Expression ( '\&\&' | '||' | '\textless' | '==' | '\textgreater' | '!=' ) Expression
 \alt Expression '[' Expression ']'
 \alt <INTEGER\_LITERAL>
