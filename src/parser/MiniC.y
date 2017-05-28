@@ -171,7 +171,7 @@ constant:
 		$$.lr_value=1;
 		$$.isConst = 1;
 		$$.value.vint = $1;
-		$$.addr = strdup(('c' + std::to_string(CreateConstant())).c_str());
+		$$.addr = strdup(('t' + std::to_string(CreateTempVar())).c_str());
 		$$.laddr = NULL;
 		$$.type = (const_Typename_ptr)LookupSymbol("int", NULL);
 		gen_const("int4",$$.addr,&$1);
@@ -180,7 +180,7 @@ constant:
 		$$.lr_value = 1;
 		$$.isConst = 1;
 		//$$.value.vchar = $1;
-		$$.addr = strdup(('c' + std::to_string(CreateConstant())).c_str());
+		$$.addr = strdup(('t' + std::to_string(CreateTempVar())).c_str());
 		$$.laddr = NULL;
 		$$.type = (const_Typename_ptr)LookupSymbol("char", NULL);
 		gen_const("int1",$$.addr,&$1);
@@ -189,7 +189,7 @@ constant:
 		$$.lr_value = 1;
 		$$.isConst = 1;
 		//$$.value.vdouble = $1;
-		$$.addr = strdup(('c' + std::to_string(CreateConstant())).c_str());
+		$$.addr = strdup(('t' + std::to_string(CreateTempVar())).c_str());
 		$$.laddr = NULL;
 		$$.type = (const_Typename_ptr)LookupSymbol("double", NULL);
 		gen_const("float8",$$.addr,&$1); //应该翻译成三地址码中的double!
@@ -198,7 +198,7 @@ constant:
 		$$.lr_value = 1;
 		$$.isConst = 1;
 		$$.value.vint = $1;
-		$$.addr = strdup(('c' + std::to_string(CreateConstant())).c_str());
+		$$.addr = strdup(('t' + std::to_string(CreateTempVar())).c_str());
 		$$.laddr = NULL;
 		$$.type = (const_Typename_ptr)LookupSymbol("int", NULL);
 		gen_const("int4",$$.addr,&$1);
@@ -209,7 +209,7 @@ string:
 	  STR_CONSTANT		{
 				//$$.value.vstr = $1;
 				$$.lr_value = 1;
-				$$.addr = strdup(('c' + std::to_string(CreateConstant())).c_str());
+				$$.addr = strdup(('t' + std::to_string(CreateTempVar())).c_str());
 				$$.laddr = NULL;
 				$$.isConst = 1;			
 				Typename_t *tmp_type = new Typename_t;
@@ -489,7 +489,7 @@ unary_expression:
 		}
 	}
 	| SIZEOF unary_expression					{
-		$$.addr = get_TAC_name('c',CreateConstant());
+		$$.addr = get_TAC_name('t',CreateTempVar());
 		gen_const("uint4", $$.addr, &($2.type -> size));
         $$.laddr = NULL;
 		$$.type = (const_Typename_ptr)LookupSymbol("unsigned int", NULL);
@@ -498,7 +498,7 @@ unary_expression:
 		//$$.value.vint = $2.type -> size; //unsigned int 不用维护
 	}
 	| SIZEOF '(' type_name ')'					{
-		$$.addr = get_TAC_name('c',CreateConstant());
+		$$.addr = get_TAC_name('t',CreateTempVar());
 		gen_const("uint4", $$.addr, &($3 -> size));
         $$.laddr = NULL;
 		$$.type = (const_Typename_ptr)LookupSymbol("unsigned int", NULL);
@@ -624,7 +624,7 @@ conditional_expression:
 		$$.isConst = 0;
 		$$.laddr = NULL;
 		
-		genIfGoto($1, "c0", "==", lab2); //等于0就要跳到后面去
+		genIfGoto($1, "t0", "==", lab2); //等于0就要跳到后面去
 
 		//下面这段是逻辑表达式值为1的时候执行的语句
 		if(check_str_un($4))
@@ -647,8 +647,8 @@ logical_jumper:
 			//需要根据前一个逻辑运算符是什么，来决定怎么跳转
 			$$ = CreateLabel();
 			if($<vint>0 == 0) //0 表示 &&， 1表示 ||
-				genIfGoto($<expression_s>-1, "c0", "==", $$);
-			else genIfGoto($<expression_s>-1, "c1", "==", $$);
+				genIfGoto($<expression_s>-1, "t0", "==", $$);
+			else genIfGoto($<expression_s>-1, "t1", "==", $$);
 		}
 	;  
 
@@ -1120,7 +1120,7 @@ if_statement_inherit:   {$$=$<statement_i>-5;}
 
 jumper: { /* $0 must be an expression */
             $$ = CreateLabel();
-            genIfGoto($<expression_s>0, "c0", "==", $$);
+            genIfGoto($<expression_s>0, "t0", "==", $$);
         }
       ;
 
@@ -1143,7 +1143,7 @@ iteration_statement:
             $<statement_i>$.sblst = NULL;
             gen_label($<statement_i>$.begin_num);
         } statement WHILE '(' expression ')' ';'    {
-            genIfGoto($6, "c0", "!=", $<statement_i>2.begin_num);
+            genIfGoto($6, "t0", "!=", $<statement_i>2.begin_num);
             gen_label($<statement_i>2.end_num);
             $$.caseList = NULL;
         }
@@ -1154,7 +1154,7 @@ iteration_statement:
             $<statement_i>$.end_num = CreateLabel();
             $<statement_i>$.sblst = NULL;
             if ($5.have)
-                genIfGoto($5.expr, "c0", "==", $<statement_i>$.end_num);
+                genIfGoto($5.expr, "t0", "==", $<statement_i>$.end_num);
         } statement {
             gen_goto($4);
             gen_label($<statement_i>7.end_num);
@@ -1178,7 +1178,7 @@ iteration_statement:
             $<statement_i>$.end_num = CreateLabel();
             $<statement_i>$.sblst = NULL;
             if ($6.have)
-                genIfGoto($6.expr, "c0", "==", $<statement_i>$.end_num);
+                genIfGoto($6.expr, "t0", "==", $<statement_i>$.end_num);
         } statement {
             gen_goto($5);
             gen_label($<statement_i>8.end_num);
@@ -1208,7 +1208,7 @@ for_jumper1:    { gen_label($$ = CreateLabel()); }
 for_jumper2:    {
                     $$.lb_end = CreateLabel();
                     if ($<expression_statement_s>0.have)
-                        genIfGoto($<expression_statement_s>0.expr, "c0", "==", $$.lb_end);
+                        genIfGoto($<expression_statement_s>0.expr, "t0", "==", $$.lb_end);
                     gen_goto($$.lb_state = CreateLabel());
                     gen_label($$.lb_iter = CreateLabel());
                 }
@@ -1281,7 +1281,7 @@ function_definition:
             if (id->type->type != idt_fpointer || ($2.dd->type != 5 && $2.dd->type != 6))
                 yyerror("function declaration error");
             id->type->structure->fpointer.implemented = 1;
-            gen_func(id->TACname);
+            gen_func(id->TACname, id->type->structure->fpointer.argNum);
             if ($2.dd->type == 5)
                 $<statement_i>$.sblst = $2.dd->data.d5.pl->idList;
             else
@@ -1290,7 +1290,7 @@ function_definition:
             $<statement_i>$.has_end=0;
             EnterFunc(id);
         } compound_statement    {
-            gen_return(NULL);
+            //gen_return(NULL);
             gen_endfunc(now_func->TACname);
             LeaveFunc();
         }

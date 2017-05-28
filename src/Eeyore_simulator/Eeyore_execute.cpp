@@ -11,6 +11,7 @@ extern vector<ins> com_ins;
 extern map<string, unsigned> label_table;
 vector<int> global_ins;
 map<string, int> gsymbol;
+map<string, int> farg;
 
 const char * param[] = {"p0", "p1", "p2", "p3", "p4", "p5", "p6", "p7", "p8", "p9"};
 #define getI(x) ((isdigit(x[0]) || x[0] == '-') ? stoi(x) : getValue(x, symbol))
@@ -96,10 +97,11 @@ int callFunction(unsigned long pc, unsigned long ori_pc, unsigned long arg_size,
 
 	void debugFunc(unsigned long pc, map<string, int> & lo_symbol);
 	while(1){
-		ins t = com_ins[pc];
+        cout << "PC: " << pc << endl;
+		ins t = com_ins[pc - 1];
 		if(t.type != iNOOP)
 			debugFunc(pc, symbol);
-		pc += 4;
+		pc += 1;
 		int src1, src2, src3, des;
 		switch(t.type){
 			case iNOOP:
@@ -146,10 +148,10 @@ int callFunction(unsigned long pc, unsigned long ori_pc, unsigned long arg_size,
 				arg_s.push(getI(t.arg1));
 				break;
 			case iCALLVOID:
-				callFunction(label_table[t.arg1], pc, stoi(t.arg2), arg_s);
+				callFunction(label_table[t.arg1], pc, farg[t.arg1], arg_s);
 				break;
 			case iCALL:
-				des = callFunction(label_table[t.arg2], pc, stoi(t.arg3), arg_s);
+				des = callFunction(label_table[t.arg2], pc, farg[t.arg2], arg_s);
 				setValue(t.arg1, des);
 				break;
 			case iRETURN:
@@ -159,7 +161,7 @@ int callFunction(unsigned long pc, unsigned long ori_pc, unsigned long arg_size,
 					return getI(t.arg1);
 				break;
 			case iVAR:
-				if(t.arg1.size() == 0){
+				if(t.arg2.size() == 0){
 					symbol[t.arg1] = 0;
 				}
 				else{
@@ -169,7 +171,7 @@ int callFunction(unsigned long pc, unsigned long ori_pc, unsigned long arg_size,
 			default:
 				;
 				//Error
-		}	
+		}
 	}
 }
 
@@ -177,8 +179,12 @@ int beginProgram(unsigned long pc){
 	stack<int> arg;
 	auto & symbol = gsymbol;
 	unsigned long tmp = 0;
+    for(int i = 0; i < com_ins.size(); ++i){
+        cout << "i: " << i << " INS: " << com_ins[i].type << endl;
+    }
 	for(auto x : global_ins){
-		ins t = com_ins[x];
+        cout << "GL: " << x << endl;
+		ins t = com_ins[x - 1];
 		int src1, src2, src3, des;
 		switch(t.type){
 			case iNOOP:
@@ -213,7 +219,7 @@ int beginProgram(unsigned long pc){
 				setValue(t.arg1, des);
 				break;
 			case iVAR:
-				if(t.arg1.size() == 0){
+				if(t.arg2.size() == 0){
 					symbol[t.arg1] = 0;
 				}
 				else{

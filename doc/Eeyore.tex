@@ -1,16 +1,109 @@
-\documentclass{article}
-\usepackage[utf8]{inputenc}
+\documentclass{ctexart}
+\usepackage{ctex}
 \usepackage[nounderscore]{syntax}
 \AtBeginDocument{\catcode`\_=8 }
-\title{BNF}
+\ctexset{section/format = {\Large\bfseries}}
+\newenvironment{typewriterfont}{\ttfamily}{\par}
+\usepackage{xcolor}
+\usepackage{minted}
+\definecolor{bg}{rgb}{0.85,0.85,0.85}
+\usepackage{makecell}
+\usepackage{listings}
+\usepackage{geometry}
+\geometry{left=3.0cm, right=3.0cm, top=2.0cm, bottom=2.0cm}
+
+\title{Eeyore相关说明}
+\date{}
+\author{}
+
+\pagestyle{plain}
 
 \begin{document}
+\maketitle
+
+\section{何为Eeyore}
+Eeyore是一种三地址码，用作MiniC语法分析后的输出格式。Eeyore的设计同样遵循简洁的原则，使代码易读易调试。
+
+为配合编译原理课程，Eeyore语法实际是龙书中使用的三地址码的扩展版本。
+
+Eeyore在MiniC编译器中的地位，对应着MiniJava编译器中使用到的Piglet和SPiglet两种中间语言。
+
+Eeyore这个名字与Piglet取自同一部动画。
+
+\section{Eeyore语法描述}
+Eeyore要求每条语句单独占一行。
+\subsection{变量}
+Eeyore中的变量有三种：原生变量，临时变量，函数参数。这三种变量分别以\texttt{'T','t','p'}开头，后接一个整数编号，编号从0开始。如\texttt{p0,p1,t0,T0}。
+
+Eeyore的变量声明形如\texttt{var t0}和\texttt{var 8 T0}，前者声明了一个int型临时变量，后者声明了有2个元素的原生int数组。
+
+函数参数不需要声明。
+
+所谓原生变量，是指MiniC中使用的变量转到Eeyore中对应的变量。相应地，临时变量是指MiniC中没有显式对应变量的变量。
+
+用个例子来说明，把左边的MiniC语句翻译到Eeyore：
+\begin{table}[H]
+    \centering
+    \small
+    \begin{typewriterfont}
+    \begin{tabular}{|c|c|}
+        \hline
+        MiniC & Eeyore \\
+        \hline
+        \makecell[l]{int a;\\ int b;\\ int c;\\a = b + 2 * c;} & \makecell[l]{var T0\\var T1\\var T2\\var t0\\t0 = 2 * T2\\var t1\\t1 = T1 + t0\\T0 = t1} \\
+        \hline
+    \end{tabular}
+    \end{typewriterfont}
+\end{table}
+
+上面\texttt{T0,T1,T2}是原生变量，分别对应MiniC中的\texttt{a,b,c}。\texttt{t0,t1}是临时变量，分别对应中间运算结果\texttt{2*c, b+2*c}。
+
+其实这两种变量在语义上没必要做如此区分，Eeyore区分二者是为了方便用户调试。
+
+\subsection{表达式}
+由上面的例子可以发现，Eeyore的表达式很易读。
+
+因为是三地址码，每条表达式语句最多涉及三个变量。
+
+允许直接把整数用作运算分量。
+
+Eeyore表达式支持的单目运算符有\texttt{'!','-'}
+
+支持的双目运算符有\texttt{'!=','==','\textgreater'.'\textless','\&\&','||','+','-','*','/','\%'}，前6个是逻辑运算符。
+
+数组操作语句形如\texttt{T0 [t0] = t1}和\texttt{t0 = T0 [t1]}。
+
+注意！因为MiniC的base语法集只有int和int数组类型，数组操作语句中括号内的数应当是4的倍数。
+
+注意！如果\texttt{T0}是数组，那\texttt{t0 = T0 + 4}这样的语句实际上是指针运算，\texttt{t0}的类型是int不是数组。
+
+\subsection{函数}
+Eeyore中的函数以\texttt{'f\_'}开头，后接函数名，如\texttt{f\_main,f\_getint}。
+
+函数定义语句形如\texttt{f\_putint [1]}，中括号内的整数表示该函数的参数个数，函数结束处应有函数结束语句，形如\texttt{end f\_xxx}。
+
+函数外的变量声明语句被视为全局变量声明，函数内的视为局部变量声明。
+
+函数调用语句形如\texttt{t0 = call f\_xxx}。如果该函数有参数，还需要在调用语句前插入传参语句，形如\texttt{param t1}，每个传参语句只传一个参数，如有多个参数，应按照参数顺序一个一个传。
+
+函数返回语句形如\texttt{return t0}。
+
+\subsection{标号与跳转}
+Eeyore中的标号以小写字母\texttt{'l'}开头，后接整数编号，编号从0开始，如\texttt{l0,l1}。标号用来指明跳转语句的跳转地点，标号声明语句形如\texttt{l0:}。
+
+跳转语句分两种：无条件跳转、条件跳转。如\texttt{goto l1}和\texttt{if t0 < 1 goto l0}。
+
+不允许跨函数跳转。
+
+\newpage
+\section{BNF}
+\begin{typewriterfont}
 \setlength{\grammarindent}{8em} % increase separation between LHS/RHS 
 \begin{grammar}
+\small
+<Declaration> ::= 'var' <INTEGER>? Variable
 
-<Declaration> ::= 'var' <LENGTH>? Variable
-
-<FunctionDecl> ::= Function ':' '\textbackslash n' ((Expression | Declaration)'\textbackslash n')* 'end' Function
+<FunctionDecl> ::= Function '[' <INTEGER> ']' '\textbackslash n' ((Expression | Declaration)'\textbackslash n')* 'end' Function
 %t1 = t1 <op>/<relop> t2
 %t1 = <op> t2
 %t1 = <type> t2 (类型转换)
@@ -30,7 +123,7 @@
 \alt 'goto' Label
 \alt Label ':'
 \alt 'param' RightValue
-\alt Variable '=' 'call' Function <INTEGER>
+\alt Variable '=' 'call' Function
 \alt 'return' RightValue
 
 
@@ -43,5 +136,106 @@
 <Function> ::= <FUNCTION>
 
 \end{grammar}
+\end{typewriterfont}
+\newpage
+\section{示例}
+\begin{table}[H]
+    \centering
+    \small
+    \begin{typewriterfont}
+    \begin{tabular}{|c|c|}
+        \hline
+        MiniC & Eeyore \\
+        \hline
+        \makecell[l]{
+int getint();\\
+int putint(int x);\\
+int n;\\
+int a[10];\\
+int main()\\
+\{\\
+\ \ n = getint();\\
+\ \ if (n > 10)\\
+\ \ \ \ return 1;\\
+\ \ int s;\\
+\ \ int i;\\
+\ \ i = 0;\\
+\ \ s = i;\\
+\ \ while (i < n) \{\\
+\ \ \ \ a[i] = getint();\\
+\ \ \ \ s = s + a[i];\\
+\ \ \ \ ++i;\\
+\ \ \}\\
+\ \ putint(s);\\
+\ \ return 0;\\
+\}
+        } & \makecell[l]{
+var T0\\
+var 40 T1\\
+f\_main [0]\\
+T0 = call f\_getint\\
+var t0\\
+t0 = T0 - 10\\
+var t1\\
+t1 = t0 > 0\\
+if t1 == 0 goto l0\\
+return 1\\
+l0:\\
+var T2\\
+var T3\\
+T3 = 0\\
+T2 = T3\\
+l1:\\
+var t2\\
+t2 = T3 < T0\\
+if t2 == 0 goto l2\\
+var t3\\
+t3 = 4 * T3\\
+var t4\\
+t4 = call f\_getint\\
+T1 [t3] = t4\\
+var t5\\
+t5 = T1 [t3]\\
+T2 = T2 + t5\\
+T3 = T3 + 1\\
+l2:\\
+param T2\\
+call f\_putint\\
+return 0\\
+end f\_main
+} \\
+        \hline
+    \end{tabular}
+    \end{typewriterfont}
+\end{table}
 
+\newpage
+\section{Eeyore模拟器使用方式}
+\begin{typewriterfont}
+\begin{lstlisting}
+Usage ./Eeyore [-d] <filename>
+
+-d : enable debug mode
+
+- e.g. ./Eeyore -d test.in
+
+出现"> "提示符表示进入debug模式，支持如下指令： 
+
++ p <pc/symbol/label/funciton name>     
+    - e.g. p pc, p c1, p t1
+    - Print the value of the symbol
++ s <number>
+    - e.g. s 10
+    - Run n Step
++ n
+    - e.g. n
+    - Run 1 Step
++ u <number/function/label>
+    - e.g. u 10, u f_g, u l1
+    - Run until pc equal to number or until the function or label.
++ r
+    - e.g. r
+    - Disable the debug mode and run until the program exit.
+\end{lstlisting}
+\end{typewriterfont}
 \end{document}

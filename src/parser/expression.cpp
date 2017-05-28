@@ -41,7 +41,7 @@ char *sizeof_type(const_Typename_ptr b_type) //得到这个type的类型的大�
 {
     if (b_type->type == idt_void) // void* 指针不能这么搞
         yyerror("b_type -> type should not be void!");
-    char *c_name = get_TAC_name('c', CreateConstant());
+    char *c_name = get_TAC_name('t', CreateTempVar());
     gen_const("int4", c_name, &(b_type->size));
     return c_name;
 }
@@ -61,9 +61,9 @@ void postfix_expression_INC_DEC_OP(expression_s_t &This, const expression_s_t &N
             {
                 char *int_1;
                 if (Next.type->type == idt_fpointer)
-                    int_1 = get_TAC_name('c', 1); //fpointer:直接取 c1 即可
+                    int_1 = get_TAC_name('t', 1); //fpointer:直接取 c1 即可
                 else
-                    int_1 = get_cast_name(Next.type->type, idt_int, "c1"); //永远要消息变量类型要一样
+                    int_1 = get_cast_name(Next.type->type, idt_int, "t1"); //永远要消息变量类型要一样
                 gen_op2(addr_1, addr_1, int_1, op);
             }
             else //pointer
@@ -101,9 +101,9 @@ void INC_DEC_OP_unary_expression(expression_s_t &This, const char *op)
         {
             char *int_1;
             if (This.type->type == idt_fpointer)
-                int_1 = get_TAC_name('c', 1); //fpointer:直接取 c1 即可
+                int_1 = get_TAC_name('t', 1); //fpointer:直接取 c1 即可
             else
-                int_1 = get_cast_name(This.type->type, idt_int, "c1"); //永远要消息变量类型要一样
+                int_1 = get_cast_name(This.type->type, idt_int, "t1"); //永远要消息变量类型要一样
             gen_op2(addr_1, addr_1, int_1, op);
         }
         else //pointer
@@ -126,7 +126,7 @@ expression_s_t __make_exp(const char *start_loc, const int Offset, const_Typenam
     char *loc = get_TAC_name('t', CreateTempVar());
     gen_var("ptr", loc);
     //gen_cpy(loc, Fth.addr);
-    offset = get_TAC_name('c', CreateConstant());
+    offset = get_TAC_name('t', CreateTempVar());
     gen_const("int4", offset, &Offset);
     gen_op2(loc, start_loc, offset, "+");
 
@@ -274,10 +274,10 @@ expression_s_t __Call_Function(FPtrStructure_t &fp, char *f_name, argument_expre
         This.type = fp.type[0];
         This.lr_value = 1;
         This.isConst = 0;
-        PushSymbolSave();
+        //PushSymbolSave();
         if (This.type->type == idt_void)
         {
-            gen_call(f_name, fp.argNum);
+            gen_call(f_name);
             This.addr = This.laddr = NULL;
         }
         else
@@ -285,9 +285,9 @@ expression_s_t __Call_Function(FPtrStructure_t &fp, char *f_name, argument_expre
             This.addr = get_TAC_name('t', CreateTempVar());
             gen_var(map_name[This.type->type], This.addr);
             This.laddr = NULL;
-            gen_cpy_call(This.addr, f_name, fp.argNum);
+            gen_cpy_call(This.addr, f_name);
         }
-        PopSymbolSave();
+        //PopSymbolSave();
         return This;
     }
     else
@@ -476,7 +476,7 @@ void get_relational_equality(expression_s_t &This, const expression_s_t &A, cons
 
 void get_AND_OR(expression_s_t &This, const expression_s_t &A, const expression_s_t &B, const char *op)//处理 AND/OR 的计算
 {
-    expression_s_t rel1, rel2, C0 = get_c0_c1_exp("c0");
+    expression_s_t rel1, rel2, C0 = get_c0_c1_exp("t0");
 	get_relational_equality(rel1, A, C0, "!="); //这里判断是否为0是直接与整数0判断是否相同
 	get_relational_equality(rel2, B, C0, "!=");		
     char *rel = get_TAC_name('t',CreateTempVar());

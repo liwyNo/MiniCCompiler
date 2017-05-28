@@ -20,15 +20,15 @@ int count_byte(int x)
     return cnt;
 }
 */
-void gen_func(/*int num, */const char *name)
+void gen_func(const char *name, int num)
 {
-    printf("%s:\n", name);
+    printf("%s [%d]\n", name, num);
     //now_byte += 3 + count_byte(num);
 }
 
 void gen_endfunc(const char *name)
 {
-    printf("end %s\n",name);
+    printf("end %s\n", name);
 }
 
 void gen_label(int num)
@@ -39,96 +39,90 @@ void gen_label(int num)
 
 void gen_const(const char *type, const char *name, const void *value)
 {
-    if (strcmp(type, "int1")==0)
-    {
+    if (strcmp(type, "int1") == 0) {
         char *p = (char *)value;
         printf("const %s %s %hhd\n", type, name, *p);
     }
-    else if (strcmp(type, "int2")==0)
-    {
+    else if (strcmp(type, "int2") == 0) {
         short int *p = (short int *)value;
         printf("const %s %s %hd\n", type, name, *p);
     }
-    else if (strcmp(type, "int4")==0)
-    {
+    else if (strcmp(type, "int4") == 0) {
         int *p = (int *)value;
-        printf("const %s %s %d\n", type, name, *p);
+        gen_var(type, name);
+        printf("%s = %d\n", name, *p);
+        //printf("const %s %s %d\n", type, name, *p);
     }
-    else if (strcmp(type, "int8")==0)
-    {
+    else if (strcmp(type, "int8") == 0) {
         long long *p = (long long *)value;
         printf("const %s %s %lld\n", type, name, *p);
     }
-    else if (strcmp(type, "uint1")==0)
-    {
+    else if (strcmp(type, "uint1") == 0) {
         unsigned char *p = (unsigned char *)value;
         printf("const %s %s %hhu\n", type, name, *p);
     }
-    else if (strcmp(type, "uint2")==0)
-    {
+    else if (strcmp(type, "uint2") == 0) {
         unsigned short int *p = (unsigned short int *)value;
         printf("const %s %s %hu\n", type, name, *p);
     }
-    else if (strcmp(type, "uint4")==0)
-    {
+    else if (strcmp(type, "uint4") == 0) {
         unsigned int *p = (unsigned int *)value;
         printf("const %s %s %u\n", type, name, *p);
     }
-    else if (strcmp(type, "uint8")==0)
-    {
+    else if (strcmp(type, "uint8") == 0) {
         unsigned long long *p = (unsigned long long *)value;
         printf("const %s %s %llu\n", type, name, *p);
     }
-    else if (strcmp(type, "float4")==0)
-    {
+    else if (strcmp(type, "float4") == 0) {
         float *p = (float *)value;
         printf("const %s %s %f\n", type, name, *p);
     }
-    else if (strcmp(type, "float8")==0)
-    {
+    else if (strcmp(type, "float8") == 0) {
         double *p = (double *)value;
         printf("const %s %s %lf\n", type, name, *p);
     }
-    else if (strcmp(type, "ptr")==0)
-    {
+    else if (strcmp(type, "ptr") == 0) {
         const void *p = value;
         //#warning "how to print pointer?"
         printf("const %s %s %p\n", type, name, p);
     }
-    else if (strcmp(type, "str")==0)
-    {
+    else if (strcmp(type, "str") == 0) {
         char *p = (char *)value;
         int n = strlen(p);
-        printf("const %s %s", type, name); 
-        while(*p!='\0')
-            printf(" %d",*(p++));
+        printf("const %s %s", type, name);
+        while (*p != '\0')
+            printf(" %d", *(p++));
         printf(" 0\n");
     }
 }
 
 void gen_var(const char *type, const char *name, int length)
 {
-    if (length == -1)
-    {
-        printf("var %s %s\n", type, name);
+    if (length == -1) {
+        if (strcmp(type, "int4") == 0 || strcmp(type, "ptr") == 0)
+            printf("var %s\n", name);
+        else
+            printf("var %s %s\n", type, name);
         //now_byte + 6 +strlen(type)+strlen(name);
     }
-    else
-    {
-        printf("var %s %d %s\n", type, length, name);
+    else {
+        if (strcmp(type, "int4") == 0 || strcmp(type, "ptr") == 0)
+            printf("var %d %s\n", length, name);
+        else
+            printf("var %s %d %s\n", type, length, name);
         //now_byte + 7 +strlen(type)+strlen(name)+count_byte(length);
     }
 }
 
 void gen_gvar(const char *type, const char *name, int length)
 {
-    if (length == -1)
-    {
+    gen_var(type, name, length);
+    return;
+    if (length == -1) {
         printf("gvar %s %s\n", type, name);
         //now_byte + 7 +strlen(type)+strlen(name);
     }
-    else
-    {
+    else {
         printf("gvar %s %d %s\n", type, length, name);
         //now_byte += 8 +strlen(type)+strlen(name)+count_byte(length);
     }
@@ -196,14 +190,14 @@ void gen_param(const char *name)
     printf("param %s\n", name);
 }
 
-void gen_call(char *f_name, int pnum)
+void gen_call(char *f_name)
 {
-    printf("call %s %d\n", f_name, pnum);
+    printf("call %s\n", f_name);
 }
 
-void gen_cpy_call(const char *name, char *f_name, int pnum)
+void gen_cpy_call(const char *name, char *f_name)
 {
-    printf("%s = call %s %d\n", name, f_name, pnum);
+    printf("%s = call %s\n", name, f_name);
 }
 
 void gen_return(const char *name)

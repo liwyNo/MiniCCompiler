@@ -150,13 +150,13 @@ void genInitilize(const_Typename_ptr type, const char *TACname, const initialize
             for (int i = 0; i < slen; ++i) {
                 gen_op1(tname3, tname2, "*");
                 gen_pnt_cpy(tname1, tname3);
-                gen_op2(tname1, tname1, "c1", "+");
-                gen_op2(tname2, tname2, "c1", "+");
+                gen_op2(tname1, tname1, "t1", "+");
+                gen_op2(tname2, tname2, "t1", "+");
             }
-            gen_cast(tname3, "c0", "int1");
+            gen_cast(tname3, "t0", "int1");
             for (int i = slen; i < type->structure->pointer.length; ++i) {
                 gen_pnt_cpy(tname1, tname3);
-                gen_op2(tname1, tname1, "c1", "+");
+                gen_op2(tname1, tname1, "t1", "+");
             }
             free(tname1);
             free(tname2);
@@ -192,12 +192,12 @@ void genInitilize(const_Typename_ptr type, const char *TACname, const initialize
         noinit.data.lr_value = 1;
         noinit.data.value.vint = 0;
         noinit.data.laddr = NULL;
-        char c0[] = "c0";
+        char c0[] = "t0";
         if (type->type == idt_array) {
             gen_cpy(tname, TACname);
             const_Typename_ptr btp = type->structure->pointer.base_type;
-            int csize = CreateConstant();
-            std::string scsize = 'c' + std::to_string(csize);
+            int csize = CreateTempVar();
+            std::string scsize = 't' + std::to_string(csize);
             gen_const("int4", scsize.c_str(), &btp->size);
 
             for (int i = 0; i < type->structure->pointer.length; ++i) {
@@ -215,8 +215,8 @@ void genInitilize(const_Typename_ptr type, const char *TACname, const initialize
             for (SymbolList_t *i = type->structure->record; i; i = i->next)
                 vsl.push_back(i);
             for (auto vsl_it = vsl.rbegin(); vsl_it != vsl.rend(); ++vsl_it) {
-                int csize = CreateConstant();
-                std::string scsize = 'c' + std::to_string(csize);
+                int csize = CreateTempVar();
+                std::string scsize = 't' + std::to_string(csize);
                 gen_const("int4", scsize.c_str(), &(*vsl_it)->offset);
                 gen_op2(tname, TACname, scsize.c_str(), "+");
                 const_Typename_ptr btp = (*vsl_it)->id->type;
@@ -351,7 +351,7 @@ void genIfGoto(expression_s_t expr, const char *name2, const char *op, int num) 
 {
     expression_s_t cint = get_c0_c1_exp(name2), rel;
     get_relational_equality(rel, expr, cint, op); //写的略有些麻烦，先得到该逻辑表达式的值，然后判断是否为真
-    gen_if_goto(rel.addr, "c1", "==", num); //???是否可以改进一下三地址码，允许直接对一个0或者1的变量 goto，不用非得表达式？
+    gen_if_goto(rel.addr, "t1", "==", num); //???是否可以改进一下三地址码，允许直接对一个0或者1的变量 goto，不用非得表达式？
     /*
     #warning "need be changed to call expression functions"
     printf("(!!) if %s %s %s goto l%d\n", expr.get_addr(), op, name2, num);
