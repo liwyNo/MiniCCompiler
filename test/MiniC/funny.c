@@ -47,6 +47,7 @@ int putGame(int T)
     putint(T);
     putchar(58);
     putchar(32);
+    return 0;
 }
 int sg[25];
 int n;

@@ -9,6 +9,7 @@ int swap(int x, int y)
     t = a[x];
     a[x] = a[y];
     a[y] = t;
+    return 0;
 }
 int main()
 {

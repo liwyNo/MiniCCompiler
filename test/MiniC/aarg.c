@@ -14,6 +14,7 @@ int cp(int a[100], int b[100])
         b[i] = a[i];
         i = i + 1;
     }
+    return 0;
 }
 int s[100];
 int main()
