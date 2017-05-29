@@ -6,6 +6,7 @@ extern int Gvar_count;
 extern int Var_count; //统计所有变量
 extern vector<ins> com_ins;
 extern map<string, unsigned> label_table;
+extern LiveInterval live_int[1000];
 
 void init_debug()
 {
@@ -22,6 +23,10 @@ void init_debug()
     for(auto it = com_ins.begin()+1; it != com_ins.end(); it++)
     {
         it->Print_Ins();
+    }
+    for(int i=1;i<=Var_count;i++)
+    {
+        live_int[i].Print_Int();
     }
 }
 

@@ -1,6 +1,7 @@
 #include "analysis.h"
 #include <iostream>
 #include <queue>
+#include <algorithm>
 using namespace std;
 #define debug(x) cerr<<#x<<"="<<x<<endl
 
@@ -8,6 +9,17 @@ extern vector<ins> com_ins;
 extern map<string, unsigned> label_table;
 extern map<string,Variable*> var_table;
 extern map<string, Function*> func_table;
+extern int Var_count;
+extern Variable* num_to_var[1000];
+LiveInterval live_int[1000];
+
+void LiveInterval::Print_Int()
+{
+    debug(var->s_name);
+    debug(st);
+    debug(ed);
+}
+
 
 int __get_Lable(string l_name)
 {
@@ -91,5 +103,30 @@ void LiveVariableAnalysis() //类似 spfa 的方式进行迭代，找不动点
         if(pre_live != it->live)
             for(auto pre_it : it-> preI)
                 q.push(pre_it);
+    }
+    //生成每个变量的活跃区间
+    int i;
+    for(i=1;i<=Var_count;i++)
+        live_int[i].st = com_ins.size(), live_int[i].ed = -1, live_int[i].var = num_to_var[i];
+    for (auto it = com_ins.begin()+1; it != com_ins.end(); it++)
+    {
+        for(i=1;i<=Var_count;i++)
+        {
+            if(it->live[i]==1)
+            {
+                live_int[i].st = min(live_int[i].st, it->line_num);
+                live_int[i].ed = max(live_int[i].ed, it->line_num);
+            }
+        }
+    }
+}
+
+bool cmp_LI(const LiveInterval &a, const LiveInterval &b)
+{
+    if(a.st == b.st)
+        return a.var < b.var;
+    else
+    {
+        return a.st < b.st;
     }
 }

@@ -4,6 +4,7 @@
 using namespace std;
 #define debug(x) cerr<<#x<<"="<<x<<endl
 map<string,Variable*> var_table;
+Variable * num_to_var[1000];
 map<string, Function*> func_table;
 int Gvar_count;
 int Var_count; //统计所有变量
@@ -63,6 +64,7 @@ Variable* new_Var(string var_name, int isGlobal, Function* now_fun = nullptr)
         now_fun -> local_var.push_back(nv);
     }
     var_table[var_name] = nv;
+    num_to_var[Var_count] = nv;
     //debug("end new_var");
     return nv;
 }
@@ -86,6 +88,7 @@ Variable* new_Var_Arr(string var_name, int isGlobal, int size, Function* now_fun
         now_fun -> stack_size += size;
     }
     var_table[var_name] = nv;
+    num_to_var[Var_count] = nv;
     return nv;
 }
 

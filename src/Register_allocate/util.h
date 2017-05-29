@@ -2,6 +2,7 @@
 #define UTIL_H
 #include <string>
 #include "typedef.h"
+#include "analysis.h"
 
 std::string fix_name(std::string var_name, Function *now_fun);
 void checkNotArray(Variable *this_var);
