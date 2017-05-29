@@ -32,7 +32,7 @@ int main()
             i = i + 1;
         }
     int s2[100];
-    cp(s2, s);
+    cp(s, s2);
     i = 0;
     while (i < 100) {
         putint(s2[i]);

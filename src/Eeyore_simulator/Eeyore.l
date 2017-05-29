@@ -9,7 +9,7 @@ OP [\+\-\*\/\%\!]|\|\||&&
 #include "stdio.h"
 void yyerror(char*);
 #include "Eeyore.tab.hpp"
-#define printf(x) 
+//#define printf(x) 
 %}
 
 %option yylineno
