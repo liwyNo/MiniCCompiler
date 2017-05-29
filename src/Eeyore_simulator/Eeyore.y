@@ -141,7 +141,7 @@ Expression
 			com_ins[yylineno - 1] = ins(iRETURN);
 		}
 	|	VAR SYMBOL EOL {
-			checkGlobal(yylineno);
+			checkGlobal(yylineno - 1);
             if(symbol.find($2) != symbol.end()){
                 cerr << "Redefination of symbol: " << $2 << ". One of defination in line " << yylineno << ".\n";
                 exit(-1);
@@ -150,7 +150,7 @@ Expression
 			com_ins[yylineno - 1] = ins(iVAR, $2);
 		}
 	|	VAR NUM SYMBOL EOL {
-			checkGlobal(yylineno);
+			checkGlobal(yylineno - 1);
             if(symbol.find($3) != symbol.end()){
                 cerr << "Redefination of symbol: " << $3 << ". One of defination in line " << yylineno << ".\n";
                 exit(-1);

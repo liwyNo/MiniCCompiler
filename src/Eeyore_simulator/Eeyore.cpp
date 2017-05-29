@@ -49,11 +49,15 @@ int main(int argc, char** argv){
 	com_ins.resize(ori_ins.size());
 	yyparse();
 
+    cout << "DEBUG" << endl;
+    for(auto x : label_table){
+        cout << x.first << " " << x.second << endl;
+    }
 	pc = (unsigned long)label_table["f_main"];
 
 	void initialDebug(bool);
 	initialDebug(debugMode);
-	
+
 	int beginProgram(unsigned long pc);
 	return beginProgram(pc);
 }

@@ -98,6 +98,8 @@ void gen_const(const char *type, const char *name, const void *value)
 
 void gen_var(const char *type, const char *name, int length)
 {
+    if (name[0] == 'p')
+        return;
     if (length == -1) {
         if (strcmp(type, "int4") == 0 || strcmp(type, "ptr") == 0)
             printf("var %s\n", name);

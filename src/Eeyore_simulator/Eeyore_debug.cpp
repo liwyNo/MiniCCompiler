@@ -27,6 +27,7 @@ void intoDebug(unsigned long pc, map<string, int> & lo_symbol){
             else{
                 if(gsymbol.find(tmp) != gsymbol.end()){
                     cout << tmp << " " << gsymbol[tmp] << endl;
+                    continue;
                 }
                 cout << "No such symbol found in the scope." << endl;
             }

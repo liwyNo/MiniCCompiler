@@ -98,7 +98,7 @@ int callFunction(unsigned long pc, unsigned long ori_pc, unsigned long arg_size,
 	void debugFunc(unsigned long pc, map<string, int> & lo_symbol);
 	while(1){
         cout << "PC: " << pc << endl;
-		ins t = com_ins[pc - 1];
+		ins t = com_ins[pc];
 		if(t.type != iNOOP)
 			debugFunc(pc, symbol);
 		pc += 1;
@@ -165,7 +165,7 @@ int callFunction(unsigned long pc, unsigned long ori_pc, unsigned long arg_size,
 					symbol[t.arg1] = 0;
 				}
 				else{
-					symbol[t.arg1] = stoi(t.arg2);
+					symbol[t.arg1] = (int)malloc(stoi(t.arg2));
 				}
 				break;
 			default:
@@ -184,7 +184,7 @@ int beginProgram(unsigned long pc){
     }
 	for(auto x : global_ins){
         cout << "GL: " << x << endl;
-		ins t = com_ins[x - 1];
+		ins t = com_ins[x];
 		int src1, src2, src3, des;
 		switch(t.type){
 			case iNOOP:
@@ -223,7 +223,7 @@ int beginProgram(unsigned long pc){
 					symbol[t.arg1] = 0;
 				}
 				else{
-					symbol[t.arg1] = stoi(t.arg2);
+					symbol[t.arg1] = (int)malloc(stoi(t.arg2));
 				}
 				break;
 			default:

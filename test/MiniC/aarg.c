@@ -14,6 +14,7 @@ int cp(int a[100], int b[100])
         b[i] = a[i];
         i = i + 1;
     }
+    return 0;
 }
 int s[100];
 int main()
@@ -31,7 +32,7 @@ int main()
             i = i + 1;
         }
     int s2[100];
-    cp(s2, s);
+    cp(s, s2);
     i = 0;
     while (i < 100) {
         putint(s2[i]);
