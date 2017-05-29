@@ -55,7 +55,8 @@ int main(int argc, char** argv){
     
     //data flow analysis
     init_preI();
-    //init_debug();
+    //
     LiveVariableAnalysis();
+    //init_debug();
 	return 0;
 }

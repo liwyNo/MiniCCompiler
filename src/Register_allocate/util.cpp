@@ -19,7 +19,7 @@ void init_debug()
         auto it_var = it->second;
         it_var->Print_Var();
     }
-    for(auto it = com_ins.begin(); it != com_ins.end(); it++)
+    for(auto it = com_ins.begin()+1; it != com_ins.end(); it++)
     {
         it->Print_Ins();
     }

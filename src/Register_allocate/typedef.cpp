@@ -143,6 +143,9 @@ void ins::Print_Ins()
     for (i=1;i<=Var_count;i++)
         printf("%d",(int)use[i]);
     cout << endl;
+    for (i=1;i<=Var_count;i++)
+        printf("%d",(int)live[i]);
+    cout << endl;
     for(i=0;i<preI.size();i++)
         debug(preI[i]->line_num);
     cout<<endl;
