@@ -4,7 +4,7 @@
 #include "typedef.h"
 #include <vector>
 #include <string>
-#include <map>
+#include <unordered_map>
 #include <set>
 using namespace std;
 
@@ -14,11 +14,12 @@ void yyerror(char*);
 
 bool isGlobal = true;
 extern vector<ins> com_ins;
-extern map<string, unsigned> label_table;
+extern unordered_map<string, unsigned> label_table;
 extern vector<int> global_ins;
-extern map<string, int> farg;
+extern unordered_map<string, int> farg;
 inline void checkGlobal(unsigned long i);
 set<string> symbol;
+string f_name = "_init";
 %}
 
 %union {
@@ -59,18 +60,21 @@ FunctionDecl
 FunctionName
 	:	FUNCTION '['NUM ']' EOL	{
 		isGlobal = false;
+        f_name = $1;
 		com_ins[yylineno - 1] = ins(iNOOP);
         if(label_table.find($1) != label_table.end()){
             cerr << "Redefination of symbol: " << $1 << ". One of defination in line " << yylineno << ".\n";
             exit(-1);
         }
 		label_table[$1] = yylineno - 1;
-        farg[$1] = stoi($3);
+        //farg[$1] = stoi($3);
+        farg[$1] = atoi($3);
 	}
 ;
 FunctionEnd
 	:	ENDT FUNCTION EOL 	{
 		isGlobal = true;
+        f_name = "_init";
 		com_ins[yylineno - 1] = ins(iNOOP);
 	}
 ;
@@ -91,23 +95,23 @@ OP2
 
 Expression
 	:	SYMBOL '=' RightValue OP2 RightValue EOL  {
-			checkGlobal(yylineno);
+			checkGlobal(yylineno - 1);
 			com_ins[yylineno - 1] = ins(iOP2, $1, $3, $4, $5);
 		}
 	|	SYMBOL '=' OP RightValue EOL  {
-			checkGlobal(yylineno);
+			checkGlobal(yylineno - 1);
 			com_ins[yylineno - 1] = ins(iOP1, $1, $3, $4);
 		}
 	|	SYMBOL '=' RightValue EOL  {
-			checkGlobal(yylineno);
+			checkGlobal(yylineno - 1);
 			com_ins[yylineno - 1] = ins(iASS, $1, $3);
 		}
 	|	SYMBOL '[' RightValue ']' '=' RightValue EOL  {
-			checkGlobal(yylineno);
+			checkGlobal(yylineno - 1);
 			com_ins[yylineno - 1] = ins(iARRSET, $1, $3, $6);
 		}
 	|	SYMBOL '=' SYMBOL '[' RightValue ']' EOL  {
-			checkGlobal(yylineno);
+			checkGlobal(yylineno - 1);
 			com_ins[yylineno - 1] = ins(iARRGET, $1, $3, $5);
 		}
 	|	IF RightValue LOGIOP RightValue GOTO LABEL EOL {
@@ -142,21 +146,21 @@ Expression
 		}
 	|	VAR SYMBOL EOL {
 			checkGlobal(yylineno - 1);
-            if(symbol.find($2) != symbol.end()){
+            if(symbol.find($2) != symbol.end() && $2[0] != 'p'){
                 cerr << "Redefination of symbol: " << $2 << ". One of defination in line " << yylineno << ".\n";
                 exit(-1);
             }
             symbol.insert($2);
-			com_ins[yylineno - 1] = ins(iVAR, $2);
+			com_ins[yylineno - 1] = ins(iNOOP, $2);
 		}
 	|	VAR NUM SYMBOL EOL {
 			checkGlobal(yylineno - 1);
-            if(symbol.find($3) != symbol.end()){
+            if(symbol.find($3) != symbol.end() && $3[0] != 'p'){
                 cerr << "Redefination of symbol: " << $3 << ". One of defination in line " << yylineno << ".\n";
                 exit(-1);
             }
             symbol.insert($3);
-			com_ins[yylineno - 1] = ins(iVAR, $3, $2);
+			com_ins[yylineno - 1] = ins(iNOOP, $3, $2);
 		}
 	|	EOL	{
 			com_ins[yylineno - 1] = ins(iNOOP);
