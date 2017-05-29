@@ -1,32 +1,35 @@
 #include <vector>
 #include <string>
-#include <map>
+#include <unordered_map>
 #include <iostream>
 using namespace std;
 
 static int debugMod = 1;
 static size_t debugCount = 0;
 extern vector<string> ori_ins;
-extern map<string, int> gsymbol;
-extern map<string, int> label_table;
+extern unordered_map<int, int> gsymbol;
+extern unordered_map<string, int> label_table;
+
+unsigned var(const char* a);
 void initialDebug(bool mod){
     debugMod = mod;
 }
-void intoDebug(unsigned long pc, map<string, int> & lo_symbol){
+void intoDebug(unsigned long pc, unordered_map<int, int> & lo_symbol){
     string tmp;
     while(1){
-        cout << "PC: " << pc << " " << ori_ins[pc] << endl;
+        cout << "PC: " << pc << " " << ori_ins[pc - 1] << endl;
         cout << "> ";
         cin >> tmp;
         if(tmp == "p"){
             // Print symbol
             cin >> tmp;
-            if(lo_symbol.find(tmp) != lo_symbol.end()){
-                cout << tmp << " " << lo_symbol[tmp] << endl;
+            int _tmp = var(tmp.c_str());
+            if(lo_symbol.find(_tmp) != lo_symbol.end()){
+                cout << tmp << " " << lo_symbol[_tmp] << endl;
             }
             else{
-                if(gsymbol.find(tmp) != gsymbol.end()){
-                    cout << tmp << " " << gsymbol[tmp] << endl;
+                if(gsymbol.find(_tmp) != gsymbol.end()){
+                    cout << tmp << " " << gsymbol[_tmp] << endl;
                     continue;
                 }
                 cout << "No such symbol found in the scope." << endl;
@@ -66,7 +69,7 @@ void intoDebug(unsigned long pc, map<string, int> & lo_symbol){
         }
     }
 }
-void debugFunc(unsigned long pc, map<string, int> & lo_symbol){
+void debugFunc(unsigned long pc, unordered_map<int, int> & lo_symbol){
     //debugMod: 1. run n step
     //          2. run until pc equal debugCount
     if(debugMod == 1){
