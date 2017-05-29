@@ -3,4 +3,5 @@
 #include "typedef.h"
 
 void init_preI();
+void LiveVariableAnalysis();
 #endif

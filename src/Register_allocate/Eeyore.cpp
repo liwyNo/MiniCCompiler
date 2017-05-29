@@ -38,22 +38,24 @@ int main(int argc, char** argv){
     }
 
     //Get the original code
+    ori_ins.push_back("");//把下表零空过去
     while (!is.eof()) {
         string tmp;
         getline(is, tmp);
         ori_ins.push_back(tmp);
+        //debug(tmp);
     }
 
 	//Compile the instruction
 	com_ins.resize(ori_ins.size());
-    //debug("123");
-
 	yyparse();
+    for (int i=1;i<com_ins.size();i++)
+        com_ins[i].line_num = i;
 
-    //debug(com_ins.size());
-    //init_debug();
+    
     //data flow analysis
     init_preI();
-
+    //init_debug();
+    LiveVariableAnalysis();
 	return 0;
 }

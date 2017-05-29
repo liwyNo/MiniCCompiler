@@ -127,3 +127,23 @@ void Function::Print_Func()
     debug(stack_size);
     cerr << endl;
 }
+
+void ins::Print_Ins()
+{
+    int i;
+    debug(line_num);
+    debug(type);
+    debug(arg1);
+    debug(arg2);
+    debug(arg3);
+    debug(arg4);
+    for (i=1;i<=Var_count;i++)
+        printf("%d",(int)def[i]);
+    cout << endl;
+    for (i=1;i<=Var_count;i++)
+        printf("%d",(int)use[i]);
+    cout << endl;
+    for(i=0;i<preI.size();i++)
+        debug(preI[i]->line_num);
+    cout<<endl;
+}

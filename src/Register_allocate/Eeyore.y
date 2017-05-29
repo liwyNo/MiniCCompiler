@@ -159,7 +159,7 @@ Expression
 			if($3.Num_or_Symbol == 1)
 				use[get_Var_in_Func(str_b, now_fun) -> num] = 1;
 			//debug($3.real_num);
-			
+			//debug(yylineno - 1);
 			com_ins[yylineno - 1] = ins(iASS, str_a, str_b);
 			com_ins[yylineno - 1].def = def;
 			com_ins[yylineno - 1].use = use;
@@ -262,7 +262,7 @@ Expression
 			checkGlobal();
 			com_ins[yylineno - 1] = ins(iNOOP);
 		}
-	|	VAR SYMBOL {
+	|	VAR SYMBOL EOL{
 			//已重写
 			if($2[2]=='p')
 				yyerror("pxx can not be declare!");
@@ -278,7 +278,7 @@ Expression
 			com_ins[yylineno - 1].use = use;
 			//debug(yylineno);
 		}
-	|	VAR NUM SYMBOL {
+	|	VAR NUM SYMBOL EOL{
 			//已重写
 			if($2[2]=='p')
 				yyerror("pxx can not be declare!");

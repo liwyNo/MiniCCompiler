@@ -4,7 +4,7 @@ extern map<string,Variable*> var_table;
 extern map<string, Function*> func_table;
 extern int Gvar_count;
 extern int Var_count; //统计所有变量
-extern vector<ins*> com_ins;
+extern vector<ins> com_ins;
 extern map<string, unsigned> label_table;
 
 void init_debug()
@@ -18,6 +18,10 @@ void init_debug()
     {
         auto it_var = it->second;
         it_var->Print_Var();
+    }
+    for(auto it = com_ins.begin(); it != com_ins.end(); it++)
+    {
+        it->Print_Ins();
     }
 }
 

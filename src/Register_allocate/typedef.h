@@ -27,7 +27,7 @@ void yyerror(char *);
 
 
 struct ins{
-	int type;
+	int line_num, type;
 	std::string arg1, arg2, arg3, arg4;
 	//std::string go_label; //要到达的 label
 	std::bitset<1000> def, use, live; //bitset 很省时间和空间，所以开这么大也无所谓 
@@ -39,7 +39,7 @@ struct ins{
 		type(_type), arg1(_arg1), arg2(_arg2), arg3(_arg3) ,arg4(_arg4){
 			def = use = 0;
 		}
-		
+	void Print_Ins();
 };
 
 struct RightValue_s_t
