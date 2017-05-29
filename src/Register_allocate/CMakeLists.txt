@@ -1,0 +1,7 @@
+include_directories(${CMAKE_CURRENT_BINARY_DIR})
+find_package(FLEX REQUIRED)
+find_package(BISON REQUIRED)
+BISON_TARGET(EeyoreParser Eeyore.y ${CMAKE_CURRENT_BINARY_DIR}/Eeyore.tab.cpp)
+FLEX_TARGET(EeyoreLexer Eeyore.l ${CMAKE_CURRENT_BINARY_DIR}/Eeyore.yy.cpp)
+ADD_FLEX_BISON_DEPENDENCY(EeyoreLexer EeyoreParser)
+ADD_EXECUTABLE(allc_reg ${BISON_EeyoreParser_OUTPUT_SOURCE} ${FLEX_EeyoreLexer_OUTPUTS} Eeyore.cpp typedef.cpp util.cpp analysis.cpp)

@@ -5,8 +5,11 @@
 #include <string>
 #include <cstring>
 #include <map>
+#include "util.h"
+#include <iostream>
 //#include "Eeyore.tab.hpp"
 using namespace std;
+#define debug(x) cerr<<#x<<"="<<x<<endl
 
 int yylex(void);
 extern int yylineno;
@@ -16,11 +19,9 @@ bool isGlobal = true;
 Function *now_fun;
 extern vector<ins> com_ins;
 extern map<string, unsigned> label_table;
-extern map<string, int> func_table;
-extern map<std::string,Variable*> var_table;
 
 //extern vector<int> global_ins;
-inline void checkGlobal(unsigned long i);
+inline void checkGlobal();
 %}
 
 %code requires {
@@ -75,7 +76,7 @@ FunctionName
 	:	FUNCTION '[' NUM ']' EOL	{
 		//已重写
 		isGlobal = false;
-		com_ins[yylineno - 1] = ins(iNOOP);
+		com_ins[yylineno - 1] = ins(iFBEGIN);
 		$$ = $1;
 		now_fun = new_Function($1, stoi(string($3)));
 	}
@@ -85,7 +86,7 @@ FunctionEnd
 		//已重写
 		isGlobal = true;
 		now_fun = nullptr;
-		com_ins[yylineno - 1] = ins(iNOOP);
+		com_ins[yylineno - 1] = ins(iFEND);
 		$$ = $2;
 
 	}
@@ -96,92 +97,200 @@ Statement
 ;
 
 RightValue
-	:	SYMBOL	{$$.str_name = $1; $$.Num_or_Symbol = 1;}
-	|	NUM	{$$.str_name = $1; $$.Num_or_Symbol = 0; $$.real_num = stoi(string($1));}
+	:	SYMBOL	{
+		//已重写
+		$$.str_name = $1; $$.Num_or_Symbol = 1;}
+	|	NUM	{
+		//已重写
+		$$.str_name = $1; $$.Num_or_Symbol = 0; $$.real_num = stoi(string($1));}
 ;
 
 OP2
-	:	OP	{$$ = $1;}
-	|	LOGIOP	{$$ = $1;}
+	:	OP	{
+		//已重写
+		$$ = $1;}
+	|	LOGIOP	{
+		//已重写
+		$$ = $1;}
 ;
 
 Expression
 	:	SYMBOL '=' RightValue OP2 RightValue EOL  {
-			checkGlobal(yylineno);
-			com_ins[yylineno - 1] = ins(iOP2, $1, $3, $4, $5);
+			//已修改
+			checkGlobal();
+			string str_a = fix_name($1, now_fun), str_b = fix_name($3.str_name, now_fun), str_c = fix_name($5.str_name, now_fun);
+			Variable *a = get_Var_in_Func(str_a, now_fun);
+			checkNotArray(a);
+			bitset<1000> def, use;
+			def[a->num]=1;
+			if($3.Num_or_Symbol == 1)
+				use[get_Var_in_Func(str_b, now_fun) -> num] = 1;
+			if($5.Num_or_Symbol == 1)
+				use[get_Var_in_Func(str_c, now_fun) -> num] = 1;
+			com_ins[yylineno - 1] = ins(iOP2, str_a, str_b, $4, str_c);
+			com_ins[yylineno - 1].def = def;
+			com_ins[yylineno - 1].use = use;
 		}
 	|	SYMBOL '=' OP RightValue EOL  {
-			checkGlobal(yylineno);
-			com_ins[yylineno - 1] = ins(iOP1, $1, $3, $4);
+			//已修改
+			checkGlobal();
+			string str_a = fix_name($1, now_fun), str_b = fix_name($4.str_name, now_fun);
+			Variable *a = get_Var_in_Func(str_a, now_fun);
+			checkNotArray(a);
+			bitset<1000> def, use;
+			def[a->num]=1;
+			if($4.Num_or_Symbol == 1)
+				use[get_Var_in_Func(str_b, now_fun) -> num] = 1;
+			com_ins[yylineno - 1] = ins(iOP1, str_a, $3, str_b);
+			com_ins[yylineno - 1].def = def;
+			com_ins[yylineno - 1].use = use;
 		}
 	|	SYMBOL '=' RightValue EOL  {
-			checkGlobal(yylineno);
-			com_ins[yylineno - 1] = ins(iASS, $1, $3);
+			//已修改
+			//debug($1);
+			//debug($3.str_name);
+			//checkGlobal();
+			string str_a = fix_name($1, now_fun), str_b = fix_name($3.str_name, now_fun);
+			//debug(str_b);
+			Variable *a = get_Var_in_Func(str_a, now_fun);
+			checkNotArray(a);
+			bitset<1000> def, use;
+			def[a->num]=1;
+			if($3.Num_or_Symbol == 1)
+				use[get_Var_in_Func(str_b, now_fun) -> num] = 1;
+			//debug($3.real_num);
+			
+			com_ins[yylineno - 1] = ins(iASS, str_a, str_b);
+			com_ins[yylineno - 1].def = def;
+			com_ins[yylineno - 1].use = use;
 		}
 	|	SYMBOL '[' RightValue ']' '=' RightValue EOL  {
-			checkGlobal(yylineno);
-			com_ins[yylineno - 1] = ins(iARRSET, $1, $3, $6);
+			//已修改
+			checkGlobal();
+			string str_a = fix_name($1, now_fun), str_b = fix_name($3.str_name, now_fun), str_c = fix_name($6.str_name, now_fun);
+			Variable *a = get_Var_in_Func(str_a, now_fun);
+			checkArray(a);
+			bitset<1000> def, use;
+			use[a -> num] = 1;
+			if($3.Num_or_Symbol == 1)
+				use[get_Var_in_Func(str_b, now_fun) -> num] = 1;
+			if($6.Num_or_Symbol == 1)
+				use[get_Var_in_Func(str_c, now_fun) -> num] = 1;
+			com_ins[yylineno - 1] = ins(iARRSET, str_a, str_b, str_c);
+			com_ins[yylineno - 1].def = def;
+			com_ins[yylineno - 1].use = use;
 		}
 	|	SYMBOL '=' SYMBOL '[' RightValue ']' EOL  {
-			checkGlobal(yylineno);
-			com_ins[yylineno - 1] = ins(iARRGET, $1, $3, $5);
+			//已修改
+			checkGlobal();
+			string str_a = fix_name($1, now_fun), str_b = fix_name($3, now_fun), str_c = fix_name($5.str_name, now_fun);
+			Variable *a = get_Var_in_Func(str_a, now_fun), *b = get_Var_in_Func(str_b, now_fun);
+			checkArray(b);
+			bitset<1000> def, use;
+			def[a -> num] = 1;
+			use[b -> num] = 1;
+			if($5.Num_or_Symbol == 1)
+				use[get_Var_in_Func(str_c, now_fun) -> num] = 1;
+			com_ins[yylineno - 1] = ins(iARRGET, str_a, str_b, str_c);
+			com_ins[yylineno - 1].def = def;
+			com_ins[yylineno - 1].use = use;
 		}
 	|	IF RightValue LOGIOP RightValue GOTO LABEL EOL {
-			com_ins[yylineno - 1] = ins(iIF, $2, $3, $4, $6);
+			//已修改
+			checkGlobal();
+			string str_a = fix_name($2, now_fun), str_b = fix_name($4, now_fun);
+			bitset<1000> def, use;
+			if($2.Num_or_Symbol == 1)
+				use[get_Var_in_Func(str_a, now_fun) -> num] = 1;
+			if($4.Num_or_Symbol == 1)
+				use[get_Var_in_Func(str_b, now_fun) -> num] = 1;
+			com_ins[yylineno - 1] = ins(iIF, str_a, $3, str_b, $6);
+			com_ins[yylineno - 1].def = def;
+			com_ins[yylineno - 1].use = use;
 		}  
 	|	GOTO LABEL EOL  {
+			//已修改
+			checkGlobal();
 			com_ins[yylineno - 1] = ins(iGOTO, $2);
 		}
 	|	LABEL ':' EOL  {
-			com_ins[yylineno - 1] = ins(iNOOP);
+			//已修改
+			checkGlobal();
+			com_ins[yylineno - 1] = ins(iLABEL);
 			label_table[$1] = yylineno - 1;
 		}
 	|	PARAM SYMBOL EOL {
+			//已修改
+			checkGlobal();
+			string str_a = fix_name($2, now_fun);
+			Variable *a = get_Var_in_Func(str_a, now_fun);
+			bitset<1000> def, use;
+			use[a -> num] = 1;
 			com_ins[yylineno - 1] = ins(iPARAM, $2);
+			com_ins[yylineno - 1].def = def;
+			com_ins[yylineno - 1].use = use;
 		}  
 	|	CALL FUNCTION EOL {
-			checkGlobal(yylineno);
+			//已重写
+			checkGlobal();
 			com_ins[yylineno - 1] = ins(iCALLVOID, $2);
 		} 
 	|	SYMBOL '=' CALL FUNCTION EOL {
+			//已重写
+			checkGlobal();
+			string str_a = fix_name($1, now_fun);
+			Variable *a = get_Var_in_Func(str_a, now_fun);
+			bitset<1000> def, use;
+			def[a -> num] = 1;
 			com_ins[yylineno - 1] = ins(iCALL, $1, $4);
+			com_ins[yylineno - 1].def = def;
+			com_ins[yylineno - 1].use = use;
 		}
 	|	RETURN RightValue EOL  {
+			//已重写
+			checkGlobal();
+			string str_a = fix_name($2.str_name, now_fun);
+			bitset<1000> def, use;
+			if($2.Num_or_Symbol == 1)
+				use[get_Var_in_Func(str_a, now_fun) -> num] = 1;
 			com_ins[yylineno - 1] = ins(iRETURN, $2);
+			com_ins[yylineno - 1].def = def;
+			com_ins[yylineno - 1].use = use;
 		}
 	|	RETURN EOL {
 			//已重写
+			checkGlobal();
 			com_ins[yylineno - 1] = ins(iNOOP);
 		}
 	|	VAR SYMBOL {
 			//已重写
 			if($2[2]=='p')
 				yyerror("pxx can not be declare!");
+			Variable *a = new_Var($2,isGlobal, now_fun);
 			if(isGlobal)
-			{
-				new_Var($2,isGlobal, now_fun);
 				com_ins[yylineno - 1] = ins(iGVAR, $2);
-			}
 			else
-			{
-				new_Var($2,isGlobal, now_fun);
 				com_ins[yylineno - 1] = ins(iVAR, $2);
-			}
+			//debug(a->num);
+			bitset<1000> def, use;
+			def[a->num] = 1;
+			com_ins[yylineno - 1].def = def;
+			com_ins[yylineno - 1].use = use;
+			//debug(yylineno);
 		}
 	|	VAR NUM SYMBOL {
 			//已重写
 			if($2[2]=='p')
 				yyerror("pxx can not be declare!");
+			Variable *a = new_Var_Arr($2,isGlobal, stoi(string($2)), now_fun);
 			if(isGlobal)
-			{
-				new_Var_Arr($2,isGlobal, stoi(string($2)), now_fun);
 				com_ins[yylineno - 1] = ins(iGVAR, $3, $2);
-			}
 			else
-			{
-				new_Var_Arr($2,isGlobal, stoi(string($2)), now_fun);
 				com_ins[yylineno - 1] = ins(iVAR, $3, $2);
-			}
+			bitset<1000> def, use;
+			def[a->num] = 1;
+			com_ins[yylineno - 1].def = def;
+			com_ins[yylineno - 1].use = use;
 		}
 	|	EOL	{
 			//已重写
@@ -192,8 +301,16 @@ Expression
 void yyerror(char *s) {
 	printf("%s\n", s);
 }
+inline void checkGlobal() //某些语句必须在函数中
+{
+	if (isGlobal)
+		yyerror("This expression can not be outside of a function!");
+}
+
+/*
 inline void checkGlobal(unsigned long i){
 	;
 	//if(isGlobal)
 		//global_ins.push_back(i);
 }
+*/

@@ -1,10 +1,12 @@
 #include "typedef.h"
 #include "Eeyore.tab.hpp"
+#include <iostream>
 using namespace std;
+#define debug(x) cerr<<#x<<"="<<x<<endl
 map<string,Variable*> var_table;
-map<string, int> label_table; //直接表示这个label的行号（指令号）
 map<string, Function*> func_table;
 int Gvar_count;
+int Var_count; //统计所有变量
 
 std::string extend_p_name(std::string p_name, std::string f_name)
 {
@@ -12,6 +14,7 @@ std::string extend_p_name(std::string p_name, std::string f_name)
 }
 Function::Function(string _name, int _num):f_name(_name),arg_num(_num) { 
     //把它的所有参数都先声明出来
+    stack_size = 0;
     for (int i = 0; i < arg_num; i++)
         new_Var(extend_p_name("p_"+to_string(i), f_name),0, this);
 }
@@ -41,6 +44,11 @@ Variable* new_Var(string var_name, int isGlobal, Function* now_fun = nullptr)
     if(get_Var(var_name) != nullptr)
         yyerror("Variable can't be declared twice!");
     Variable* nv = new Variable(isGlobal, var_name, 0);
+    Var_count ++;
+    //debug(Var_count);
+    //debug(var_name);
+    //debug(isGlobal);
+    nv -> num = Var_count;
     
     if(isGlobal)
     {
@@ -55,6 +63,7 @@ Variable* new_Var(string var_name, int isGlobal, Function* now_fun = nullptr)
         now_fun -> local_var.push_back(nv);
     }
     var_table[var_name] = nv;
+    //debug("end new_var");
     return nv;
 }
 
@@ -63,6 +72,8 @@ Variable* new_Var_Arr(string var_name, int isGlobal, int size, Function* now_fun
     if(get_Var(var_name) != nullptr)
         yyerror("Variable can't be declared twice!");
     Variable* nv = new Variable(isGlobal, var_name, 1);
+    Var_count ++;
+    nv -> num = Var_count;
     nv -> arr_size = size;
     if(isGlobal)
     {
@@ -91,5 +102,28 @@ Variable* get_Var_in_Func(std::string var_name, Function *now_fun) //在 now_fun
     if(rel -> isGlobal || rel -> fa_func == now_fun)
         return rel;
     else 
+    {
+        yyerror("Can not find the var in this function!'");
         return nullptr;
+    }
+}
+
+void Variable::Print_Var()
+{
+    cerr << num << " " << s_name <<":"<< endl;
+    debug(isGlobal);
+    debug(isArray);
+    debug(arr_size);    
+    debug(v_name);
+    debug(spill_loc);
+    debug(fa_func);
+    cerr << endl;
+}
+
+void Function::Print_Func()
+{
+    debug(f_name);
+    debug(arg_num);
+    debug(stack_size);
+    cerr << endl;
 }
