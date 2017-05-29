@@ -91,6 +91,7 @@ int main(int argc, char** argv){
     label_table["f_getint"] = -1;
     label_table["f_putint"] = -2;
     label_table["f_putchar"] = -3;
+    label_table["f_getchar"] = -4;
     relocate();
 
     //cout << "DEBUG" << endl;
