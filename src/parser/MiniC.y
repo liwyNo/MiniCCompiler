@@ -1093,7 +1093,13 @@ expression_statement:
 	;
 
 selection_statement:
-	  IF '(' expression jumper ')' if_statement_inherit statement ELSE {gen_label($4); $<statement_i>$=$<statement_i>0;} statement  {$$.caseList=NULL;}
+	  IF '(' expression jumper ')' if_statement_inherit statement ELSE {gen_goto($<vint>$=CreateLabel());} {
+            gen_label($4);
+            $<statement_i>$=$<statement_i>0;
+        }  statement  {
+            gen_label($<vint>9);
+            $$.caseList=NULL;
+        }
 	| IF '(' expression jumper ')' if_statement_inherit statement %prec IFX {gen_label($4); $$.caseList=NULL;}
 	| SWITCH {gen_goto($<vint>$=CreateLabel());} '(' expression ')' {
             $<statement_i>$=$<statement_i>0;
