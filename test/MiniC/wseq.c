@@ -51,6 +51,7 @@ int calcfa(int x)
         fa[x * 22 + i] = fa[fa[x * 22 + i - 1] * 22 + i - 1];
         i = i + 1;
     }
+    return 0;
 }
 int query(int x, int p)
 {

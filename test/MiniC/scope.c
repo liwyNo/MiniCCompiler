@@ -7,6 +7,7 @@ int f(int n)
     putint(n);
     n = 10;
     putchar(n);
+    return 0;
 }
 int main()
 {

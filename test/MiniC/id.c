@@ -1,8 +1,8 @@
 int getint();
 int putint(int _);
 int putchar(int _0);
-int __(){int _();_();}
-int _() {}
+int __(){int _();return _();}
+int _() {return 0;}
 int main()
 {
     int a12343_;

@@ -29,6 +29,7 @@ int qsort(int L, int R)
         qsort(L, r + 1);
     if (l < R-1)
         qsort(l, R);
+    return 0;
 }
 int swap(int x, int y)
 {
@@ -36,6 +37,7 @@ int swap(int x, int y)
     t = a[x];
     a[x] = a[y];
     a[y] = t;
+    return 0;
 }
 int main()
 {
