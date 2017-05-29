@@ -33,7 +33,7 @@ int main(int argc, char *argv[])
         debug = false;
 
     extern FILE *yyin;
-    yyin = fopen(argv[2], "r");
+    yyin = fopen(argv[debug?2:1], "r");
     yyparse();
     fclose(yyin);
 
