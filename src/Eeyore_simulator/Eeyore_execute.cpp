@@ -16,8 +16,7 @@ unordered_map<int, int> gsymbol;
 
 const int  param[] = {0x3, 0x7, 0xb, 0xf, 0x13, 0x17, 0x1b, 0x1f, 0x23, 0x27};
 #define getI(x) (((x) & 3) ? getValue(x, symbol) : (x) >> 2)
-#define setValue(x, y) symbol[(x)] = (y)
-
+#define setValue(x, y) {if(symbol.find(x) != symbol.end()) symbol[x] = y; else gsymbol[x] = y;}
 int getValue(int x, unordered_map<int, int> & symbol){
 	if(symbol.find(x) != symbol.end())
 		return symbol[x];
@@ -100,6 +99,11 @@ int callBuildIn(int a, stack<int> & stk){
         //cout << (char)tmp;
         printf("%c", (char)tmp);
         return 0;
+    }
+    if(a == -4){
+        char tmp;
+        scanf("%c", &tmp);
+        return tmp;
     }
     return 0;
 }
