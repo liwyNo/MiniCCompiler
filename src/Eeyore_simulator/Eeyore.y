@@ -12,14 +12,19 @@ int yylex(void);
 extern int yylineno;
 void yyerror(char*);
 
+extern vector<_store> relocated; 
 bool isGlobal = true;
 extern vector<ins> com_ins;
 extern unordered_map<string, unsigned> label_table;
 extern vector<int> global_ins;
-extern unordered_map<string, int> farg;
+extern unordered_map<string, unsigned> farg;
+extern unordered_map<unsigned, unordered_map<int, int>> f_symbol;
+extern unordered_map<unsigned, vector<pair<int ,int>>> f_arr;
 inline void checkGlobal(unsigned long i);
-set<string> symbol;
-string f_name = "_init";
+set<int> symbol;
+
+unordered_map<int, int> * t_sp;
+vector<pair<int, int>> * t_arrp;
 %}
 
 %union {
@@ -36,15 +41,15 @@ string f_name = "_init";
 %token CALL
 %token RETURN
 %token ENDT
-%token <vstr>NUM
-%token <vstr>SYMBOL
+%token <vint>NUM
+%token <vint>SYMBOL
 %token <vstr>LABEL
 %token <vstr>FUNCTION
-%token <vstr>OP
-%token <vstr>LOGIOP
+%token <vint>OP
+%token <vint>LOGIOP
 
-%type <vstr>RightValue
-%type <vstr>OP2
+%type <vint>RightValue
+%type <vint>OP2
 
 %%
 Program
@@ -60,21 +65,22 @@ FunctionDecl
 FunctionName
 	:	FUNCTION '['NUM ']' EOL	{
 		isGlobal = false;
-        f_name = $1;
 		com_ins[yylineno - 1] = ins(iNOOP);
         if(label_table.find($1) != label_table.end()){
             cerr << "Redefination of symbol: " << $1 << ". One of defination in line " << yylineno << ".\n";
             exit(-1);
         }
 		label_table[$1] = yylineno - 1;
-        //farg[$1] = stoi($3);
-        farg[$1] = atoi($3);
+        f_symbol[yylineno - 1] = unordered_map<int, int>();
+        t_sp = &f_symbol[yylineno - 1];
+        f_arr[yylineno - 1] = vector<pair<int, int>>();
+        t_arrp = &f_arr[yylineno - 1];
+        farg[$1] = ($3 >> 2);
 	}
 ;
 FunctionEnd
 	:	ENDT FUNCTION EOL 	{
 		isGlobal = true;
-        f_name = "_init";
 		com_ins[yylineno - 1] = ins(iNOOP);
 	}
 ;
@@ -115,10 +121,12 @@ Expression
 			com_ins[yylineno - 1] = ins(iARRGET, $1, $3, $5);
 		}
 	|	IF RightValue LOGIOP RightValue GOTO LABEL EOL {
-			com_ins[yylineno - 1] = ins(iIF, $2, $3, $4, $6);
+            relocated.emplace_back(yylineno - 1, $6, 3);
+			com_ins[yylineno - 1] = ins(iIF, $2, $3, $4, 0);
 		}  
 	|	GOTO LABEL EOL  {
-			com_ins[yylineno - 1] = ins(iGOTO, $2);
+            relocated.emplace_back(yylineno - 1, $2, 0);
+			com_ins[yylineno - 1] = ins(iGOTO, 0);
 		}
 	|	LABEL ':' EOL  {
 			com_ins[yylineno - 1] = ins(iNOOP);
@@ -132,11 +140,12 @@ Expression
 			com_ins[yylineno - 1] = ins(iPARAM, $2);
 		}  
 	|	CALL FUNCTION EOL {
-			checkGlobal(yylineno);
-			com_ins[yylineno - 1] = ins(iCALLVOID, $2);
+            relocated.emplace_back(yylineno - 1, $2, 0);
+			com_ins[yylineno - 1] = ins(iCALLVOID, 0, 0);
 		} 
 	|	SYMBOL '=' CALL FUNCTION EOL {
-			com_ins[yylineno - 1] = ins(iCALL, $1, $4);
+            relocated.emplace_back(yylineno - 1, $4, 1);
+			com_ins[yylineno - 1] = ins(iCALL, $1, 0, 0);
 		}
 	|	RETURN RightValue EOL  {
 			com_ins[yylineno - 1] = ins(iRETURN, $2);
@@ -146,21 +155,33 @@ Expression
 		}
 	|	VAR SYMBOL EOL {
 			checkGlobal(yylineno - 1);
-            if(symbol.find($2) != symbol.end() && $2[0] != 'p'){
+            if(symbol.find($2) != symbol.end()){
                 cerr << "Redefination of symbol: " << $2 << ". One of defination in line " << yylineno << ".\n";
                 exit(-1);
             }
             symbol.insert($2);
-			com_ins[yylineno - 1] = ins(iNOOP, $2);
+            if(!isGlobal){
+                t_sp->emplace($2, 0); 
+            }
+            else{
+                f_symbol[0][$2] = 0;
+            }
+			com_ins[yylineno - 1] = ins(iNOOP);
 		}
 	|	VAR NUM SYMBOL EOL {
 			checkGlobal(yylineno - 1);
-            if(symbol.find($3) != symbol.end() && $3[0] != 'p'){
+            if(symbol.find($3) != symbol.end()){
                 cerr << "Redefination of symbol: " << $3 << ". One of defination in line " << yylineno << ".\n";
                 exit(-1);
             }
             symbol.insert($3);
-			com_ins[yylineno - 1] = ins(iNOOP, $3, $2);
+            if(!isGlobal){
+                t_arrp->emplace_back($3, $2 >> 2); 
+            }
+            else{
+                f_arr[0].emplace_back($3, $2 >> 2);
+            }
+			com_ins[yylineno - 1] = ins(iNOOP);
 		}
 	|	EOL	{
 			com_ins[yylineno - 1] = ins(iNOOP);
