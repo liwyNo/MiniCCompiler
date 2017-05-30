@@ -17,7 +17,7 @@ Function::Function(string _name, int _num):f_name(_name),arg_num(_num) {
     //把它的所有参数都先声明出来
     stack_size = 12; //先把12个callee save的寄存器的空间存下来
     for (int i = 0; i < arg_num; i++)
-        new_Var(extend_p_name("p_"+to_string(i), f_name),0, this);
+        new_Var(extend_p_name("p"+to_string(i), f_name),0, this);
 }
 Function* new_Function(string fun_name, int arg_num)
 {
@@ -42,6 +42,7 @@ string __get_new_gvar_name()
 Variable::Variable(bool _isGlobal, std::string _s_name, bool _isArray):isGlobal(_isGlobal),s_name(_s_name),isArray(_isArray) {}
 Variable* new_Var(string var_name, int isGlobal, Function* now_fun = nullptr)
 {
+    //debug(var_name);    
     if(get_Var(var_name) != nullptr)
         yyerror("Variable can't be declared twice!");
     Variable* nv = new Variable(isGlobal, var_name, 0);
@@ -102,7 +103,12 @@ Variable* get_Var(string var_name)
 Variable* get_Var_in_Func(std::string var_name, Function *now_fun) //在 now_fun 里面返回 var_name 这个变量，如果没有，或者作用域不对，则返回 nullptr
 {
     Variable* rel = get_Var(var_name);
-    if(rel -> isGlobal || rel -> fa_func == now_fun)
+    if(rel == nullptr)
+    {
+        yyerror("Can not find the var in this function!'");
+        return nullptr;
+    }
+    else if(rel -> isGlobal || rel -> fa_func == now_fun)
         return rel;
     else 
     {

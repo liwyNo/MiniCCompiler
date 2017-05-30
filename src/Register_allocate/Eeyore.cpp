@@ -47,21 +47,24 @@ int main(int argc, char** argv){
 
 	//Compile the instruction
 	com_ins.resize(ori_ins.size());
+    //debug(123);
 	yyparse();
     for (int i=1;i<com_ins.size();i++)
         com_ins[i].line_num = i;
 
-    
-    //data flow analysis
+    //init_debug();
+    /*data flow analysis*/
     init_preI();
-    //
+    //init_debug();
     LiveVariableAnalysis();
     //init_debug();
 
-    //Register Allocate:linear scan!
+    /*Register Allocate:linear scan!*/
     init_all_reg();
+    //init_debug();
     //return 0;
     LinearScan();
     init_debug();
+    //gen_output();
 	return 0;
 }
