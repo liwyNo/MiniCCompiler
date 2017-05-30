@@ -2,7 +2,6 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include "yaccTypes.h"
 int yylex(void);
 extern int yylineno;
 %}
@@ -18,8 +17,8 @@ extern const char *str_reg[REGNUM];
     int vint;
 }
 
-%token <vint> INT_CONSTANT GVAR LABEL REGISTER
-%token <vstr> FUNCTION
+%token <vint> INT_CONSTANT 
+%token <vstr> FUNCTION REGISTER LABEL GVAR
 %token END IF GOTO CALL LOAD STORE MALLOC LOADADDR
 %token GE LE AND OR NE EQ
 
@@ -39,19 +38,38 @@ block: function_declare
      ;
 
 function_declare: FUNCTION '[' INT_CONSTANT ']' '[' INT_CONSTANT ']' {
-                        add_func_begin($1, $3, $6);
+                        int stk_s = ($6 / 4 + 1) * 16;
+                        printf("\t.text\n");
+                        printf("\t.align\t2\n");
+                        printf("\t.global\t%s\n", $1);
+                        printf("\t.type\t%s, @function\n", $1);
+                        printf("%s:\n", $1);
+                        printf("\tadd\tsp,sp,-%d\n", stk_s);
+                        printf("\tsw\tra,%d(sp)\n", stk_s - 4);
                     } expression_list END FUNCTION {
-                        if (strcmp($1, $11) != 0)
-                            yyerror("function declare name not match");
-                        stmts.push_back(new stmt_func_end($1));
+                        int stk_s = ($6 / 4 + 1) * 16;
+                        printf("\tlw\tra,%d(sp)\n", stk_s - 4);
+                        printf("\tadd\tsp,sp,%d\n", stk_s);
+                        printf("\tjr\tra\n");
+                        printf("\t.size\t%s, .-%s\n", $1, $1);
                     }
                 ;
 
 integer: INT_CONSTANT   {$$=$1;}
        | '-' INT_CONSTANT {$$=-$2;}
 
-global_var_declare: GVAR '=' MALLOC INT_CONSTANT { add_gvar_array($1, $4); }
-                  | GVAR '=' integer   { add_gvar_int($1, $3); }
+global_var_declare: GVAR '=' MALLOC INT_CONSTANT {
+                        printf("\t.comm\t%s,%d,4\n", $1, $4 * 4);
+                  }
+                  | GVAR '=' integer   {
+                        printf("\t.global\t%s\n", $1);
+                        printf("\t.section\t.sdata\n");
+                        printf("\t.align 2\n");
+                        printf("\t.type\t%s, @object\n", $1);
+                        printf("\t.size\t%s, 4\n", $1);
+                        printf("%s:\n", $1);
+                        printf("\t.word\t%d\n", $3);
+                  }
                   ;
 
 expression_list: 
@@ -65,30 +83,129 @@ operator: '+' {$$=strdup("+");}
         | '%' {$$=strdup("%");}
         | '>' {$$=strdup(">");}
         | '<' {$$=strdup("<");}
-        | LE {$$=strdup("<=");}
-        | GE {$$=strdup(">=");}
+        | LE {$$=strdup("@");}
+        | GE {$$=strdup("#");}
         | AND {$$=strdup("&&");}
         | OR {$$=strdup("||");}
         | NE {$$=strdup("!=");}
         | EQ {$$=strdup("==");}
         ;
 
-expression: REGISTER '=' integer   {check_zero_written($1); stmts.push_back(new stmt_assign_const($1, $3));}
-          | REGISTER '=' REGISTER operator REGISTER     {check_zero_written($1); check_op2($4); stmts.push_back(new stmt_assign_op2($1, $3, $4, $5));}
-          | REGISTER '=' REGISTER operator integer {check_zero_written($1); check_op2i($4); stmts.push_back(new stmt_assign_op2i($1, $3, $4, $5));}
-          | REGISTER '=' operator REGISTER  {check_zero_written($1); check_op1($3); stmts.push_back(new stmt_assign_op1($1, $3, $4));}
-          | REGISTER '=' REGISTER   {check_zero_written($1); stmts.push_back(new stmt_assign_move($1, $3));}
-          | REGISTER '[' INT_CONSTANT ']' '=' REGISTER  {check_zero_written($1); stmts.push_back(new stmt_assign_lidx($1, $3, $6));}
-          | REGISTER '=' REGISTER '[' INT_CONSTANT ']'  {check_zero_written($1); stmts.push_back(new stmt_assign_ridx($1, $3, $5));}
-          | IF REGISTER operator REGISTER GOTO LABEL    {check_op2($3); stmts.push_back(new stmt_if_goto($2, $3, $4, $6));}
-          | GOTO LABEL  {stmts.push_back(new stmt_goto($2));}
-          | LABEL ':'   {add_label($1);}
-          | CALL FUNCTION   {stmts.push_back(new stmt_call($2));}
-          | STORE REGISTER INT_CONSTANT {stmts.push_back(new stmt_store_local($2, $3));}
-          | STORE REGISTER GVAR {check_gvar($3); stmts.push_back(new stmt_store_global($2, gvar_name[$3]));}
-          | LOAD INT_CONSTANT REGISTER  {check_zero_written($3); stmts.push_back(new stmt_load_local($2, $3));}
-          | LOAD GVAR REGISTER  {check_gvar($3); stmts.push_back(new stmt_load_global(gvar_name[$2], $3));}
-          | LOADADDR INT_CONSTANT REGISTER {check_zero_written($3); stmts.push_back(new stmt_loadaddr($2, $3));}
+expression: REGISTER '=' integer   {printf("\tli\t%s,%d\n", $1, $3);}
+          | REGISTER '=' REGISTER operator REGISTER     {
+                switch($4[0]){
+                    case '+':
+                        printf("\tadd\t%s,%s,%s\n", $1, $3, $5);
+                        break;
+                    case '-':
+                        printf("\tsub\t%s,%s,%s\n", $1, $3, $5);
+                        break;
+                    case '*':
+                        printf("\tmul\t%s,%s,%s\n", $1, $3, $5);
+                        break;
+                    case '/':
+                        printf("\tdiv\t%s,%s,%s\n", $1, $3, $5);
+                        break;
+                    case '%':
+                        printf("\trem\t%s,%s,%s\n", $1, $3, $5);
+                        break;
+                    case '<':
+                        printf("\tslt\t%s,%s,%s\n", $1, $3, $5);
+                        break;
+                    case '@': //<=
+                        printf("\tsub\t%s,%s,%s\n", $1, $3, $5);
+                        printf("\tsgtz\t%s,%s\n", $1, $1);
+                        printf("\txori\t%s,%s,1\n", $1, $1);
+                        break;
+                    case '#': //>=
+                        printf("\tsub\t%s,%s,%s\n", $1, $3, $5);
+                        printf("\tsltz\t%s,%s\n", $1, $1);
+                        printf("\txori\t%s,%s,1\n", $1, $1);
+                        break;
+                    case '>':
+                        printf("\tsgt\t%s,%s,%s\n", $1, $5, $3);
+                        break;
+                    case '&':
+                        //Need better solution
+                        printf("\tseqz\t%s,%s\n", $1, $3);
+                        printf("\tadd\t%s,%s,-1\n", $1, $1);
+                        printf("\tand\t%s,%s,%s\n", $1, $1, $5);
+                        printf("\tsnez\t%s,%s\n", $1, $1);
+                        break;
+                    case '|':
+                        printf("\tor\t%s,%s,%s\n", $1, $3, $5);
+                        printf("\tsnez\t%s,%s\n", $1, $1);
+                        break;
+                    case '!':
+                        printf("\txor\t%s,%s,%s\n", $1, $3, $5);
+                        printf("\tsnez\t%s,%s\n", $1, $1);
+                        break;
+                    case '=':
+                        printf("\txor\t%s,%s,%s\n", $1, $3, $5);
+                        printf("\tseqz\t%s,%s\n", $1, $1);
+                        break;
+                }
+          }
+          | REGISTER '=' REGISTER operator integer {
+                switch($4[0]){
+                    case '+':
+                        printf("\tadd\t%s,%s,%d\n", $1, $3, $5);
+                        break;
+                    case '<':
+                        printf("\tslti\t%s,%s,%d\n", $1, $3, $5);
+                        break;
+                }
+          }
+          | REGISTER '=' operator REGISTER  {
+                switch($3[0]){
+                    case '!':
+                        printf("\tseqz\t%s,%s\n", $1, $4);
+                        printf("\tand\t%s,%s,0xff\n", $1, $1);
+                        break;
+                    case '-':
+                        printf("\tsub\t%s,zero,%s\n", $1, $4);
+                        break;
+                }
+          }
+          | REGISTER '=' REGISTER   {printf("\tmv\t%s,%s\n", $1, $3);}
+          | REGISTER '[' INT_CONSTANT ']' '=' REGISTER  {printf("\tsw\t%s,%d(%s)\n", $6, $3, $1);}
+          | REGISTER '=' REGISTER '[' INT_CONSTANT ']'  {printf("\tlw\t%s,%d(%s)\n", $1, $5, $3);}
+          | IF REGISTER operator REGISTER GOTO LABEL    {
+                switch($3[0]){
+                    case '<':
+                        printf("\tblt\t%s,%s,.%s\n", $2, $4, $6);
+                        break;
+                    case '>':
+                        printf("\tbgt\t%s,%s,.%s\n", $2, $4, $6);
+                        break;
+                    case '!':
+                        printf("\tbne\t%s,%s,.%s\n", $2, $4, $6);
+                        break;
+                    case '=':
+                        printf("\tbeq\t%s,%s,.%s\n", $2, $4, $6);
+                        break;
+                    case '@': //<=
+                        printf("\tble\t%s,%s,.%s\n", $2, $4, $6);
+                        break;
+                    case '#': //>=
+                        printf("\tble\t%s,%s,.%s\n", $4, $2, $6);
+                        break;
+                }
+          }
+          | GOTO LABEL  {printf("\tj\t.%s\n", $2);}
+          | LABEL ':'   {printf(".%s:\n", $1);}
+          | CALL FUNCTION   {printf("\tcall\t%s\n", $2);}
+          | STORE REGISTER INT_CONSTANT {printf("\tsw\t%s,%d(sp)\n", $2, $3 * 4);}
+          | LOAD INT_CONSTANT REGISTER  {printf("\tlw\t%s,%d(sp)\n", $3, $2 * 4);}
+          | LOAD GVAR REGISTER  {
+                printf("\tlui\t%s,%%hi(%s)\n",$3, $2);
+                printf("\tlw\t%s,%%lo(%s)(%s)\n", $3, $2, $3);
+          }
+          | LOADADDR INT_CONSTANT REGISTER {printf("\tadd\t%s,sp,%d\n", $3, $2 * 4);}
+          | LOADADDR GVAR REGISTER {
+                printf("\tlui\t%s,%%hi(%s)\n",$3, $2);
+                printf("\tadd\t%s,%s,%%lo(%s)\n", $3, $3, $2);
+          }
           /*| REGISTER '=' MALLOC INT_CONSTANT {if ($4 % 4 != 0 || $4 == 0) yyerror("what do you mean by this mallocing size?"); stmts.push_back(new stmt_malloc($1, $4));}*/
           ;
 
@@ -98,4 +215,8 @@ void yyerror(const char *s)
 {
     printf("line %d: %s\n", yylineno, s);
     exit(1);
+}
+int main(){
+    yyparse();
+    return 0;
 }

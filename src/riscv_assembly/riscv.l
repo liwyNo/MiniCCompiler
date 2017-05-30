@@ -7,7 +7,6 @@ W   [a-zA-Z_0-9]
 #include <cstring>
 #include <cstdio>
 #include "riscv.tab.hpp"
-#include "riscv.h"
 void yyerror(const char *s);
 %}
 
@@ -35,8 +34,8 @@ void yyerror(const char *s);
 "="     {return '=';}
 ":"     {return ':';}
 f_{W}+  {yylval.vstr=strdup(yytext+2); return FUNCTION;}
-l{D}+   {sscanf(yytext+1,"%d",&yylval.vint); return LABEL;}
-v{D}+   {sscanf(yytext+1,"%d",&yylval.vint); return GVAR;}
+l{D}+   {yylval.vstr=strdup(yytext); return LABEL;}
+v{D}+   {yylval.vstr=strdup(yytext); return GVAR;}
 call    {return CALL;}
 if      {return IF;}
 goto    {return GOTO;}
@@ -45,7 +44,10 @@ load    {return LOAD;}
 store   {return STORE;}
 loadaddr {return LOADADDR;}
 malloc  {return MALLOC;}
-x{D}+|s{D}+|a{D}+|t{D}+   {yylval.vint=find_reg(yytext); if (yylval.vint==-1) yyerror("register id not found"); return REGISTER;}
+x0  {yylval.vstr=strdup("zero"); return REGISTER;}
+s([0-9]|10|11)  {yylval.vstr=strdup(yytext); return REGISTER;}
+a[0-7]  {yylval.vstr=strdup(yytext); return REGISTER;}
+t[0-6]  {yylval.vstr=strdup(yytext); return REGISTER;}
 {WS}+   {}
 .       {}
 
