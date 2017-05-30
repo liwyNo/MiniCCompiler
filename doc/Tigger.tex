@@ -18,7 +18,7 @@
 \begin{document}
 \maketitle
 \section{何为Tigger}
-Tigger是面向RISCV的一种中间表示，用作寄存器分配的输出格式。
+Tigger是面向RISC-V的一种中间表示，用作寄存器分配的输出格式。
 
 为了让同学们快速熟悉Tigger语法，Tigger遵循一贯的简洁易读风格，被设计得与Eeyore很像。
 
@@ -28,7 +28,7 @@ Tigger这个名字与Kanga取自同一部动画。
 
 \section{Tigger语法描述}
 \subsection{寄存器}
-Tigger共有28个可用的寄存器，这些寄存器的名称与RISCV保持一致（相比RISCV，删去了一些不需要编译器管理寄存器）。
+Tigger共有28个可用的寄存器，这些寄存器的名称与RISC-V保持一致（相比RISC-V，删去了一些不需要编译器管理寄存器）。
 
 \texttt{x0}：该寄存器恒等于0，不可更改
 
@@ -84,14 +84,16 @@ Tigger共有28个可用的寄存器，这些寄存器的名称与RISCV保持一�
 
 \texttt{<VARIABLE> = <INTEGER>}用来声明一个初始值为\texttt{<INTEGER>}的全局变量\texttt{<VARIABLE>}，即\texttt{<VARIABLE>}这个名称表示的内存地址上4字节的内容为\texttt{<INTEGER>}。
 
-\texttt{<VARIABLE> = malloc <INTEGER>}用来声明数组，\texttt{<VARIABLE>}这个名称表示的内存地址上4字节的内容为一个内存地址，这个地址指向一个长度为\texttt{<INTEGER>}的内存区域。
+\texttt{<VARIABLE> = malloc <INTEGER>}用来声明数组，\texttt{<VARIABLE>}这个名称表示的内存地址之后的\texttt{<INTEGER>}字节的内容为一个数组。
 注意！\texttt{<INTEGER>}是4的倍数。
 
 对全局变量的操作都通过寄存器完成，全局变量的\texttt{load}和\texttt{store}语句与之前介绍的稍有不同。
 
-\texttt{store Reg <VARIABLE>}语句表示把\texttt{Reg}这个寄存器的值存入\texttt{<VARIABLE>}这个全局变量名称所表示的内存地址。
-
 \texttt{load <VARIABLE> Reg}表示把\texttt{<VARIABLE>}这个全局变量对应内存地址上4字节的内容加载到寄存器\texttt{Reg}。
+
+\texttt{loadaddr <VARIABLE> Reg}表示把\texttt{<VARIABLE>}这个全局变量对应内存地址加载到寄存器\texttt{Reg}。
+
+注意！由于RISC-V汇编的原因，没有\texttt{store Reg <VARIABLE>}语句。该语句可以通过\texttt{loadaddr}语句与数组访问语句结合来完成。
 
 \newpage
 \section{BNF}
@@ -117,10 +119,11 @@ Tigger共有28个可用的寄存器，这些寄存器的名称与RISCV保持一�
 \alt Label ':'
 \alt 'call' Function
 \alt 'store' Reg <INTEGER>
-\alt 'store' Reg <VARIABLE>
+%\alt 'store' Reg <VARIABLE>
 \alt 'load' <INTEGER> Reg
 \alt 'load' <VARIABLE> Reg
 \alt 'loadaddr' <INTEGER> Reg
+\alt 'loadaddr' <VARIABLE> Reg
 
 <Reg> ::= 'x0'
 | 's0'

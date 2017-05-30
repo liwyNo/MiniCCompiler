@@ -3,7 +3,7 @@
 
 std::vector<int> stackmem;
 int reg[REGNUM];
-std::vector<int> gvars;
+std::vector<int*> gvars;
 std::vector<statement_t *> stmts;
 std::map<int, int> labels;
 std::map<std::string, int> funcs;

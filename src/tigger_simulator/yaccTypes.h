@@ -120,10 +120,18 @@ struct stmt_store_local: public statement_t {
     void run();
 };
 
+/*
 struct stmt_store_global: public statement_t {
     int rnum;
     int xnum;
     stmt_store_global(int _rnum, int _xnum): rnum(_rnum), xnum(_xnum) {}
+    void run();
+};*/
+
+struct stmt_loadaddr_global: public statement_t {
+    int xnum;
+    int rnum;
+    stmt_loadaddr_global(int _xnum, int _rnum): xnum(_xnum), rnum(_rnum) {}
     void run();
 };
 
@@ -148,10 +156,10 @@ struct stmt_load_global: public statement_t {
     void run();
 };*/
 
-struct stmt_loadaddr: public statement_t {
+struct stmt_loadaddr_local: public statement_t {
     int snum;
     int rnum;
-    stmt_loadaddr(int _snum, int _rnum): snum(_snum), rnum(_rnum) {}
+    stmt_loadaddr_local(int _snum, int _rnum): snum(_snum), rnum(_rnum) {}
     void run();
 };
 

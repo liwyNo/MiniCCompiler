@@ -163,6 +163,7 @@ void stmt_store_local::run()
     ++pc;
 }
 
+/*
 void stmt_store_global::run()
 {
     if (xnum > ngvar) {
@@ -172,6 +173,7 @@ void stmt_store_global::run()
     gvars[xnum] = reg[rnum];
     ++pc;
 }
+*/
 
 void stmt_load_local::run()
 {
@@ -185,12 +187,22 @@ void stmt_load_global::run()
         printf("heap memery access error\n");
         exit(-1);
     }
-    reg[rnum] = gvars[xnum];
+    reg[rnum] = *gvars[xnum];
     ++pc;
 }
 
-void stmt_loadaddr::run()
+void stmt_loadaddr_local::run()
 {
     reg[rnum] = (int)&stackmem[sp - ssp + snum];
+    ++pc;
+}
+
+void stmt_loadaddr_global::run()
+{
+    if (xnum > ngvar) {
+        printf("heap memery access error\n");
+        exit(-1);
+    }
+    reg[rnum] = (int)gvars[xnum];
     ++pc;
 }

@@ -11,7 +11,7 @@ struct statement_t;
 
 extern std::vector<int> stackmem;
 extern int reg[REGNUM];
-extern std::vector<int> gvars;
+extern std::vector<int*> gvars;
 extern std::vector<statement_t *> stmts;
 extern std::map<int, int> labels;
 extern std::map<std::string, int> funcs;

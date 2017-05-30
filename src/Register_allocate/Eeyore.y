@@ -13,7 +13,7 @@ using namespace std;
 
 int yylex(void);
 extern int yylineno;
-void yyerror(char*);
+void yyerror(const char*);
 
 bool isGlobal = true;
 Function *now_fun;
@@ -298,7 +298,7 @@ Expression
 		}
 ;
 %%
-void yyerror(char *s) {
+void yyerror(const char *s) {
 	printf("%s\n", s);
 }
 inline void checkGlobal() //某些语句必须在函数中
