@@ -4,4 +4,5 @@
 #include <string>
 void init_all_reg();
 void LinearScan();
+void gen_output();
 #endif

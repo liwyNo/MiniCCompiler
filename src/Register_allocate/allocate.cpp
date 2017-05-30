@@ -101,3 +101,16 @@ void SpillAnInterval(LiveInterval *now_li)
     else
         now_li->spilled = 1;
 }
+
+extern vector<ins> com_ins;
+void gen_output()
+{
+    bool isGlobal = 1;
+    for (auto it = com_ins.begin()+1; it != com_ins.end(); it++)
+    {
+        if(it->type == iFBEGIN) 
+            isGlobal = 0;
+        if(it->type == iFEND)
+            isGlobal = 1;
+    }
+}
