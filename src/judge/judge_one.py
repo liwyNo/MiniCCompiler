@@ -40,8 +40,8 @@ system('mkdir -p %s' % judge_folder)
 res = 0
 for t in range(num):
     data_in = path.join(testdir, 'data%d.in' % t) # change this
-    data_ans = path.join(testdir, 'data%d.ans' % t) # change this
-    data_out = path.join(judge_folder, 'data%d.out' % t)
+    data_ans = path.join(testdir, 'data%d.out' % t) # change this
+    data_out = path.join(judge_folder, '%d.out' % t)
     tads = path.join(judge_folder, 'tads.txt')
     regmid = path.join(judge_folder, 'regmid.txt')
     risc = path.join(judge_folder, 'risc.txt')
