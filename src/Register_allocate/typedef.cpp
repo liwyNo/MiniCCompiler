@@ -15,7 +15,7 @@ std::string extend_p_name(std::string p_name, std::string f_name)
 }
 Function::Function(string _name, int _num):f_name(_name),arg_num(_num) { 
     //把它的所有参数都先声明出来
-    stack_size = 0;
+    stack_size = 12; //先把12个callee save的寄存器的空间存下来
     for (int i = 0; i < arg_num; i++)
         new_Var(extend_p_name("p_"+to_string(i), f_name),0, this);
 }

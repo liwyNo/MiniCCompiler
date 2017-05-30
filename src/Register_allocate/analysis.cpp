@@ -18,8 +18,15 @@ void LiveInterval::Print_Int()
     debug(var->s_name);
     debug(st);
     debug(ed);
+    debug(spilled);
+    debug(reg->r_name);
+    cout << endl;
 }
 
+void Register::free()
+{
+    var = nullptr;
+}
 
 int __get_Lable(string l_name)
 {
@@ -107,7 +114,11 @@ void LiveVariableAnalysis() //类似 spfa 的方式进行迭代，找不动点
     //生成每个变量的活跃区间
     int i;
     for(i=1;i<=Var_count;i++)
+    {
         live_int[i].st = com_ins.size(), live_int[i].ed = -1, live_int[i].var = num_to_var[i];
+        num_to_var[i]->LI = &live_int[i];
+        live_int[i].spilled = 0;
+    }
     for (auto it = com_ins.begin()+1; it != com_ins.end(); it++)
     {
         for(i=1;i<=Var_count;i++)

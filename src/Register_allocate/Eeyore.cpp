@@ -7,6 +7,7 @@
 #include <fstream>
 #include "Eeyore.tab.hpp"
 #include "analysis.h"
+#include "allocate.h"
 #include "util.h"
 
 using namespace std;
@@ -58,5 +59,11 @@ int main(int argc, char** argv){
     //
     LiveVariableAnalysis();
     //init_debug();
+
+    //Register Allocate:linear scan!
+    init_all_reg();
+    //return 0;
+    LinearScan();
+    init_debug();
 	return 0;
 }
