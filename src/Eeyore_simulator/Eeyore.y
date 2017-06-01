@@ -136,7 +136,7 @@ Expression
             }
 			label_table[$1] = yylineno - 1;
 		}
-	|	PARAM SYMBOL EOL {
+	|	PARAM RightValue EOL {
 			com_ins[yylineno - 1] = ins(iPARAM, $2);
 		}  
 	|	CALL FUNCTION EOL {
