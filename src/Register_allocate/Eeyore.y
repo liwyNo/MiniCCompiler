@@ -169,7 +169,7 @@ Expression
 			checkGlobal();
 			string str_a = fix_name($1, now_fun), str_b = fix_name($3.str_name, now_fun), str_c = fix_name($6.str_name, now_fun);
 			Variable *a = get_Var_in_Func(str_a, now_fun);
-			checkArray(a);
+			//checkArray(a);
 			bitset<1000> def, use;
 			use[a -> num] = 1;
 			if($3.Num_or_Symbol == 1)
@@ -185,7 +185,7 @@ Expression
 			checkGlobal();
 			string str_a = fix_name($1, now_fun), str_b = fix_name($3, now_fun), str_c = fix_name($5.str_name, now_fun);
 			Variable *a = get_Var_in_Func(str_a, now_fun), *b = get_Var_in_Func(str_b, now_fun);
-			checkArray(b);
+			//checkArray(b);
 			bitset<1000> def, use;
 			def[a -> num] = 1;
 			use[b -> num] = 1;
@@ -226,7 +226,7 @@ Expression
 			Variable *a = get_Var_in_Func(str_a, now_fun);
 			bitset<1000> def, use;
 			use[a -> num] = 1;
-			com_ins[yylineno - 1] = ins(iPARAM, $2);
+			com_ins[yylineno - 1] = ins(iPARAM, str_a);
 			com_ins[yylineno - 1].def = def;
 			com_ins[yylineno - 1].use = use;
 		}  
@@ -282,7 +282,7 @@ Expression
 			//已重写
 			if($2[2]=='p')
 				yyerror("pxx can not be declare!");
-			Variable *a = new_Var_Arr($2,isGlobal, stoi(string($2)), now_fun);
+			Variable *a = new_Var_Arr($3,isGlobal, stoi(string($2)), now_fun);
 			if(isGlobal)
 				com_ins[yylineno - 1] = ins(iGVAR, $3, $2);
 			else
@@ -299,7 +299,8 @@ Expression
 ;
 %%
 void yyerror(const char *s) {
-	printf("%s\n", s);
+	fprintf(stderr,"%d: %s\n", yylineno, s);
+	exit(1);
 }
 inline void checkGlobal() //某些语句必须在函数中
 {

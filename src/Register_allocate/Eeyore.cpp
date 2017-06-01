@@ -52,18 +52,19 @@ int main(int argc, char** argv){
     for (int i=1;i<com_ins.size();i++)
         com_ins[i].line_num = i;
 
+    //debug("pass pass");
     //init_debug();
     /*data flow analysis*/
     init_preI();
     //init_debug();
-    LiveVariableAnalysis();
+    //LiveVariableAnalysis();
     //init_debug();
 
     /*Register Allocate:linear scan!*/
     init_all_reg();
     //init_debug();
     //return 0;
-    LinearScan();
+    //LinearScan();
     //init_debug();
     gen_output();
 	return 0;

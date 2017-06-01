@@ -15,15 +15,18 @@ void init_debug()
         auto it_var = it->second;
         it_var->Print_Func();
     }
+    
     for(auto it = var_table.begin(); it != var_table.end(); it++)
     {
         auto it_var = it->second;
         it_var->Print_Var();
     }
+    /*
     for(auto it = com_ins.begin()+1; it != com_ins.end(); it++)
     {
         it->Print_Ins();
     }
+    */
     for(int i=1;i<=Var_count;i++)
     {
         live_int[i].Print_Int();

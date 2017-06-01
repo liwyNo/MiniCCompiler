@@ -91,6 +91,8 @@ Variable* new_Var_Arr(string var_name, int isGlobal, int size, Function* now_fun
     {
         nv -> spill_loc = now_fun -> stack_size; //栈空间下标从0开始
         now_fun -> stack_size += size/4;  //别忘除4！！！
+        nv -> fa_func = now_fun;
+        now_fun -> local_var.push_back(nv);
     }
     var_table[var_name] = nv;
     num_to_var[Var_count] = nv;

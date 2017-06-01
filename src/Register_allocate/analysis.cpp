@@ -73,11 +73,18 @@ void init_preI()//假装是正确的了，不管正确性验证了
     }
 }
 
-void LiveVariableAnalysis() //类似 spfa 的方式进行迭代，找不动点
+void LiveVariableAnalysis(ins* start_ins) //类似 spfa 的方式进行迭代，找不动点
 {
     queue<ins*> q;
     bool isGlobal = 1;
-    for (auto it = com_ins.begin()+1; it != com_ins.end(); it++)
+    ins* end_ins;
+    for (auto it = start_ins; ; it++)
+        if(it->type == iFEND)
+        {
+            end_ins = it;
+            break;
+        }
+    for (auto it = start_ins; it != end_ins; it++)
     {
         if(it->type == iFBEGIN) 
             isGlobal = 0;
@@ -119,7 +126,7 @@ void LiveVariableAnalysis() //类似 spfa 的方式进行迭代，找不动点
         num_to_var[i]->LI = &live_int[i];
         live_int[i].spilled = 0;
     }
-    for (auto it = com_ins.begin()+1; it != com_ins.end(); it++)
+    for (auto it = start_ins; it != end_ins; it++)
     {
         for(i=1;i<=Var_count;i++)
         {

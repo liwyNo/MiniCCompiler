@@ -196,12 +196,14 @@ inline void upd_hold(string v_name)
         hold_var[get_Var(v_name)] = 1;
 }
 
-void LoadVar_Temp(Variable* lvar, Register* reg) //仅函数传参时用到，仅仅是Load 其他啥都不修改
+void LoadVar_Temp(Variable* lvar, string r_name) //仅函数传参和处理数组时用到，仅仅是Load 其他啥都不修改
 {
+    if(lvar->reg != nullptr)
+        __gen_R1_Ass_R2(r_name, lvar->reg->r_name);
     if(lvar->isGlobal == 0)
-        __gen_Load_Int_Reg(lvar->spill_loc, reg->r_name);
+        __gen_Load_Int_Reg(lvar->spill_loc, r_name);
     else
-        __gen_Load_Gvar_Reg(lvar->v_name, reg->r_name);
+        __gen_Load_Gvar_Reg(lvar->v_name, r_name);
 }
 
 void StoreVal(Variable *svar, Register* reg) //把 reg 内的值存到 svar 的内存里，只在取得函数返回值时使用
@@ -217,10 +219,20 @@ void StoreVal(Variable *svar, Register* reg) //把 reg 内的值存到 svar 的�
 
 void LoadVar(Variable* lvar, Register* reg)
 {
-    if(lvar->isGlobal == 0)
-        __gen_Load_Int_Reg(lvar->spill_loc, reg->r_name);
+    if(lvar -> isArray == 1)
+    {
+        if(lvar-> isGlobal == 0)
+            __gen_LDAD_Int_Reg(lvar->spill_loc, reg->r_name);
+        else
+            __gen_LDAD_Gvar_Reg(lvar ->v_name, reg->r_name);
+    }
     else
-        __gen_Load_Gvar_Reg(lvar->v_name, reg->r_name);
+    {
+        if(lvar-> isGlobal == 0)
+            __gen_Load_Int_Reg(lvar->spill_loc, reg->r_name);
+        else
+            __gen_Load_Gvar_Reg(lvar->v_name, reg->r_name);
+    }
     free_reg.erase(reg);
     used_reg.insert(reg);
     reg->var = lvar;
@@ -234,12 +246,17 @@ void SpillVar(Variable* svar)
         debug("Warning nullptr occured in SpillVar function!");
         return;
     }
-    if(svar->isGlobal == 0)
-        __gen_ST_Reg_Int(svar->reg->r_name, svar->spill_loc);
+    if(svar->isArray)//数组没有实体，不能存回去
+        ;
     else
     {
-        __gen_LDAD_Gvar_Reg(svar->v_name, addr_reg);
-        __gen_Reg_Int_Ass_Reg(addr_reg, 0, svar->reg->r_name);
+        if(svar->isGlobal == 0)
+            __gen_ST_Reg_Int(svar->reg->r_name, svar->spill_loc);
+        else
+        {
+            __gen_LDAD_Gvar_Reg(svar->v_name, addr_reg);
+            __gen_Reg_Int_Ass_Reg(addr_reg, 0, svar->reg->r_name);
+        }
     }
     used_reg.erase(svar->reg);
     free_reg.insert(svar->reg);
@@ -266,11 +283,13 @@ string get_Reg(string v_name, Variable* &be_spilled)
     if(isdigit(v_name[0]))//假如是个数字，就给分配预留出来的两个寄存器之一
     {
         __gen_Reg_Int(stoi(v_name), num_reg[use_num_reg]);
-        return num_reg[use_num_reg];
+        return num_reg[use_num_reg++];
     }
     auto my_var = get_Var(v_name);
     if(my_var->reg != nullptr)
         return my_var->reg->r_name;
+    
+    
     /*此时说明它在这个位置没有被Linear Scan钦定寄存器，需要找个空的，或者搞掉别人的寄存器*/
     if(!free_reg.empty())
     {
@@ -308,26 +327,29 @@ void gen_output()
     for (auto it = com_ins.begin()+1; it != com_ins.end(); it++)
     {
         ins_num++;
-        //debug(ins_num);
-        /*钦定的寄存器在一开头就处理好*/
-        ExpireOldInterval2(ins_num);
-        while(p_i <= Var_count && live_int[p_i].st <= ins_num)
-        {
-            if(!live_int[p_i].spilled)
-            {
-                auto my_var = live_int[p_i].var;
-                auto reg = live_int[p_i].reg;
-                if(reg->var != nullptr)
-                    SpillVar(reg->var);
-                LoadVar(my_var, reg);
-            }
-            p_i++;
-        }
-
+        debug(ins_num);
         if(it->type == iFBEGIN) 
             isGlobal = 0;
         if(it->type == iFEND)
             isGlobal = 1;
+        /*钦定的寄存器在一开头就处理好*/
+        if(isGlobal == 0 && it->type != iFBEGIN)
+        {
+            ExpireOldInterval2(ins_num);
+            while(p_i <= Var_count && live_int[p_i].st <= ins_num)
+            {
+                if(!live_int[p_i].spilled)
+                {
+                    auto my_var = live_int[p_i].var;
+                    auto reg = live_int[p_i].reg;
+                    if(reg->var != nullptr)
+                        SpillVar(reg->var);
+                    LoadVar(my_var, reg);
+                }
+                p_i++;
+            }
+        }
+        
         hold_var.clear();
         use_num_reg = 0;
 
@@ -388,10 +410,14 @@ void gen_output()
             R2 = get_Reg(it->arg2, sp2);
             R3 = get_Reg(it->arg3, sp3);
             Variable *a = get_Var(it->arg1);
-            if(a->isGlobal == 0)
-                __gen_LDAD_Int_Reg(a->spill_loc, addr_reg);
-            else
-                __gen_LDAD_Gvar_Reg(a->v_name, addr_reg);
+            if(a->isArray == 1)
+            {
+                if(a->isGlobal == 0)
+                    __gen_LDAD_Int_Reg(a->spill_loc, addr_reg);
+                else
+                    __gen_LDAD_Gvar_Reg(a->v_name, addr_reg);
+            }
+            else LoadVar_Temp(a, addr_reg);
             __gen_R1_R2_OP2_R3(addr_reg, addr_reg, R2, "+");
             __gen_Reg_Int_Ass_Reg(addr_reg, 0, R3);
             Recover(sp2);
@@ -400,15 +426,19 @@ void gen_output()
         if(it->type == iARRGET)
         {
             string R1, R2, R3;
-            Variable *sp1, *sp2, *sp3;
+            Variable *sp1, *sp2, *sp3, *trash;
             upd_hold(it->arg1), upd_hold(it->arg2), upd_hold(it->arg3);
             R1 = get_Reg(it->arg1, sp1);
             R3 = get_Reg(it->arg3, sp3);
             Variable *a = get_Var(it->arg1), *b = get_Var(it->arg2);
-            if(b->isGlobal == 0)
-                __gen_LDAD_Int_Reg(b->spill_loc, addr_reg);
-            else
-                __gen_LDAD_Gvar_Reg(b->v_name, addr_reg);
+            if(b->isArray == 1)
+            {
+                if(b->isGlobal == 0)
+                    __gen_LDAD_Int_Reg(b->spill_loc, addr_reg);
+                else
+                    __gen_LDAD_Gvar_Reg(b->v_name, addr_reg);
+            }
+            else LoadVar_Temp(b, addr_reg);
             __gen_R1_R2_OP2_R3(addr_reg, addr_reg, R3, "+");
             __gen_Reg_Ass_Reg_Int(R1, addr_reg, 0);
             a->inMemory = 0;
@@ -468,17 +498,14 @@ void gen_output()
 
         if(it->type == iCALLVOID)
         {
-            if(last_param != ins_num - 1) //之前一个 Param 语句都没有，这活就得轮到这里完成了
+            
+            for(auto reg_name: caller_reg)
             {
-                //把所有 caller save 都存起来
-                for(auto reg_name: caller_reg)
+                auto reg_it = get_reg[reg_name];
+                if(reg_it->var != nullptr)
                 {
-                    auto reg_it = get_reg[reg_name];
-                    if(reg_it->var != nullptr)
-                    {
-                        sp_stk.push(reg_it->var);
-                        SpillVar(reg_it->var);
-                    }
+                    sp_stk.push(reg_it->var);
+                    SpillVar(reg_it->var);
                 }
             }
             int param_cnt=0;
@@ -492,7 +519,7 @@ void gen_output()
                     sp_stk.push(param_var);
                     SpillVar(param_var);
                 }
-                LoadVar_Temp(param_var, pas_reg);
+                LoadVar_Temp(param_var, pas_reg->r_name);
                 param_cnt++;
             }
             
@@ -506,31 +533,32 @@ void gen_output()
 
         if(it->type == iCALL)
         {
-            if(last_param != ins_num - 1) //之前一个 Param 语句都没有，这活就得轮到这里完成了
+            
+            //把所有 caller save 都存起来
+            for(auto reg_name: caller_reg)
             {
-                //把所有 caller save 都存起来
-                for(auto reg_name: caller_reg)
+                auto reg_it = get_reg[reg_name];
+                if(reg_it->var != nullptr)
                 {
-                    auto reg_it = get_reg[reg_name];
-                    if(reg_it->var != nullptr)
-                    {
-                        sp_stk.push(reg_it->var);
-                        SpillVar(reg_it->var);
-                    }
+                    sp_stk.push(reg_it->var);
+                    SpillVar(reg_it->var);
                 }
             }
+            //debug("save caller");
             int param_cnt=0;
             while(!param_que.empty())
             {
                 Register* pas_reg = get_reg["a"+to_string(param_cnt)];
                 auto param_var = param_que.front();
+                //debug((param_var == nullptr));
+                //param_var->Print_Var();
                 param_que.pop();
                 if(param_var->reg != nullptr) //为了省事，都先放到内存里
                 {
                     sp_stk.push(param_var);
                     SpillVar(param_var);
                 }
-                LoadVar_Temp(param_var, pas_reg);
+                LoadVar_Temp(param_var, pas_reg->r_name);
                 param_cnt++;
             }
 
@@ -583,7 +611,7 @@ void gen_output()
             else
             {
                 string init_num = it->arg2;
-                cout << a->v_name << " = malloc" << init_num << endl;
+                cout << a->v_name << " = malloc " << init_num << endl;
             }
         }
         if(it->type == iLABEL)
@@ -599,7 +627,17 @@ void gen_output()
                 reg->free();
             free_reg = all_reg;
             used_reg.clear();
+
+            LiveVariableAnalysis(&(*it));
+            LinearScan();
+            //init_debug();
             
+            for (auto reg: all_reg)
+                reg->free();
+            free_reg = all_reg;
+            used_reg.clear();
+            act_li.clear();
+            p_i = 1;
             
             cout << ori_ins[it - com_ins.begin()];
             now_fun = get_Fun(it->arg1);

@@ -65,6 +65,7 @@ operator: '+' {$$=strdup("+");}
         | '%' {$$=strdup("%");}
         | '>' {$$=strdup(">");}
         | '<' {$$=strdup("<");}
+        | '!' {$$=strdup("!");}
         | LE {$$=strdup("<=");}
         | GE {$$=strdup(">=");}
         | AND {$$=strdup("&&");}

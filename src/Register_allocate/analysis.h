@@ -31,5 +31,5 @@ struct LiveInterval //表示一个变量的活跃区间
 bool cmp_LI(const LiveInterval &a, const LiveInterval &b);
 
 void init_preI();
-void LiveVariableAnalysis();
+void LiveVariableAnalysis(ins *start_ins);
 #endif
