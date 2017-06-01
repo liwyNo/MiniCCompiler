@@ -65,9 +65,9 @@ MiniC编译器，除了MiniC语言外，还涉及Eeyore和Tigger两种中间语�
 
 MiniC编译器总共有3个必要大步骤，总体流程是：MiniC $\rightarrow$ Eeyore $\rightarrow$ Tigger $\rightarrow$ RISC-V。
 
-MiniC,Eeyore,Tigger的设计都遵循简洁易读的原则，方便同学处理。同学们没必要使用Eeyore或Tigger的全部语法，如果觉得使用它们的某个子集就能完成任务也是可以的。（其实我们认为Eeyore和Tigger已经高度精简，没必要再取子集了）
+MiniC, Eeyore, Tigger的设计都遵循简洁易读的原则，方便同学处理。同学们没必要使用Eeyore或Tigger的全部语法，如果觉得使用它们的某个子集就能完成任务也是可以的。%（其实我们认为Eeyore和Tigger已经高度精简，没必要再取子集了）
 
-Eeyore和Tigger这两个名称，继承了MiniJava编译器中使用到的Piglet和Kanga的命名传统。都取自同一动画``winnie pooh"。
+Eeyore和Tigger这两个名称，继承了MiniJava编译器中使用到的Piglet和Kanga的命名传统。都取自同一动画``Winnie Pooh"。
 
 \begin{center}\includegraphics[width=15cm]{name} \end{center}
 
@@ -115,7 +115,7 @@ Tigger可以看作是MiniC编译器中的Kanga。
 
 根据我们小组完成各阶段所用的时间，我们对同学们的MiniC编译器任务做了如下初步进度安排。（我们小组的完成进度在下一节）
 
-第1--2周：努力学习编译原理，并预习语法制导翻译部分。
+第1--2周：努力学习编译原理，并预习语法制导翻译部分，并尝试学习安装riscv-gcc。
 
 第3--7周：完成MiniC$\rightarrow$Eeyore。具体地说，第3周实现符号表与类型检查，第4周完成词法分析，第5周完成文法书写，第6周处理表达式翻译，第7周处理控制流翻译。
 
@@ -125,19 +125,18 @@ Tigger可以看作是MiniC编译器中的Kanga。
 
 第14周：编写实验报告。
 
-可以看出，以上时间安排没有占满整个学期的时间，这是考虑到同学们有期中期末考试以及假期，预留出了2周左右的时间。
+可以看出，以上时间安排没有占满整个学期的时间，这是考虑到同学们有期中期末考试以及假期，预留出了2周左右的时间。根据我们自己的经验，主要的难度在于Eeyore和Tigger的产生，而最后一步相对比较容易，所以还可以有一周时间用于活动安排或者用于扩展内容或程序优化。
 
 \newpage
 \section{工作完成情况}
 
-{\color{red}在下面每个方面具体写如何完成的，尤其是寄存器分配算法部分}
+\textbf{\color{red}在下面每个方面具体写如何完成的，尤其是寄存器分配算法部分}
 
 \subsection{MiniC方面}
-
-\noindent 完成MiniC语法制定。
-\\
-
-\noindent 完成MiniC的parser。
+\begin{itemize}
+	\item 完成MiniC语法制定
+	\item 完成MiniC的parser
+\end{itemize}
 
 前半学期花了很多时间实现了复杂MiniC语法的parser，几乎是把所有扩展内容都实现了。
 
@@ -149,13 +148,11 @@ parser编写过程中遇到了C语言中不区分布尔表达式与其他表达�
 
 \subsection{Eeyore方面}
 
-\noindent 完成Eeyore语法制定。
-\\
-
-\noindent 完成Eeyore模拟器。
-\\
-
-\noindent 完成Eeyore上的寄存器分配算法，把Eeyore转化成Tigger。
+\begin{itemize}
+	\item 完成Eeyore语法制定
+	\item 完成Eeyore模拟器
+	\item 完成Eeyore上的寄存器分配算法，把Eeyore转化成Tigger
+\end{itemize}
 
 即使是在已经简化过的 Eeyore 文法上，也是较为复杂一步。预处理使用了 lex + yacc，建出符号表。寄存器分配使用了 Linear Scan 算法，相较于之前的 web + 图染色算法，大大简化。
 
@@ -167,10 +164,11 @@ parser编写过程中遇到了C语言中不区分布尔表达式与其他表达�
 
 \subsection{Tigger方面}
 
-\noindent 完成Tigger语法制定。
-\\
-
-\noindent 完成Tigger模拟器。
+\begin{itemize}
+	\item  完成Tigger语法制定
+	\item  完成Tigger模拟器
+	\item  完成Tigger转为RICS-V汇编
+\end{itemize}
 
 Tigger模拟器的实现，先利用lex和yacc构建语法树（其实基本是一条链），在运行之前给全局变量赋值，然后从\texttt{f\_main}开始执行，执行过程中维护栈和寄存器的值。
 
@@ -179,20 +177,19 @@ Tigger模拟器的实现，先利用lex和yacc构建语法树（其实基本是�
 Tigger模拟器同Eeyore模拟器一样，也实现了调试功能，帮助同学们调试寄存器分配算法。
 \\
 
-\noindent 完成Tigger转化为RISC-V。
-
 \subsection{评测方面}
+\begin{itemize}
+	\item 完成测试平台搭建
+	\item 完成测试程序以及测试数据构造
+\end{itemize}
 
-\noindent 完成测试平台搭建。
-\\
-
-\noindent 完成测试程序以及测试数据构造。
-
-测试程序都是些MiniC程序，这些程序有大有小，可以比较全面地对编译器的正确性和产出代码的质量进行测试。
+测试程序都是些MiniC程序，这些程序有大有小，可以比较全面地对编译器的正确性和产出代码的质量进行测试。但是因为我们对编译测试的原理不太熟悉，所以测试程序可能设计的有一些缺陷，这一点我们可以之后进一步修正。
 
 对于每个MiniC测试程序，我们都构造了一些测试数据，每个测试数据包括一个输入文件和一个答案文件。
 
 我们没有专门构造Eeyore和Tigger的测试集，因为同学们有可能不会用到Eeyore和Tigger的全部语法。因此，Eeyore和Tigger的测试程序应由MiniC的测试程序经过转化而来，测试数据与之前的相同。
+
+评测平台我们使用的是CMU开源的Autolab测试平台，也就是我们学校著名的ICS课程使用的测试平台，实现在线测评和统计成绩。
 
 \subsection{计划与现实}
 
