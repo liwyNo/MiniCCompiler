@@ -23,7 +23,7 @@
 #include <vector>
 #include <map>
 #include <bitset>
-void yyerror(char *);
+void yyerror(const char *);
 
 
 struct ins{

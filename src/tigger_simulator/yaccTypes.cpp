@@ -61,7 +61,7 @@ void add_gvar_int(int xnum, int value)
     if (gvar_name.find(xnum) != gvar_name.end())
         yyerror("gvar already exists");
     gvar_name[xnum] = ngvar++;
-    gvars.push_back(value);
+    gvars.push_back(new int(value));
 }
 
 void add_gvar_array(int xnum, int size)
@@ -69,7 +69,7 @@ void add_gvar_array(int xnum, int size)
     if (gvar_name.find(xnum) != gvar_name.end())
         yyerror("gvar already exists");
     gvar_name[xnum] = ngvar++;
-    gvars.push_back((int)malloc(size));
+    gvars.push_back((int*)malloc(size));
 }
 
 void check_zero_written(int rnum)

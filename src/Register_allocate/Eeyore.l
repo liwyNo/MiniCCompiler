@@ -7,7 +7,7 @@ OP [\+\-\*\/\%\!]|\|\||&&
 
 %{
 #include "stdio.h"
-void yyerror(char*);
+void yyerror(const char*);
 #include "Eeyore.tab.hpp"
 #define printf(x) 
 %}
