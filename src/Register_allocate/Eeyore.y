@@ -76,7 +76,7 @@ FunctionName
 	:	FUNCTION '[' NUM ']' EOL	{
 		//已重写
 		isGlobal = false;
-		com_ins[yylineno - 1] = ins(iFBEGIN);
+		com_ins[yylineno - 1] = ins(iFBEGIN, $1);
 		$$ = $1;
 		now_fun = new_Function($1, stoi(string($3)));
 	}
@@ -149,7 +149,7 @@ Expression
 			//已修改
 			//debug($1);
 			//debug($3.str_name);
-			//checkGlobal();
+			//checkGlobal(); 有可能在外面有赋值
 			string str_a = fix_name($1, now_fun), str_b = fix_name($3.str_name, now_fun);
 			//debug(str_b);
 			Variable *a = get_Var_in_Func(str_a, now_fun);
@@ -216,7 +216,7 @@ Expression
 	|	LABEL ':' EOL  {
 			//已修改
 			checkGlobal();
-			com_ins[yylineno - 1] = ins(iLABEL);
+			com_ins[yylineno - 1] = ins(iLABEL, $1);
 			label_table[$1] = yylineno - 1;
 		}
 	|	PARAM SYMBOL EOL {

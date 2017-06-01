@@ -125,7 +125,7 @@ void LiveVariableAnalysis() //类似 spfa 的方式进行迭代，找不动点
         {
             if(it->live[i]==1)
             {
-                live_int[i].st = min(live_int[i].st, it->line_num);
+                live_int[i].st = min(live_int[i].st, it->line_num-1); //需要 -1，因为这说明上一句是对它的一个赋值
                 live_int[i].ed = max(live_int[i].ed, it->line_num);
             }
         }

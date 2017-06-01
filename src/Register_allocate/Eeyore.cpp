@@ -66,7 +66,7 @@ int main(int argc, char** argv){
     //init_debug();
     //return 0;
     LinearScan();
-    init_debug();
-    //gen_output();
+    //init_debug();
+    gen_output();
 	return 0;
 }
