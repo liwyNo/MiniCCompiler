@@ -4,6 +4,7 @@
 #include <string>
 #include <iostream>
 #include <stack>
+#include <queue>
 using namespace std;
 #define debug(x) cerr<<#x<<"="<<x<<endl
 set<Register*> free_reg, used_reg, all_reg;
@@ -35,7 +36,7 @@ void init_all_reg()
         all_reg.insert(now_reg);
         callee_reg.push_back("s"+to_string(i));
     }
-    for(i=2;i<=7;i++)
+    for(i=0;i<=7;i++)
     {
         Register *now_reg = new Register();
         now_reg->var = nullptr;
@@ -253,7 +254,8 @@ void Recover(Variable *svar) //恢复这个变量
         return;
     if(svar->LI->spilled == 0 && svar->LI->st <= ins_num && svar->LI->ed >= ins_num) //只有被钦定的变量，我们才去恢复它
     {
-        SpillVar(svar->LI->reg->var);//把原先的赶走
+        if(svar->LI->reg->var != nullptr)
+            SpillVar(svar->LI->reg->var);//把原先的赶走
         LoadVar(svar, svar->LI->reg);//新的加回来
     }
 }
@@ -299,6 +301,7 @@ void gen_output()
     int i, p_i = 1;
     int last_param=-1, arg_cnt; //cnt_arg 统计已经压进去多少个参数了
     stack<Variable*> sp_stk; //存储在调函数的过程中，被强制溢出的变量
+    queue<Variable*> param_que;
     ins_num = 0;
     act_li.clear();
 
@@ -362,6 +365,8 @@ void gen_output()
 
         if(it->type == iASS)
         {
+            if(isGlobal)
+                continue;
             string R1, R2;
             Variable *sp1, *sp2;
             upd_hold(it->arg1), upd_hold(it->arg2);
@@ -430,6 +435,10 @@ void gen_output()
 
         if(it->type == iPARAM)
         {
+            //假装一切没有发生过，只把参数名字默默的记下来
+            Variable *a = get_Var(it->arg1);
+            param_que.push(a);
+            /*
             if(last_param == ins_num - 1)
                 arg_cnt ++;
             else
@@ -454,17 +463,77 @@ void gen_output()
             
             Variable *a = get_Var(it->arg1);
             LoadVar_Temp(a, pas_reg);
+            */
         }
 
         if(it->type == iCALLVOID)
         {
+            if(last_param != ins_num - 1) //之前一个 Param 语句都没有，这活就得轮到这里完成了
+            {
+                //把所有 caller save 都存起来
+                for(auto reg_name: caller_reg)
+                {
+                    auto reg_it = get_reg[reg_name];
+                    if(reg_it->var != nullptr)
+                    {
+                        sp_stk.push(reg_it->var);
+                        SpillVar(reg_it->var);
+                    }
+                }
+            }
+            int param_cnt=0;
+            while(!param_que.empty())
+            {
+                Register* pas_reg = get_reg["a"+to_string(param_cnt)];
+                auto param_var = param_que.front();
+                param_que.pop();
+                if(param_var->reg != nullptr) //为了省事，都先放到内存里
+                {
+                    sp_stk.push(param_var);
+                    SpillVar(param_var);
+                }
+                LoadVar_Temp(param_var, pas_reg);
+                param_cnt++;
+            }
+            
             cout << ori_ins[ins_num] << endl;
             while(!sp_stk.empty())
+            {
                 Recover(sp_stk.top()); //为了省事，也只恢复被钦定的，其他的就不管了
+                sp_stk.pop();
+            }
         }
 
         if(it->type == iCALL)
         {
+            if(last_param != ins_num - 1) //之前一个 Param 语句都没有，这活就得轮到这里完成了
+            {
+                //把所有 caller save 都存起来
+                for(auto reg_name: caller_reg)
+                {
+                    auto reg_it = get_reg[reg_name];
+                    if(reg_it->var != nullptr)
+                    {
+                        sp_stk.push(reg_it->var);
+                        SpillVar(reg_it->var);
+                    }
+                }
+            }
+            int param_cnt=0;
+            while(!param_que.empty())
+            {
+                Register* pas_reg = get_reg["a"+to_string(param_cnt)];
+                auto param_var = param_que.front();
+                param_que.pop();
+                if(param_var->reg != nullptr) //为了省事，都先放到内存里
+                {
+                    sp_stk.push(param_var);
+                    SpillVar(param_var);
+                }
+                LoadVar_Temp(param_var, pas_reg);
+                param_cnt++;
+            }
+
             //cout << ori_ins[ins_num] << endl;
             cout << "call " << it->arg2 << endl;
             Variable *a = get_Var(it->arg1);
@@ -475,7 +544,10 @@ void gen_output()
             }
             StoreVal(a, get_reg["a0"]);
             while(!sp_stk.empty())
+            {
                 Recover(sp_stk.top()); //为了省事，也只恢复被钦定的，其他的就不管了
+                sp_stk.pop();
+            }
         }
 
         if(it->type == iRETURN)

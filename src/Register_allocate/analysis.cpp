@@ -130,6 +130,9 @@ void LiveVariableAnalysis() //类似 spfa 的方式进行迭代，找不动点
             }
         }
     }
+    for(i=1;i<=Var_count;i++)
+        if(com_ins[live_int[i].st+1].type == iFBEGIN)//特殊情况，全局变量的活跃范围可能超出函数
+            live_int[i].st+=2;
 }
 
 bool cmp_LI(const LiveInterval &a, const LiveInterval &b)

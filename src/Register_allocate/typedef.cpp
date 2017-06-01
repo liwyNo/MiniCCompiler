@@ -58,8 +58,8 @@ Variable* new_Var(string var_name, int isGlobal, Function* now_fun = nullptr)
     
     if(isGlobal)
     {
-        Gvar_count ++;
         nv -> v_name = __get_new_gvar_name();
+        Gvar_count ++;
     }
     else
     {
@@ -84,8 +84,8 @@ Variable* new_Var_Arr(string var_name, int isGlobal, int size, Function* now_fun
     nv -> arr_size = size;
     if(isGlobal)
     {
-        Gvar_count ++;
         nv -> v_name = __get_new_gvar_name();
+        Gvar_count ++;
     }
     else
     {

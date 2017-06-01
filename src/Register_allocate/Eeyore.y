@@ -58,7 +58,7 @@ inline void checkGlobal();
 
 %%
 Program
-	:	/* Empty */
+:	/* Empty */
 	|	Program Statement FunctionDecl 
 	|	Program FunctionDecl 
 	|	Program Statement END
