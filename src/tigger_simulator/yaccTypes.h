@@ -26,14 +26,14 @@ struct stmt_func_begin: public statement_t {
     int stackSlotNum;
     stmt_func_begin(const std::string &_name, int _argNum, int _stackSlotNum): name(_name), argNum(_argNum), stackSlotNum(_stackSlotNum) {}
     void run();
-    std::string str() { return name + " [" + std::to_string(argNum) + "] [" + std::to_string(stackSlotNum) + "]"; }
+    std::string str() { return "f_"+name + " [" + std::to_string(argNum) + "] [" + std::to_string(stackSlotNum) + "]"; }
 };
 
 struct stmt_func_end: public statement_t {
     std::string name;
     stmt_func_end(const std::string &_name): name(_name) {}
     void run();
-    std::string str() { return "end " + name; }
+    std::string str() { return "end f_" + name; }
 };
 
 struct stmt_assign_const: public statement_t {
@@ -125,7 +125,7 @@ struct stmt_call: public statement_t {
     std::string name;
     stmt_call(const char *_name): name(_name) {}
     void run();
-    std::string str() {return "call " + name;}
+    std::string str() {return "call f_" + name;}
 };
 
 struct stmt_store_local: public statement_t {

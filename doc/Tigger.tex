@@ -122,6 +122,9 @@ Tigger共有28个可用的寄存器，这些寄存器的名称与RISC-V保持一
 注意！由于RISC-V汇编的原因，没有\texttt{store Reg <VARIABLE>}语句。该语句可以通过\texttt{loadaddr}语句与数组访问语句结合来完成。
 \end{itemize}
 
+\subsection{注释}
+Tigger允许单行注释，与C语言注释类似使用//，处理时自动忽略改行从//之后所有内容。
+
 \subsection{系统库支持}
 与MiniC和Eeyore中的输入输出函数原型相同。
 
