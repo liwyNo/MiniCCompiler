@@ -17,9 +17,14 @@ void debug_wait()
     if (run_type == DEBUG_CONTINUE)
         if (breaks.find(stmts[pc]->line) == breaks.end())
             return;
+    bool shown_str = false;
     while (1) {
         statement_t *ptr = stmts[pc];
-        printf("%d: %s\n> ", ptr->line, ptr->str().c_str());
+        if (!shown_str) {
+            printf("%d: %s\n", ptr->line, ptr->str().c_str());
+            shown_str = true;
+        }
+        printf("> ");
         fflush(stdout);
         std::string sline;
 read_again:
@@ -30,7 +35,7 @@ read_again:
             goto read_again;
         ptr = stmts[pc];
         if (strcmp(op, "l") == 0)
-            ;
+            shown_str = false;
         else if (strcmp(op, "n") == 0) {
             run_type = DEBUG_NEXT;
             return;
