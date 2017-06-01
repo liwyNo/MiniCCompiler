@@ -6,21 +6,27 @@
 void stmt_func_begin::run()
 {
     ssp = stackSlotNum;
-    sp += stackSlotNum;
+    st = new int[stackSlotNum];
+    //sp += stackSlotNum;
     //stackmem.resize(stackmem.size() + stackSlotNum);
     ++pc;
 }
 
-void stmt_func_end::run()
+void stmt_return::run()
 {
-    //stackmem.erase(stackmem.end() - ssp, stackmem.end());
     if (callstack.empty())
         exit(reg[find_reg("a0")]);
     CallStack_t t = callstack.top();
     callstack.pop();
-    sp = t.sp;
     ssp = t.ssp;
+    st = t.st;
     pc = t.pc + 1;
+}
+
+void stmt_func_end::run()
+{
+    printf("reach function end with no return statement");
+    exit(1);
 }
 
 void stmt_assign_const::run()
@@ -136,7 +142,7 @@ void stmt_call::run()
         ++pc;
     }
     else {
-        callstack.push(CallStack_t(pc, sp, ssp));
+        callstack.push(CallStack_t(pc, st, ssp));
         pc = funcs[name];
     }
 }
@@ -159,7 +165,7 @@ void stmt_label::run()
 
 void stmt_store_local::run()
 {
-    stackmem[sp - ssp + snum] = reg[rnum];
+    st[snum] = reg[rnum];
     ++pc;
 }
 
@@ -177,7 +183,7 @@ void stmt_store_global::run()
 
 void stmt_load_local::run()
 {
-    reg[rnum] = stackmem[sp - ssp + snum];
+    reg[rnum] = st[snum];
     ++pc;
 }
 
@@ -193,7 +199,7 @@ void stmt_load_global::run()
 
 void stmt_loadaddr_local::run()
 {
-    reg[rnum] = (int)&stackmem[sp - ssp + snum];
+    reg[rnum] = (int)&st[snum];
     ++pc;
 }
 

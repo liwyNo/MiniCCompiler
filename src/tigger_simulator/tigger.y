@@ -20,7 +20,7 @@ extern const char *str_reg[REGNUM];
 
 %token <vint> INT_CONSTANT GVAR LABEL REGISTER
 %token <vstr> FUNCTION
-%token END IF GOTO CALL LOAD STORE MALLOC LOADADDR
+%token END IF GOTO CALL LOAD STORE MALLOC LOADADDR RETURN
 %token GE LE AND OR NE EQ
 
 %type <vint> integer
@@ -90,6 +90,7 @@ expression: REGISTER '=' integer   {check_zero_written($1); stmts.push_back(new 
           | LOAD GVAR REGISTER  {check_gvar($3); stmts.push_back(new stmt_load_global(gvar_name[$2], $3));}
           | LOADADDR INT_CONSTANT REGISTER {check_zero_written($3); stmts.push_back(new stmt_loadaddr_local($2, $3));}
           | LOADADDR GVAR REGISTER {check_zero_written($3); stmts.push_back(new stmt_loadaddr_global(gvar_name[$2], $3));}
+          | RETURN {stmts.push_back(new stmt_return());}
           /*| REGISTER '=' MALLOC INT_CONSTANT {if ($4 % 4 != 0 || $4 == 0) yyerror("what do you mean by this mallocing size?"); stmts.push_back(new stmt_malloc($1, $4));}*/
           ;
 

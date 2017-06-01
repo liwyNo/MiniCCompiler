@@ -44,6 +44,7 @@ end     {return END;}
 load    {return LOAD;}
 store   {return STORE;}
 loadaddr {return LOADADDR;}
+return {return RETURN;}
 malloc  {return MALLOC;}
 x{D}+|s{D}+|a{D}+|t{D}+   {yylval.vint=find_reg(yytext); if (yylval.vint==-1) yyerror("register id not found"); return REGISTER;}
 {WS}+   {}
