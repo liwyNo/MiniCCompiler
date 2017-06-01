@@ -199,11 +199,24 @@ inline void upd_hold(string v_name)
 void LoadVar_Temp(Variable* lvar, string r_name) //仅函数传参和处理数组时用到，仅仅是Load 其他啥都不修改
 {
     if(lvar->reg != nullptr)
+    {
         __gen_R1_Ass_R2(r_name, lvar->reg->r_name);
-    if(lvar->isGlobal == 0)
-        __gen_Load_Int_Reg(lvar->spill_loc, r_name);
+        return;
+    }
+    if(lvar -> isArray == 1)
+    {
+        if(lvar-> isGlobal == 0)
+            __gen_LDAD_Int_Reg(lvar->spill_loc, r_name);
+        else
+            __gen_LDAD_Gvar_Reg(lvar ->v_name, r_name);
+    }
     else
-        __gen_Load_Gvar_Reg(lvar->v_name, r_name);
+    {
+        if(lvar->isGlobal == 0)
+            __gen_Load_Int_Reg(lvar->spill_loc, r_name);
+        else
+            __gen_Load_Gvar_Reg(lvar->v_name, r_name);
+    }
 }
 
 void StoreVal(Variable *svar, Register* reg) //把 reg 内的值存到 svar 的内存里，只在取得函数返回值时使用
@@ -327,7 +340,7 @@ void gen_output()
     for (auto it = com_ins.begin()+1; it != com_ins.end(); it++)
     {
         ins_num++;
-        debug(ins_num);
+        //debug(ins_num);
         if(it->type == iFBEGIN) 
             isGlobal = 0;
         if(it->type == iFEND)
@@ -498,7 +511,6 @@ void gen_output()
 
         if(it->type == iCALLVOID)
         {
-            
             for(auto reg_name: caller_reg)
             {
                 auto reg_it = get_reg[reg_name];
