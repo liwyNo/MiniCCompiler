@@ -55,7 +55,7 @@ Tigger共有28个可用的寄存器，这些寄存器的名称与RISC-V保持一
 
 函数结束语句和Eeyore中的一样，形如\texttt{end f\_xxx}。
 
-没有返回语句，执行到函数结束语句时函数返回。
+函数必须以返回语句返回。
 
 函数调用语句形如\texttt{call f\_xxx}。
 \subsection{栈内存操作}
@@ -124,6 +124,7 @@ Tigger共有28个可用的寄存器，这些寄存器的名称与RISC-V保持一
 \alt 'load' <VARIABLE> Reg
 \alt 'loadaddr' <INTEGER> Reg
 \alt 'loadaddr' <VARIABLE> Reg
+\alt 'return'
 
 <Reg> ::= 'x0'
 | 's0'
@@ -183,6 +184,7 @@ f_fac [1] [3]
 l1:
     a0 = 1
 l2:
+    return
 end f_fac
 
 f_main [0] [0]
@@ -192,6 +194,7 @@ f_main [0] [0]
     a0 = 10
     call f_putchar
     a0 = 0
+    return
 end f_main
 \end{lstlisting}
 \end{typewriterfont}

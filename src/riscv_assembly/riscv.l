@@ -44,6 +44,7 @@ load    {return LOAD;}
 store   {return STORE;}
 loadaddr {return LOADADDR;}
 malloc  {return MALLOC;}
+return {return RETURN;}
 x0  {yylval.vstr=strdup("zero"); return REGISTER;}
 s([0-9]|10|11)  {yylval.vstr=strdup(yytext); return REGISTER;}
 a[0-7]  {yylval.vstr=strdup(yytext); return REGISTER;}

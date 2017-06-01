@@ -163,6 +163,10 @@ struct stmt_loadaddr_local: public statement_t {
     void run();
 };
 
+struct stmt_return: public statement_t {
+    void run();
+};
+
 void add_func_begin(const std::string &fname, int argNum, int stackSlotNum);
 void add_label(int lnum);
 void add_gvar_int(int xnum, int value);

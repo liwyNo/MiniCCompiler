@@ -10,9 +10,9 @@
 struct statement_t;
 
 //extern std::vector<int> stackmem;
-#define STACKNUM 1000000
+//#define STACKNUM 1000000
 
-extern int stackmem[STACKNUM];
+//extern int stackmem[STACKNUM];
 extern int reg[REGNUM];
 extern std::vector<int*> gvars;
 extern std::vector<statement_t *> stmts;
@@ -20,12 +20,13 @@ extern std::map<int, int> labels;
 extern std::map<std::string, int> funcs;
 extern std::map<int, int> gvar_name;
 extern int ngvar;
-extern int pc, sp, ssp;
+extern int pc, *st, ssp;
 struct CallStack_t {
     int pc; /* program counter */
-    int sp; /* stack pointer */
+    //int sp; /* stack pointer */
+    int *st;
     int ssp; /* stack space to use */
-    CallStack_t(int _pc, int _sp, int _ssp): pc(_pc), sp(_sp), ssp(_ssp) {}
+    CallStack_t(int _pc, int *_st, int _ssp): pc(_pc), st(_st), ssp(_ssp) {}
 };
 extern std::stack<CallStack_t> callstack;
 extern const char *str_reg[REGNUM];

@@ -55,7 +55,7 @@ read_again:
             if (snum >= ssp)
                 printf("%d is out of stack space\n", snum);
             else
-                printf("stack[%d] = %d\n", snum, stackmem[sp - ssp + snum]);
+                printf("stack[%d] = %d\n", snum, st[snum]);
         }
         else if (strcmp(op, "psx") == 0) {
             int snum;
@@ -63,7 +63,7 @@ read_again:
             if (snum >= ssp)
                 printf("%d is out of stack space\n", snum);
             else
-                printf("stack[%d] = 0x%x\n", snum, stackmem[sp - ssp + snum]);
+                printf("stack[%d] = 0x%x\n", snum, st[snum]);
         }
         else if (strcmp(op, "pg") == 0) {
             int xnum;

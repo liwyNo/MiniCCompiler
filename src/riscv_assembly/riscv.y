@@ -4,12 +4,11 @@
 #include <cstring>
 int yylex(void);
 extern int yylineno;
+int stk_s;
 %}
 
 %code requires {
 void yyerror(const char *s);
-#define REGNUM 28
-extern const char *str_reg[REGNUM];
 }
 
 %union {
@@ -19,7 +18,7 @@ extern const char *str_reg[REGNUM];
 
 %token <vint> INT_CONSTANT 
 %token <vstr> FUNCTION REGISTER LABEL GVAR
-%token END IF GOTO CALL LOAD STORE MALLOC LOADADDR
+%token END IF GOTO CALL LOAD STORE MALLOC LOADADDR RETURN
 %token GE LE AND OR NE EQ
 
 %type <vint> integer
@@ -38,7 +37,7 @@ block: function_declare
      ;
 
 function_declare: FUNCTION '[' INT_CONSTANT ']' '[' INT_CONSTANT ']' {
-                        int stk_s = ($6 / 4 + 1) * 16;
+                        stk_s = ($6 / 4 + 1) * 16;
                         printf("\t.text\n");
                         printf("\t.align\t2\n");
                         printf("\t.global\t%s\n", $1);
@@ -47,10 +46,7 @@ function_declare: FUNCTION '[' INT_CONSTANT ']' '[' INT_CONSTANT ']' {
                         printf("\tadd\tsp,sp,-%d\n", stk_s);
                         printf("\tsw\tra,%d(sp)\n", stk_s - 4);
                     } expression_list END FUNCTION {
-                        int stk_s = ($6 / 4 + 1) * 16;
-                        printf("\tlw\tra,%d(sp)\n", stk_s - 4);
-                        printf("\tadd\tsp,sp,%d\n", stk_s);
-                        printf("\tjr\tra\n");
+			stk_s = 0;
                         printf("\t.size\t%s, .-%s\n", $1, $1);
                     }
                 ;
@@ -205,6 +201,12 @@ expression: REGISTER '=' integer   {printf("\tli\t%s,%d\n", $1, $3);}
           | LOADADDR GVAR REGISTER {
                 printf("\tlui\t%s,%%hi(%s)\n",$3, $2);
                 printf("\tadd\t%s,%s,%%lo(%s)\n", $3, $3, $2);
+          }
+	  | RETURN{
+                printf("\tlw\tra,%d(sp)\n", stk_s - 4);
+                printf("\tadd\tsp,sp,%d\n", stk_s);
+                printf("\tjr\tra\n");
+	  
           }
           /*| REGISTER '=' MALLOC INT_CONSTANT {if ($4 % 4 != 0 || $4 == 0) yyerror("what do you mean by this mallocing size?"); stmts.push_back(new stmt_malloc($1, $4));}*/
           ;
