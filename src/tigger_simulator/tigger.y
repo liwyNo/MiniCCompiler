@@ -87,9 +87,9 @@ expression: REGISTER '=' integer   {check_zero_written($1); stmts.push_back(new 
           | STORE REGISTER INT_CONSTANT {stmts.push_back(new stmt_store_local($2, $3));}
           /*| STORE REGISTER GVAR {check_gvar($3); stmts.push_back(new stmt_store_global($2, gvar_name[$3]));}*/
           | LOAD INT_CONSTANT REGISTER  {check_zero_written($3); stmts.push_back(new stmt_load_local($2, $3));}
-          | LOAD GVAR REGISTER  {check_gvar($3); stmts.push_back(new stmt_load_global(gvar_name[$2], $3));}
+          | LOAD GVAR REGISTER  {check_gvar($2); check_zero_written($3); stmts.push_back(new stmt_load_global(gvar_name[$2], $3));}
           | LOADADDR INT_CONSTANT REGISTER {check_zero_written($3); stmts.push_back(new stmt_loadaddr_local($2, $3));}
-          | LOADADDR GVAR REGISTER {check_zero_written($3); stmts.push_back(new stmt_loadaddr_global(gvar_name[$2], $3));}
+          | LOADADDR GVAR REGISTER {check_gvar($2); check_zero_written($3); stmts.push_back(new stmt_loadaddr_global(gvar_name[$2], $3));}
           | RETURN {stmts.push_back(new stmt_return());}
           /*| REGISTER '=' MALLOC INT_CONSTANT {if ($4 % 4 != 0 || $4 == 0) yyerror("what do you mean by this mallocing size?"); stmts.push_back(new stmt_malloc($1, $4));}*/
           ;

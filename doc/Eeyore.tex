@@ -106,10 +106,13 @@ Eeyore中的函数以\texttt{'f\_'}开头，后接函数名，如\texttt{f\_main
 
 %函数调用语句形如\texttt{t0 = call f\_xxx}。如果该函数有参数，还需要在调用语句前插入传参语句，形如\texttt{param t1}，每个传参语句只传一个参数，如有多个参数，应按照参数顺序一个一个传。
 \item 
-函数调用语句形如： \texttt{call f\_xxx} 或 \texttt{t0 = call f\_xxx}。
+函数调用语句形如： \texttt{t0 = call f\_xxx}。
 
 \item 
 传参数指令形如： \texttt{param t1}，所有传参都是\textbf{传值}，多个参数需依次传入。
+
+\item
+作为参数的变量，在\texttt{param Variable}语句之后，到函数调用前，不可修改。（这样限制的目的是使寄存器分配时避免繁琐的分类讨论）
 
 \item
 函数返回语句形如\texttt{return t0}。
@@ -153,7 +156,7 @@ Eeyore模拟器提供对输入输出的系统调用支持，对应的函数原�
 %* t1 = t2
 %t1 = t2 [ t3 ]
 
-<RightValue> ::= Varibale | <INTEGER>
+<RightValue> ::= Variable | <INTEGER>
 
 <Expression>	::=	Variable '=' RightValue OP2 RightValue
 \alt Variable '=' OP1 RightValue
