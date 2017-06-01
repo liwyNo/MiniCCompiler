@@ -3,6 +3,8 @@
 #include "yaccTypes.h"
 #include <cstring>
 #include <cstdlib>
+#include <iostream>
+#include <string>
 
 bool debug;
 int run_type = DEBUG_NEXT;
@@ -16,17 +18,19 @@ void debug_wait()
         if (breaks.find(stmts[pc]->line) == breaks.end())
             return;
     while (1) {
-        printf("> ");
+        statement_t *ptr = stmts[pc];
+        printf("%d: %s\n> ", ptr->line, ptr->str().c_str());
         fflush(stdout);
-        static char line[100];
+        std::string sline;
 read_again:
-        gets(line);
+        std::getline(std::cin, sline);
+        const char *line = sline.c_str();
         static char op[100];
         if (sscanf(line, "%s", op) != 1)
             goto read_again;
-        statement_t *ptr = stmts[pc];
+        ptr = stmts[pc];
         if (strcmp(op, "l") == 0)
-            printf("line %d\n", ptr->line);
+            ;
         else if (strcmp(op, "n") == 0) {
             run_type = DEBUG_NEXT;
             return;

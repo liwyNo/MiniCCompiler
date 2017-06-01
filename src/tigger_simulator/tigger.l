@@ -15,6 +15,7 @@ void yyerror(const char *s);
 
 %%
 
+"//".*  { /* comment */ }
 "+"     {return '+';}
 "-"     {return '-';}
 "*"     {return '*';}
