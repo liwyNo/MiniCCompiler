@@ -119,7 +119,7 @@ expression: REGISTER '=' integer   {printf("\tli\t%s,%d\n", $1, $3);}
                         printf("\txori\t%s,%s,1\n", $1, $1);
                         break;
                     case '>':
-                        printf("\tsgt\t%s,%s,%s\n", $1, $5, $3);
+                        printf("\tsgt\t%s,%s,%s\n", $1, $3, $5);
                         break;
                     case '&':
                         //Need better solution
