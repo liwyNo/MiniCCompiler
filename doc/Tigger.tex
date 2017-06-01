@@ -18,7 +18,7 @@
 \begin{document}
 \maketitle
 \section{何为Tigger}
-Tigger是面向RISC-V的一种中间表示，用作寄存器分配的输出格式。
+Tigger /\texttt{'}t\i g\textschwa (r)/ 是面向RISC-V的一种中间表示，用作寄存器分配的输出格式。
 
 为了让同学们快速熟悉Tigger语法，Tigger遵循一贯的简洁易读风格，被设计得与Eeyore很像。
 
@@ -43,7 +43,7 @@ Tigger共有28个可用的寄存器，这些寄存器的名称与RISC-V保持一
 \subsection{表达式、标号、跳转语句}
 所有的表达式计算都只能寄存器上进行。具体是哪些语句，详见BNF。
 
-注意！由于RSICV某些规则的原因，Tigger中只有的\texttt{'+'}和\texttt{'<'}运算符允许作为\texttt{Reg = Reg OP2 <INTEGER>}语句中的\texttt{OP2}。
+注意！由于RISC-V某些规则的原因，Tigger中只有的\texttt{'+'}和\texttt{'<'}运算符允许作为\texttt{Reg = Reg OP2 <INTEGER>}语句中的\texttt{OP2}。
 
 所有在Eeyore中支持的运算符，在Tigger中都支持。
 
@@ -165,7 +165,7 @@ Tigger共有28个可用的寄存器，这些寄存器的名称与RISC-V保持一
 \section{示例}
 \begin{typewriterfont}
 \begin{lstlisting}
-f_fac [1] [3] :
+f_fac [1] [3]
     a0 = a0 + -1
     if a0 <= x0 goto l1
     store a0 0
@@ -185,7 +185,7 @@ l1:
 l2:
 end f_fac
 
-f_main [0] [0] :
+f_main [0] [0]
     call f_getint
     call f_fac
     call f_putint

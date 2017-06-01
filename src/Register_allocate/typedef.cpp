@@ -39,7 +39,11 @@ string __get_new_gvar_name()
 {
     return "v"+to_string(Gvar_count);
 } 
-Variable::Variable(bool _isGlobal, std::string _s_name, bool _isArray):isGlobal(_isGlobal),s_name(_s_name),isArray(_isArray) {}
+Variable::Variable(bool _isGlobal, std::string _s_name, bool _isArray):isGlobal(_isGlobal),s_name(_s_name),isArray(_isArray) 
+{
+    reg = nullptr;
+    inMemory == _isGlobal;
+}
 Variable* new_Var(string var_name, int isGlobal, Function* now_fun = nullptr)
 {
     //debug(var_name);    
@@ -86,7 +90,7 @@ Variable* new_Var_Arr(string var_name, int isGlobal, int size, Function* now_fun
     else
     {
         nv -> spill_loc = now_fun -> stack_size; //栈空间下标从0开始
-        now_fun -> stack_size += size;
+        now_fun -> stack_size += size/4;  //别忘除4！！！
     }
     var_table[var_name] = nv;
     num_to_var[Var_count] = nv;

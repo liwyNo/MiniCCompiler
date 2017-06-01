@@ -68,6 +68,7 @@ Function* new_Function(std::string fun_name, int arg_num);
 Function* get_Fun(std::string fun_name);
 
 struct LiveInterval;
+struct Register;
 struct Variable
 {
 	int num; //全局的编号
@@ -79,6 +80,8 @@ struct Variable
 	int spill_loc;//假如是局部变量，则有一个溢出到栈的对应位置
 	Function *fa_func; //假如是局部变量，则存一下它在哪个函数里面
 	LiveInterval* LI;
+	Register* reg;//若当前未分配寄存器，则为 nullptr
+	bool inMemory;//判断当前的值在内存中有没有
 
 	Variable(bool _isGlobal, std::string _s_name, bool _isArray);
 	void Print_Var();
