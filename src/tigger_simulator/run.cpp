@@ -7,13 +7,13 @@ void stmt_func_begin::run()
 {
     ssp = stackSlotNum;
     sp += stackSlotNum;
-    stackmem.resize(stackmem.size() + stackSlotNum);
+    //stackmem.resize(stackmem.size() + stackSlotNum);
     ++pc;
 }
 
 void stmt_func_end::run()
 {
-    stackmem.erase(stackmem.end() - ssp, stackmem.end());
+    //stackmem.erase(stackmem.end() - ssp, stackmem.end());
     if (callstack.empty())
         exit(reg[find_reg("a0")]);
     CallStack_t t = callstack.top();

@@ -1,7 +1,8 @@
 #include "yaccTypes.h"
 #include "dbg.h"
 
-std::vector<int> stackmem;
+//std::vector<int> stackmem;
+int stackmem[STACKNUM];
 int reg[REGNUM];
 std::vector<int*> gvars;
 std::vector<statement_t *> stmts;
