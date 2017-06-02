@@ -2,7 +2,7 @@
 
 ### 1. Linear Scan 概述
 
-Linear Scan 是一种全局寄存器分配算法。相较于经典的图染色算法，Linear Scan 算法速度更快，图染色算法时间复杂度为 ![equation](http://latex.codecogs.com/gif.latex?O(N^4))，而 Linear Scan 为 ![equation](http://latex.codecogs.com/gif.latex?O(N \log N))。并且 Linear Scan 算法的分配效果与图染色算法相当，有时甚至更好。这正是我们选择使用 Linear Scan 算法的原因。
+Linear Scan 是一种全局寄存器分配算法。相较于经典的图染色算法，Linear Scan 算法速度更快，图染色算法时间复杂度为 ![equation](http://latex.codecogs.com/gif.latex?O(N^4))，而 Linear Scan 为 ![equation](http://latex.codecogs.com/gif.latex?O(N log N))。并且 Linear Scan 算法的分配效果与图染色算法相当，有时甚至更好。这正是我们选择使用 Linear Scan 算法的原因。
 
 ### 2. 活性分析
 

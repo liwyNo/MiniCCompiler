@@ -6,7 +6,7 @@
  * inherit property of XX: XX_i_t
  */
 
-typedef struct {
+typedef struct expression_s_t {
     int isConst;
     const_Typename_ptr type;
     bool lr_value; //left : 0,right :1
