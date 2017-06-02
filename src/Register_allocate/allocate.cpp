@@ -233,7 +233,7 @@ void StoreVal(Variable *svar, Register* reg) //把 reg 内的值存到 svar 的�
 //LoadVar 负责绑定一组寄存器和变量
 void LoadVar(Variable* lvar, Register* reg, bool left_value = 0) //left_value 判断是否是左值，假如是左值，则不用 load
 {
-    if(!left_value)
+    if(!left_value || 1)
     {
         if(lvar -> isArray == 1)
         {
@@ -290,6 +290,13 @@ void Recover(Variable *svar, bool left_value = 0) //恢复被钦定的变量
         return;
     if(svar->LI->spilled == 0 && svar->LI->st <= ins_num && svar->LI->ed >= ins_num) //只有被钦定的变量，我们才去恢复它
     {
+        if(svar->reg == svar->LI->reg) //根本不用恢复
+            return;
+        if(svar->reg != nullptr && svar->reg != svar->LI->reg) //既不为空，也不为本身被钦定的，则要把之前那个溢出掉
+        {
+            debug("change");
+            SpillVar(svar);
+        }
         if(svar->LI->reg->var != nullptr)
             SpillVar(svar->LI->reg->var);//把原先的赶走
         LoadVar(svar, svar->LI->reg, left_value);//新的加回来
@@ -306,7 +313,7 @@ string get_Reg(string v_name, Variable* &be_spilled, bool left_value = 0) //判�
     }
     auto my_var = get_Var(v_name);
     //先尝试恢复一下
-    Recover(my_var, left_value);
+    //Recover(my_var, left_value);
     if(my_var->reg != nullptr)
         return my_var->reg->r_name;
     
@@ -325,6 +332,7 @@ string get_Reg(string v_name, Variable* &be_spilled, bool left_value = 0) //判�
             be_spilled = spill_reg->var;
             SpillVar(be_spilled);
             LoadVar(my_var, spill_reg, left_value);
+            //debug("spill!");
             return my_var->reg->r_name;
         }
     }
@@ -360,13 +368,14 @@ void gen_output()
             {
                 if(!live_int[p_i].spilled)
                 {
-                    /*用到的时候，会自然完成一下功能的
+                    //用到的时候，会自然完成一下功能的，这里会出 bug
+                    
                     auto my_var = live_int[p_i].var;
                     auto reg = live_int[p_i].reg;
                     if(reg->var != nullptr)
                         SpillVar(reg->var);
                     LoadVar(my_var, reg);
-                    */
+                    
                     act_li.insert(&live_int[p_i]);
                 }
                 else
@@ -435,6 +444,8 @@ void gen_output()
             R2 = get_Reg(it->arg2, sp2);
             R3 = get_Reg(it->arg3, sp3);
             Variable *a = get_Var(it->arg1);
+            R1 = get_Reg(it->arg1, sp1); //更新了架构之后，数组也可以 get_Reg了！
+            /*
             if(a->isArray == 1)
             {
                 if(a->isGlobal == 0)
@@ -443,19 +454,23 @@ void gen_output()
                     __gen_LDAD_Gvar_Reg(a->v_name, addr_reg);
             }
             else LoadVar_Temp(a, addr_reg);
-            __gen_R1_R2_OP2_R3(addr_reg, addr_reg, R2, "+");
+            */
+            __gen_R1_R2_OP2_R3(addr_reg, R1, R2, "+");
             __gen_Reg_Int_Ass_Reg(addr_reg, 0, R3);
+            Recover(sp1);
             Recover(sp2);
             Recover(sp3);
         }
         if(it->type == iARRGET)
         {
             string R1, R2, R3;
-            Variable *sp1, *sp2, *sp3, *trash;
+            Variable *sp1, *sp2, *sp3;
             upd_hold(it->arg1), upd_hold(it->arg2), upd_hold(it->arg3);
             R1 = get_Reg(it->arg1, sp1, 1);
             R3 = get_Reg(it->arg3, sp3);
             Variable *a = get_Var(it->arg1), *b = get_Var(it->arg2);
+            R2 = get_Reg(it->arg2, sp2);
+            /*
             if(b->isArray == 1)
             {
                 if(b->isGlobal == 0)
@@ -464,10 +479,12 @@ void gen_output()
                     __gen_LDAD_Gvar_Reg(b->v_name, addr_reg);
             }
             else LoadVar_Temp(b, addr_reg);
-            __gen_R1_R2_OP2_R3(addr_reg, addr_reg, R3, "+");
+            */
+            __gen_R1_R2_OP2_R3(addr_reg, R2, R3, "+");
             __gen_Reg_Ass_Reg_Int(R1, addr_reg, 0);
             a->inMemory = 0;
             Recover(sp1);
+            Recover(sp2);
             Recover(sp3);
         }
 
@@ -491,7 +508,9 @@ void gen_output()
         if(it->type == iPARAM)
         {
             //假装一切没有发生过，只把参数名字默默的记下来
-            Variable *a = get_Var(it->arg1);
+            Variable *a = get_Var(it->arg1), *sp1;
+            get_Reg(it->arg1, sp1);
+            Recover(sp1);
             param_que.push(a);
             /*
             if(last_param == ins_num - 1)
@@ -610,7 +629,7 @@ void gen_output()
             R1 = get_Reg(it->arg1,sp1);
             __gen_R1_Ass_R2("a0", R1);
             //到末尾了，也不用管恢复溢出变量了
-
+            Recover(sp1);
             //恢复 callee save
             for(i = 0; i < callee_reg.size(); i++)
             {
@@ -701,10 +720,18 @@ void ExpireOldInterval2(int now_loc)
         auto it = *(act_li.begin());
         if(it->ed < now_loc)
         {
-            it->reg->free();
-            SpillVar(it->var); //区别在于多了输出变量的溢出
-            used_reg.erase(it->reg);
-            free_reg.insert(it->reg);
+            if(it->var->reg != nullptr)
+            {
+                it->reg->free();
+                SpillVar(it->var); //区别在于多了输出变量的溢出
+                used_reg.erase(it->reg);
+                free_reg.insert(it->reg);
+            }
+            else
+            {
+                it->var->Print_Var();
+                debug("Warning! This register could not be null!");
+            }
             act_li.erase(it);
         }
         else break;
