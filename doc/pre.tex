@@ -72,13 +72,24 @@
     Eeyore与Tigger继承了MiniJava编译器中使用的Piglet与Kanga两种中间表示的命名传统，取自同一动画 “winnie pooh”。
 }
 
+\subsection{改进}
+
+\begin{frame}
+    \frametitle{两处较大的改进}
+    据调查，类型检查与寄存器分配是课程中最难的两部分，因此我们针对性地做了两处改进。
+    \begin{itemize}
+        \item MiniC的类型检查与MiniJava相比大大简化，只有int和一维int数组，减轻了同学们的任务量。
+        \item 采用Linear Scan寄存器分配算法，相较于图染色算法，实现难度大大降低，且实际效果不亚于图染色。
+    \end{itemize}
+\end{frame}
+
 \subsection{进度安排}
 
 \begin{frame}
     \frametitle{进度安排}
     我们根据自身完成MiniC编译器的经验，给未来的同学们作出如下进度安排：
     \begin{itemize}
-        \item 第1--2周：努力学习编译原理，并预习语法制导翻译部分。
+        \item 第1--2周：努力学习编译原理，并预习语法制导翻译部分，并尝试学习安装riscv-gcc。
 
         \item 第3--7周：完成MiniC$\rightarrow$Eeyore。
 
@@ -110,6 +121,7 @@
         \item 寄存器分配\qquad\qquad 第14--15周完成（李佳蔚）
         \item Tigger转RISC-V\qquad\qquad 第15周完成（李汪洋）
         \item MiniC测试程序与数据\qquad 第15周完成（梁家硕）
+        \item 测试平台搭建\qquad\qquad 第15周完成（李汪洋）
     \end{itemize}
 \end{frame}
 
