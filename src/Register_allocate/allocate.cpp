@@ -58,7 +58,7 @@ struct Comp_ptr_li
     }
 };
 
-set<LiveInterval*, Comp_ptr_li> act_li;
+set<LiveInterval*, Comp_ptr_li> act_li, spill_li;
 void ExpireOldInterval(int now_loc);
 void SpillAnInterval(LiveInterval *now_li);
 void LinearScan()
@@ -230,22 +230,28 @@ void StoreVal(Variable *svar, Register* reg) //把 reg 内的值存到 svar 的�
     }
 }
 
-void LoadVar(Variable* lvar, Register* reg)
+//LoadVar 负责绑定一组寄存器和变量
+void LoadVar(Variable* lvar, Register* reg, bool left_value = 0) //left_value 判断是否是左值，假如是左值，则不用 load
 {
-    if(lvar -> isArray == 1)
+    if(!left_value)
     {
-        if(lvar-> isGlobal == 0)
-            __gen_LDAD_Int_Reg(lvar->spill_loc, reg->r_name);
+        if(lvar -> isArray == 1)
+        {
+            if(lvar-> isGlobal == 0)
+                __gen_LDAD_Int_Reg(lvar->spill_loc, reg->r_name);
+            else
+                __gen_LDAD_Gvar_Reg(lvar ->v_name, reg->r_name);
+        }
         else
-            __gen_LDAD_Gvar_Reg(lvar ->v_name, reg->r_name);
+        {
+            if(lvar-> isGlobal == 0)
+                __gen_Load_Int_Reg(lvar->spill_loc, reg->r_name);
+            else
+                __gen_Load_Gvar_Reg(lvar->v_name, reg->r_name);
+        }
     }
     else
-    {
-        if(lvar-> isGlobal == 0)
-            __gen_Load_Int_Reg(lvar->spill_loc, reg->r_name);
-        else
-            __gen_Load_Gvar_Reg(lvar->v_name, reg->r_name);
-    }
+        ;//debug("reduced!!!");
     free_reg.erase(reg);
     used_reg.insert(reg);
     reg->var = lvar;
@@ -259,7 +265,7 @@ void SpillVar(Variable* svar)
         debug("Warning nullptr occured in SpillVar function!");
         return;
     }
-    if(svar->isArray)//数组没有实体，不能存回去
+    if(svar->isArray || svar->inMemory) //数组没有实体，不能存回去，已经在内存中的，也不用再存一遍了
         ;
     else
     {
@@ -278,7 +284,7 @@ void SpillVar(Variable* svar)
     svar->reg = nullptr;
 }
 
-void Recover(Variable *svar) //恢复这个变量
+void Recover(Variable *svar, bool left_value = 0) //恢复被钦定的变量
 {
     if(svar == nullptr)
         return;
@@ -286,11 +292,11 @@ void Recover(Variable *svar) //恢复这个变量
     {
         if(svar->LI->reg->var != nullptr)
             SpillVar(svar->LI->reg->var);//把原先的赶走
-        LoadVar(svar, svar->LI->reg);//新的加回来
+        LoadVar(svar, svar->LI->reg, left_value);//新的加回来
     }
 }
 
-string get_Reg(string v_name, Variable* &be_spilled)
+string get_Reg(string v_name, Variable* &be_spilled, bool left_value = 0) //判断是否是左值，假如是左值，则不用 load
 {
     be_spilled = nullptr;
     if(isdigit(v_name[0]))//假如是个数字，就给分配预留出来的两个寄存器之一
@@ -299,14 +305,15 @@ string get_Reg(string v_name, Variable* &be_spilled)
         return num_reg[use_num_reg++];
     }
     auto my_var = get_Var(v_name);
+    //先尝试恢复一下
+    Recover(my_var, left_value);
     if(my_var->reg != nullptr)
         return my_var->reg->r_name;
-    
     
     /*此时说明它在这个位置没有被Linear Scan钦定寄存器，需要找个空的，或者搞掉别人的寄存器*/
     if(!free_reg.empty())
     {
-        LoadVar(my_var, *(free_reg.begin()));
+        LoadVar(my_var, *(free_reg.begin()), left_value);
         return my_var->reg->r_name;
     }
     else
@@ -317,7 +324,7 @@ string get_Reg(string v_name, Variable* &be_spilled)
                 continue;
             be_spilled = spill_reg->var;
             SpillVar(be_spilled);
-            LoadVar(my_var, spill_reg);
+            LoadVar(my_var, spill_reg, left_value);
             return my_var->reg->r_name;
         }
     }
@@ -353,12 +360,17 @@ void gen_output()
             {
                 if(!live_int[p_i].spilled)
                 {
+                    /*用到的时候，会自然完成一下功能的
                     auto my_var = live_int[p_i].var;
                     auto reg = live_int[p_i].reg;
                     if(reg->var != nullptr)
                         SpillVar(reg->var);
                     LoadVar(my_var, reg);
+                    */
+                    act_li.insert(&live_int[p_i]);
                 }
+                else
+                    spill_li.insert(&live_int[p_i]);
                 p_i++;
             }
         }
@@ -371,7 +383,7 @@ void gen_output()
             string R1, R2, R3;
             Variable *sp1, *sp2, *sp3;
             upd_hold(it->arg1), upd_hold(it->arg2), upd_hold(it->arg4);
-            R1 = get_Reg(it->arg1, sp1);
+            R1 = get_Reg(it->arg1, sp1, 1);
             R2 = get_Reg(it->arg2, sp2);
             R3 = get_Reg(it->arg4, sp3);
             Variable *a = get_Var(it->arg1);
@@ -388,7 +400,7 @@ void gen_output()
             string R1, R2;
             Variable *sp1, *sp2;
             upd_hold(it->arg1), upd_hold(it->arg3);
-            R1 = get_Reg(it->arg1, sp1);
+            R1 = get_Reg(it->arg1, sp1, 1);
             R2 = get_Reg(it->arg3, sp2);
             Variable *a = get_Var(it->arg1);
             //别忘修改第一个变量的inmemory
@@ -405,7 +417,7 @@ void gen_output()
             string R1, R2;
             Variable *sp1, *sp2;
             upd_hold(it->arg1), upd_hold(it->arg2);
-            R1 = get_Reg(it->arg1, sp1);
+            R1 = get_Reg(it->arg1, sp1, 1);
             R2 = get_Reg(it->arg2, sp2);
             Variable *a = get_Var(it->arg1);
             //别忘修改第一个变量的inmemory
@@ -441,7 +453,7 @@ void gen_output()
             string R1, R2, R3;
             Variable *sp1, *sp2, *sp3, *trash;
             upd_hold(it->arg1), upd_hold(it->arg2), upd_hold(it->arg3);
-            R1 = get_Reg(it->arg1, sp1);
+            R1 = get_Reg(it->arg1, sp1, 1);
             R3 = get_Reg(it->arg3, sp3);
             Variable *a = get_Var(it->arg1), *b = get_Var(it->arg2);
             if(b->isArray == 1)
@@ -583,6 +595,7 @@ void gen_output()
                 SpillVar(a);//就算之前有，也给搞出来
             }
             StoreVal(a, get_reg["a0"]);
+            a->inMemory = 1;
             while(!sp_stk.empty())
             {
                 Recover(sp_stk.top()); //为了省事，也只恢复被钦定的，其他的就不管了
@@ -649,6 +662,7 @@ void gen_output()
             free_reg = all_reg;
             used_reg.clear();
             act_li.clear();
+            spill_li.clear();
             p_i = 1;
             
             cout << ori_ins[it - com_ins.begin()];
@@ -692,6 +706,23 @@ void ExpireOldInterval2(int now_loc)
             used_reg.erase(it->reg);
             free_reg.insert(it->reg);
             act_li.erase(it);
+        }
+        else break;
+    }
+    while(!spill_li.empty())
+    {
+        auto it = *(spill_li.begin());
+        if(it->ed < now_loc)
+        {
+            if(it->var->reg != nullptr)
+            {
+                auto reg = it->var->reg;
+                reg->free();
+                SpillVar(it->var); 
+                used_reg.erase(reg);
+                free_reg.insert(reg);
+            }
+            spill_li.erase(it);
         }
         else break;
     }
