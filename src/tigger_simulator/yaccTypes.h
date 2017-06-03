@@ -26,7 +26,7 @@ struct stmt_func_begin: public statement_t {
     int stackSlotNum;
     stmt_func_begin(const std::string &_name, int _argNum, int _stackSlotNum): name(_name), argNum(_argNum), stackSlotNum(_stackSlotNum) {}
     void run();
-    std::string str() { return "f_"+name + " [" + std::to_string(argNum) + "] [" + std::to_string(stackSlotNum) + "]"; }
+    std::string str() { return "f_" + name + " [" + std::to_string(argNum) + "] [" + std::to_string(stackSlotNum) + "]"; }
 };
 
 struct stmt_func_end: public statement_t {
@@ -118,7 +118,7 @@ struct stmt_label: public statement_t {
     int lnum;
     stmt_label(int _lnum): lnum(_lnum) {}
     void run();
-    std::string str() {return "l" + std::to_string(lnum);}
+    std::string str() {return "l" + std::to_string(lnum) + ":";}
 };
 
 struct stmt_call: public statement_t {
@@ -157,7 +157,7 @@ struct stmt_load_local: public statement_t {
     int rnum;
     stmt_load_local(int _snum, int _rnum): snum(_snum), rnum(_rnum) {}
     void run();
-    std::string str() {return "load " + std::to_string(snum)+" "+str_reg[rnum];}
+    std::string str() {return "load " + std::to_string(snum) + " " + str_reg[rnum];}
 };
 
 struct stmt_load_global: public statement_t {
@@ -165,7 +165,7 @@ struct stmt_load_global: public statement_t {
     int rnum;
     stmt_load_global(int _xnum, int _rnum): xnum(_xnum), rnum(_rnum) {}
     void run();
-    std::string str(){return "load v"+std::to_string(xnum)+" "+str_reg[rnum];}
+    std::string str() {return "load v" + std::to_string(xnum) + " " + str_reg[rnum];}
 };
 
 /*struct stmt_malloc: public statement_t {
@@ -180,12 +180,12 @@ struct stmt_loadaddr_local: public statement_t {
     int rnum;
     stmt_loadaddr_local(int _snum, int _rnum): snum(_snum), rnum(_rnum) {}
     void run();
-    std::string str(){return "loadaddr "+std::to_string(snum)+" "+str_reg[rnum];}
+    std::string str() {return "loadaddr " + std::to_string(snum) + " " + str_reg[rnum];}
 };
 
 struct stmt_return: public statement_t {
     void run();
-    std::string str(){return "return";}
+    std::string str() {return "return";}
 };
 
 void add_func_begin(const std::string &fname, int argNum, int stackSlotNum);
