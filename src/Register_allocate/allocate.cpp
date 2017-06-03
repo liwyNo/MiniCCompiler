@@ -233,7 +233,7 @@ void StoreVal(Variable *svar, Register* reg) //把 reg 内的值存到 svar 的�
 //LoadVar 负责绑定一组寄存器和变量
 void LoadVar(Variable* lvar, Register* reg, bool left_value = 0) //left_value 判断是否是左值，假如是左值，则不用 load
 {
-    if(!left_value || 1)
+    if(!left_value)
     {
         if(lvar -> isArray == 1)
         {
@@ -313,7 +313,7 @@ string get_Reg(string v_name, Variable* &be_spilled, bool left_value = 0) //判�
     }
     auto my_var = get_Var(v_name);
     //先尝试恢复一下
-    //Recover(my_var, left_value);
+    Recover(my_var, left_value);
     if(my_var->reg != nullptr)
         return my_var->reg->r_name;
     
@@ -368,13 +368,15 @@ void gen_output()
             {
                 if(!live_int[p_i].spilled)
                 {
-                    //用到的时候，会自然完成一下功能的，这里会出 bug
-                    
-                    auto my_var = live_int[p_i].var;
-                    auto reg = live_int[p_i].reg;
-                    if(reg->var != nullptr)
-                        SpillVar(reg->var);
-                    LoadVar(my_var, reg);
+                    //只有活跃区间在函数头的，我们才一上来给加上
+                    if((it-1)->type == iFBEGIN)
+                    {
+                        auto my_var = live_int[p_i].var;
+                        auto reg = live_int[p_i].reg;
+                        if(reg->var != nullptr)
+                            SpillVar(reg->var);
+                        LoadVar(my_var, reg);
+                    }
                     
                     act_li.insert(&live_int[p_i]);
                 }
@@ -391,11 +393,16 @@ void gen_output()
         {
             string R1, R2, R3;
             Variable *sp1, *sp2, *sp3;
-            upd_hold(it->arg1), upd_hold(it->arg2), upd_hold(it->arg4);
-            R1 = get_Reg(it->arg1, sp1, 1);
+            upd_hold(it->arg2), upd_hold(it->arg4);
+            Variable *a = get_Var(it->arg1);
+            bool left_value = 1;
+            if(hold_var[a])
+                left_value = 0;
+            upd_hold(it->arg1);
+            R1 = get_Reg(it->arg1, sp1, left_value);
             R2 = get_Reg(it->arg2, sp2);
             R3 = get_Reg(it->arg4, sp3);
-            Variable *a = get_Var(it->arg1);
+            
             //别忘修改第一个变量的inmemory
             a->inMemory = 0;
             __gen_R1_R2_OP2_R3(R1,R2,R3, it->arg3);
@@ -408,10 +415,14 @@ void gen_output()
         {
             string R1, R2;
             Variable *sp1, *sp2;
-            upd_hold(it->arg1), upd_hold(it->arg3);
-            R1 = get_Reg(it->arg1, sp1, 1);
-            R2 = get_Reg(it->arg3, sp2);
+            upd_hold(it->arg3);
             Variable *a = get_Var(it->arg1);
+            bool left_value = 1;
+            if(hold_var[a])
+                left_value = 0;
+            upd_hold(it->arg1);
+            R1 = get_Reg(it->arg1, sp1, left_value);
+            R2 = get_Reg(it->arg3, sp2);
             //别忘修改第一个变量的inmemory
             a->inMemory = 0;
             __gen_R1_OP1_R2(R1, R2, it->arg2);
@@ -425,10 +436,14 @@ void gen_output()
                 continue;
             string R1, R2;
             Variable *sp1, *sp2;
-            upd_hold(it->arg1), upd_hold(it->arg2);
-            R1 = get_Reg(it->arg1, sp1, 1);
-            R2 = get_Reg(it->arg2, sp2);
+            upd_hold(it->arg2);
             Variable *a = get_Var(it->arg1);
+            bool left_value = 1;
+            if(hold_var[a])
+                left_value = 0;
+            upd_hold(it->arg1);
+            R1 = get_Reg(it->arg1, sp1, left_value);
+            R2 = get_Reg(it->arg2, sp2);
             //别忘修改第一个变量的inmemory
             a->inMemory = 0;
             __gen_R1_Ass_R2(R1, R2);
@@ -465,10 +480,15 @@ void gen_output()
         {
             string R1, R2, R3;
             Variable *sp1, *sp2, *sp3;
-            upd_hold(it->arg1), upd_hold(it->arg2), upd_hold(it->arg3);
-            R1 = get_Reg(it->arg1, sp1, 1);
+            upd_hold(it->arg2), upd_hold(it->arg3);
+            Variable *a = get_Var(it->arg1);
+            bool left_value = 1;
+            if(hold_var[a])
+                left_value = 0;
+            upd_hold(it->arg1);
+            R1 = get_Reg(it->arg1, sp1, left_value);
             R3 = get_Reg(it->arg3, sp3);
-            Variable *a = get_Var(it->arg1), *b = get_Var(it->arg2);
+            Variable *b = get_Var(it->arg2);
             R2 = get_Reg(it->arg2, sp2);
             /*
             if(b->isArray == 1)
