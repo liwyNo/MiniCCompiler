@@ -42,7 +42,8 @@ string __get_new_gvar_name()
 Variable::Variable(bool _isGlobal, std::string _s_name, bool _isArray):isGlobal(_isGlobal),s_name(_s_name),isArray(_isArray) 
 {
     reg = nullptr;
-    inMemory == _isGlobal;
+    inMemory = 1;
+    //inMemory == _isGlobal;
 }
 Variable* new_Var(string var_name, int isGlobal, Function* now_fun = nullptr)
 {
