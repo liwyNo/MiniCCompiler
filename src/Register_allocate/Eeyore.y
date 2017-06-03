@@ -219,13 +219,13 @@ Expression
 			com_ins[yylineno - 1] = ins(iLABEL, $1);
 			label_table[$1] = yylineno - 1;
 		}
-	|	PARAM SYMBOL EOL {
+	|	PARAM RightValue EOL {
 			//已修改
 			checkGlobal();
 			string str_a = fix_name($2, now_fun);
-			Variable *a = get_Var_in_Func(str_a, now_fun);
 			bitset<1000> def, use;
-			use[a -> num] = 1;
+			if($2.Num_or_Symbol == 1)
+				use[get_Var_in_Func(str_a, now_fun)->num] = 1;
 			com_ins[yylineno - 1] = ins(iPARAM, str_a);
 			com_ins[yylineno - 1].def = def;
 			com_ins[yylineno - 1].use = use;

@@ -348,7 +348,7 @@ void gen_output()
     int i, p_i = 1;
     int last_param=-1, arg_cnt; //cnt_arg 统计已经压进去多少个参数了
     stack<Variable*> sp_stk; //存储在调函数的过程中，被强制溢出的变量
-    queue<Variable*> param_que;
+    queue<string> param_que;
     ins_num = 0;
     act_li.clear();
 
@@ -531,7 +531,7 @@ void gen_output()
             Variable *a = get_Var(it->arg1), *sp1;
             get_Reg(it->arg1, sp1);
             Recover(sp1);
-            param_que.push(a);
+            param_que.push(it->arg1);
             /*
             if(last_param == ins_num - 1)
                 arg_cnt ++;
@@ -575,14 +575,24 @@ void gen_output()
             while(!param_que.empty())
             {
                 Register* pas_reg = get_reg["a"+to_string(param_cnt)];
-                auto param_var = param_que.front();
-                param_que.pop();
-                if(param_var->reg != nullptr) //为了省事，都先放到内存里
+                if(isdigit((param_que.front())[0]))
                 {
-                    sp_stk.push(param_var);
-                    SpillVar(param_var);
+                    Variable* sp1;
+                    string num_par = get_Reg(param_que.front(),sp1);
+                    __gen_R1_Ass_R2(pas_reg->r_name, num_par);
                 }
-                LoadVar_Temp(param_var, pas_reg->r_name);
+                else
+                {
+                    auto param_var = get_Var(param_que.front());
+                    //param_que.pop();
+                    if(param_var->reg != nullptr) //为了省事，都先放到内存里
+                    {
+                        sp_stk.push(param_var);
+                        SpillVar(param_var);
+                    }
+                    LoadVar_Temp(param_var, pas_reg->r_name);
+                }
+                param_que.pop();
                 param_cnt++;
             }
             
@@ -612,16 +622,23 @@ void gen_output()
             while(!param_que.empty())
             {
                 Register* pas_reg = get_reg["a"+to_string(param_cnt)];
-                auto param_var = param_que.front();
-                //debug((param_var == nullptr));
-                //param_var->Print_Var();
-                param_que.pop();
-                if(param_var->reg != nullptr) //为了省事，都先放到内存里
+                if(isdigit((param_que.front())[0]))
                 {
-                    sp_stk.push(param_var);
-                    SpillVar(param_var);
+                    Variable* sp1;
+                    string num_par = get_Reg(param_que.front(),sp1);
+                    __gen_R1_Ass_R2(pas_reg->r_name, num_par);
                 }
-                LoadVar_Temp(param_var, pas_reg->r_name);
+                else
+                {
+                    auto param_var = get_Var(param_que.front());
+                    if(param_var->reg != nullptr) //为了省事，都先放到内存里
+                    {
+                        sp_stk.push(param_var);
+                        SpillVar(param_var);
+                    }
+                    LoadVar_Temp(param_var, pas_reg->r_name);
+                }
+                param_que.pop();
                 param_cnt++;
             }
 
