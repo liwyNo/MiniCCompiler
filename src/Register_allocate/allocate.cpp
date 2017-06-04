@@ -265,7 +265,7 @@ void SpillVar(Variable* svar)
         debug("Warning nullptr occured in SpillVar function!");
         return;
     }
-    if(svar->isArray || svar->inMemory) //数组没有实体，不能存回去，已经在内存中的，也不用再存一遍了
+    if(svar->isArray)//无法知道一个值是否在内存里，所以这个优化不要乱加 || svar->inMemory) //数组没有实体，不能存回去，已经在内存中的，也不用再存一遍了
         ;
     else
     {
