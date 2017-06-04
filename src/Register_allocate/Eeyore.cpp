@@ -17,7 +17,7 @@ int yyparse (void);
 extern FILE * yyin;
 
 void help(const char * path) {
-    cout << "Usage: " << path << " <filename>" << endl;
+    cout << "Usage: " << path << " <input> <output>" << endl;
 }
 
 vector<string> ori_ins;
@@ -29,12 +29,13 @@ int main(int argc, char** argv){
 //这些代码都是直接抄的 simulator 的
 	ifstream is;
     //Analyze the arguments
-    if (argc != 2) {
+    if (argc != 3) {
         help(argv[0]);
         exit(-1);
     }
     is.open(argv[1]);
     yyin = fopen(argv[1], "r");
+    freopen(argv[2], "w", stdout);
 
     //Get the original code
     ori_ins.push_back("");//把下表零空过去

@@ -14,6 +14,12 @@ void InitConstant()
 }
 int main(int argc, char *argv[])
 {
+    if (argc != 3) {
+        puts("Usage: parser <input> <output>");
+        exit(1);
+    }
+    freopen(argv[1], "r", stdin);
+    freopen(argv[2], "w", stdout);
     InitSymbolStack();
     InitConstant();
     yyparse();
