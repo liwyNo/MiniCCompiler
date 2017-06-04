@@ -5,6 +5,7 @@
 int yylex(void);
 extern int yylineno;
 int stk_s;
+extern FILE * yyin, * yyout;
 %}
 
 %code requires {
@@ -219,7 +220,9 @@ void yyerror(const char *s)
     printf("line %d: %s\n", yylineno, s);
     exit(1);
 }
-int main(){
+int main(int argc, char ** argv){
+    yyin = fopen(argv[1], "r");
+    yyout = fopen(argv[2], "w");
     yyparse();
     return 0;
 }
