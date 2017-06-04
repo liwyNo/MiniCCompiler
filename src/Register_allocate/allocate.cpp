@@ -361,7 +361,7 @@ void gen_output()
         if(it->type == iFEND)
             isGlobal = 1;
         /*钦定的寄存器在一开头就处理好*/
-        if(isGlobal == 0 && it->type != iFBEGIN)
+        if(isGlobal == 0 && it->type != iFBEGIN && it->type != iLABEL)
         {
             ExpireOldInterval2(ins_num);
             while(p_i <= Var_count && live_int[p_i].st <= ins_num)
