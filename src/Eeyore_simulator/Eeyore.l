@@ -36,7 +36,7 @@ unsigned var(const char* a){
 "\t"
 \/\/.*
 "\n"	{printf("Lex: EOL\n"); return EOL;}
-
+<<EOF>> {static int once=0; return once++ ? 0 : EOL;}
 "var"	{printf("Lex: VAR\n"); return VAR;}
 "if"	{printf("Lex: IF\n"); return IF;}
 "goto"	{printf("Lex: GOTO\n"); return GOTO;}

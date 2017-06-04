@@ -242,7 +242,7 @@ Expression
 			Variable *a = get_Var_in_Func(str_a, now_fun);
 			bitset<1000> def, use;
 			def[a -> num] = 1;
-			com_ins[yylineno - 1] = ins(iCALL, $1, $4);
+			com_ins[yylineno - 1] = ins(iCALL, str_a, $4);
 			com_ins[yylineno - 1].def = def;
 			com_ins[yylineno - 1].use = use;
 		}
@@ -253,7 +253,7 @@ Expression
 			bitset<1000> def, use;
 			if($2.Num_or_Symbol == 1)
 				use[get_Var_in_Func(str_a, now_fun) -> num] = 1;
-			com_ins[yylineno - 1] = ins(iRETURN, $2);
+			com_ins[yylineno - 1] = ins(iRETURN, str_a);
 			com_ins[yylineno - 1].def = def;
 			com_ins[yylineno - 1].use = use;
 		}
