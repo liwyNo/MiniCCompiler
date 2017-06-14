@@ -93,7 +93,7 @@ Tigger共有28个可用的寄存器，这些寄存器的名称与RISC-V保持一
 
 举个例子，假设某个时刻函数调用关系是\texttt{main[0][3] -> f[0][4]}，正在执行函数\texttt{f}，假设此时的栈如下图所示：
 
-\begin{center}\includegraphics[width=6.4cm,height=3.6cm]{stack}\end{center}
+\begin{center}\includegraphics[height=4cm]{stack2}\end{center}
 
 此时语句\texttt{load 2 s0}，会使\texttt{s0 = 5}；语句\texttt{loadaddr 2 s0}，会使\texttt{s0 = 0x110}；语句\texttt{store s0 2}会把图中的\texttt{5}改成\texttt{s0}的值。
 

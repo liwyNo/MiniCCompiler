@@ -6,10 +6,14 @@
 \geometry{left=3.0cm, right=3.0cm, top=2.0cm, bottom=2.0cm}
 \usepackage{graphics}
 \usepackage{hyperref}
+\usepackage[nounderscore]{syntax}
+\AtBeginDocument{\catcode`\_=8 }
+\usepackage{minted}
+\usepackage{makecell}
+\usepackage{listings}
+\usepackage{amssymb}
 \usepackage{amsmath}
-\title{编译实习课程改革\ 实习报告}
-\date{}
-\author{李汪洋\ 李佳蔚\ 梁家硕}
+\newenvironment{typewriterfont}{\ttfamily}{\par}
 \ctexset{section/format = {\Large\bfseries}}
 \hypersetup{
 colorlinks=true,
@@ -18,7 +22,19 @@ linkcolor=black
 
 \begin{document}
 
-\maketitle
+\begin{titlepage}
+    \mbox{}
+    \vskip 8 cm
+    \centering
+
+    \Huge 编译实习课程改革\ 实习报告
+    \rule{\textwidth}{1pt}\par % Thick horizontal line
+
+    \huge 李汪洋\ 李佳蔚\ 梁家硕
+
+    \Large \today
+
+\end{titlepage}
 \tableofcontents
 \newpage
 
@@ -75,7 +91,7 @@ Eeyore和Tigger这两个名称，继承了MiniJava编译器中使用到的Piglet
 
 \subsection{MiniC}
 
-MiniC是C语言的一个子集，我们对C语言进行了大量的删减，力图产生一种高度精简的、易于实现的语言。对于MiniC的语言定义与描述，参考《MiniC文档说明》。
+MiniC是C语言的一个子集，我们对C语言进行了大量的删减，力图产生一种高度精简的、易于实现的语言。对于MiniC的语言定义与描述，参考附录中的“MiniC说明”。
 
 MiniC编译器的第一步，是实现MiniC语言的词法分析和语法分析（可以利用lex和yacc等工具），并分析语义，将MiniC转换成Eeyore中间语言。
 
@@ -83,7 +99,7 @@ MiniC的类型只有int和一维int数组，极大地减小了类型检查的工
 
 \subsection{Eeyore}
 
-Eeyore是一中三地址码，为了让同学们易于接受，Eeyore的语法是编译原理课程教学用书（龙书）中使用的三地址码格式的扩展。具体描述参考《Eeyore文档说明》。
+Eeyore是一中三地址码，为了让同学们易于接受，Eeyore的语法是编译原理课程教学用书（龙书）中使用的三地址码格式的扩展。具体描述参考附录中的“Eeyore说明”。
 
 Eeyore可以看作是MiniC编译器中的Piglet和Spiglet。
 
@@ -97,7 +113,7 @@ Eeyore可以看作是MiniC编译器中的Piglet和Spiglet。
 
 \subsection{Tigger}
 
-Tigger可以被认为是Eeyore进行了寄存器分配后的版本，与Eeyore语法很像。具体描述参考《Tigger文档说明》。
+Tigger可以被认为是Eeyore进行了寄存器分配后的版本，与Eeyore语法很像。具体描述参考附录中“Tigger说明”。
 
 Tigger可以看作是MiniC编译器中的Kanga。
 
@@ -221,4 +237,36 @@ MiniC语法扩展内容，也许无法被翻译成Eeyore或Tigger代码，这是
 
 同学们若想本地测试自己生成的RISC-V汇编是否正确，需要先下载并编译riscv-tools，再利用riscv-gcc生成机器码，最后用RISC-V的模拟器来运行。在我们小组编译riscv-tools的过程中，遇到了大量奇怪的编译错误，RISC-V官方并没有给出多少对于这些编译错误的说明，致使我们花费了不少时间来解决这些错误。我想同学们在尝试编译riscv-tools的时候，也许会觉得很头大。
 
+\newpage
+\section{收获}
+
+\noindent 李佳蔚：
+
+第一个收获是把之前编译技术没学明白的东西都彻底搞明白了。编译实习这门课的特点就是如果不彻底搞明白原理，根本没法写代码。发明Eeyore和Tigger语法的过程也对自己的能力有很大提高。发明一种语言比使用一种语言，对理解的要求高得多。
+
+第二个收获是积累了很多与一个小团队一起合作写工程的经验。这是我第一次写比较大的工程，所以在这期间学到了许多写工程的基本常识和技巧，这种能力的提高在将来发展中也一定会有很大帮助。
+
+第三个也是最大的收获就是完成了一件富有现实意义的工作。真心希望该项目能作为课程改革的一个起点，最终惠及广大信科师生。
+
+\bigskip
+\noindent 梁家硕：
+
+巩固了编译技术课程上学到的知识，一些看起来不难的算法，其实实现起来细节很多，必须亲身实践才能透彻领悟。
+
+小组合作使我深切体会到团队的力量。项目的任务量比较大，团队的协作与沟通给了我很大的鼓舞，两位队友的表现很出色，让我有信心能把自己的任务完成。
+
+从前对汇编几乎一窍不通，该项目的工作使我头一次接触到RISC-V汇编，也许对今后的学习有所帮助。
+
+参与教学改革、提高教学质量，大概之前做梦也想不到会做这样的项目吧。当了一回课程设计者，不仅对该课程有了更多的理解，也对“教育”与“学习”本身的有了不同于从前的认识。
+
+\newpage
+\section{附录}
+以下内容是完整的MiniC、Eeyore、Tigger语法描述与定义。
+
+三种语言都有各自的文档，内容与以下部分相同。三个分离的文档可提供给同学们，以便查阅。
+\input{report_MiniC}
+\newpage
+\input{report_Eeyore}
+\newpage
+\input{report_Tigger}
 \end{document}

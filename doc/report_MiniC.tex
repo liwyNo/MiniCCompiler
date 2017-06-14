@@ -1,0 +1,132 @@
+\subsection{MiniC说明}
+\subsubsection{概述}
+MiniC是C语言的一个子集，对C语言语法进行了大量删减，以产生一种适用于编译实习课程的语言。
+
+MiniC是为了取代原先编译实习课程使用的MiniJava语言而设计的，目的是更好地配合编译原理课程进度，在一定程度上减轻任务量。MiniC基础语法%（我们称之为base语法集）
+高度精炼，使同学们无论能力如何，都能完成编译器编写的过程。
+
+同时，对于能力较强的同学，实习课程可以提供一些MiniC语法扩展内容，把从C语言中删除的一些语法加回MiniC，来提升MiniC语言的易用程度和表达能力，对完成扩展内容的同学提供一定程度的加分。
+
+\subsubsection{语法描述}
+\begin{itemize}
+\item 
+MiniC取消了C语言中的宏。%即取消了编译预处理过程。
+\item 
+MiniC中的变量有两种类型，int和一维int数组。%（没有void类型，没有指针）
+\item
+MiniC中函数返回值只有int，参数可以是int或int数组，程序从main函数开始执行。同时，MiniC不会给函数默认返回值，如果执行完一个函数而没有return，会导致未知行为。
+
+%另外，MiniC中的函数都有return语句，即使返回值无意义，也要以return一个数的方式结束函数。
+\item 
+单目运算符有\texttt{'!'}和\texttt{'-'}
+\item
+双目运算符有\texttt{'+','-','*','/','\%','\&\&','||','\textless','\textgreater','==','!='}
+\item
+合法的表达式参考BNF。
+\item 
+允许使用函数前置声明（参见样例中\texttt{getint}函数）。
+\item 
+MiniC程序中允许C风格的单行注释。%和多行注释。
+\item 
+MiniC只保留\texttt{if-else}条件分支语句和\texttt{while}循环语句。
+\item 
+为了使MiniC更容易实现，限定\texttt{if,while}后面的括号里和逻辑运算符两边的运算分量只会出现如下两种形式：\\
+\indent\ \ \texttt{x>y||(a+b)!=c}这样的逻辑表达式；\\
+\indent\ \ \texttt{x}或\texttt{f(x)}或\texttt{a[x]}这样的单个变量或函数。\\
+\indent 总之，不会出现类似\texttt{if (a+b)}或\texttt{(b+c)||d}这样的语句。
+\end{itemize}
+\newpage
+\subsubsection{BNF}
+\setlength{\grammarindent}{8em} % increase separation between LHS/RHS 
+\begin{typewriterfont}
+\begin{grammar}
+<Goal> ::= (VarDefn | FuncDefn | FuncDecl)* MainFunc
+
+<VarDefn> ::= Type Identifier ';'
+\alt Type Identifier'['<INTEGER>']' ';'
+
+<VarDecl> ::= Type Identifier
+\alt Type Identifier'['<INTEGER>?']'
+
+<FuncDefn>  ::= Type Identifier '(' ( VarDecl ( ',' VarDecl )* )? ')' '\{' (FuncDecl | Statement)* '\}'
+
+<FuncDecl> ::= Type Identifier '(' ( VarDecl (',' VarDecl)*)?')' ';'
+
+<MainFunc> ::= 'int' 'main' '(' ')' '\{' (FuncDecl | Statement)* '\}'
+
+<Type> ::= 'int'
+
+<Statement> ::= '\{' (Statement)* '\}'
+\alt 'if' '(' Expression ')' Statement ('else' Statement)?
+\alt 'while' '(' Expression ')' Statement
+\alt Identifier '=' Expression ';'
+\alt Identifier '[' Expression ']' '=' Expression ';'
+\alt VarDefn
+\alt 'return' Expression ';'
+
+<Expression>	::=	Expression ( '+' | '-' | '*' | '/' | '\%' ) Expression
+\alt Expression ( '\&\&' | '||' | '\textless' | '==' | '\textgreater' | '!=' ) Expression
+\alt Expression '[' Expression ']'
+\alt <INTEGER>
+\alt Identifier
+\alt ( '!' | '-' ) Expression
+\alt Identifier '(' (Identifier (',' Identifier)*)? ')'
+\alt '(' Expression ')'
+
+<Identifier>	::=	<IDENTIFIER>
+
+\end{grammar}
+\end{typewriterfont}
+
+\newpage
+\subsubsection{示例}
+\small
+\begin{minted}[linenos]{c}
+int getint(); // 前置函数声明，getint函数是MiniC内置函数，返回一个读入的整数
+int putchar(int c); // 内置函数，用于输出字符(参数为ascii码)，返回值无意义
+                    // 注意！base语法集不包括形如int putchar(int);这种参数名没有具体给出的函数声明
+int putint(int i); // 内置函数，用于输出整数，返回值无意义
+int getchar(); // 内置函数，返回一个读入的字符的ascii码 (此程序未使用到该函数)
+int f(int x) /* 该函数以递归方式计算Fibonacci数 */
+{
+    if (x < 2) /* if-else语句 */
+        return 1;
+    else
+        return f(x - 1) + f(x - 2); /* 递归函数调用 */
+}
+int g(int x) /* 该函数以数组和循环语句计算Fibonacci数 */
+{
+    int a[40]; /* int数组声明
+                  注意！base中数组大小必须是常数，不可写成int a[x];或int a[10+30];这样*/
+    a[0] = a[1] = 1;
+    int i;
+    i = 2; /* 注意！base语法集不包括初始化赋值语句  int i = 2; */
+    while (i < x + 1) /* while循环是base语法集唯一的循环语句 */
+    {
+        a[i] = a[i - 1] + a[i - 2];
+        ++i;
+    }
+    return a[x];
+}
+int n; // 声明了一个全局变量
+int main() {
+    n = getint();
+    if (n < 0 || n > 30) /* 不带else的if语句 */
+        return 1;
+    putint(f(n));
+    putchar(10); // 输出换行符
+    putint(g(n));
+    putchar(10);
+    return 0;
+}
+\end{minted}
+\newpage
+\normalsize
+\subsubsection{MiniC语法扩展}
+MiniC设计者们亲身实践了MiniC大部分语法扩展，深切体会到实现一些复杂语法扩展的不宜。
+
+对MiniC语法进行扩展时，应尽量遵循“细致”的原则，避免涉及范围过大的扩展。
+
+比如，整数数据类型扩展：加入8位，16位，32位，64位的有符号和无符号整数。这个扩展涉及的范围就有些大，可以考虑分解成多个扩展：带符号整数扩展、不同长度的整数运算扩展、char字符串扩展（8位有符号整数组成的数组）、字符与字符串表示扩展(加入\texttt{"abc",'\textbackslash n'}这样的表达式)。
+
+具体可以扩展内容，按教学通知为准。
