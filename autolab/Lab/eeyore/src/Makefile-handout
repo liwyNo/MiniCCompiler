@@ -1,0 +1,6 @@
+# Student makefile for the Hello Lab
+all: 
+
+clean:
+
+

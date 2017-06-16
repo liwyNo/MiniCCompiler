@@ -1,0 +1,8 @@
+all:
+	tar xf autograde.tar
+	cp handin.tar eeyore-handout/
+	mkdir -p eeyore-handout/handin
+	(cd eeyore-handout; ./driver.sh)
+
+clean:
+	rm -rf *~ eeyore-handout

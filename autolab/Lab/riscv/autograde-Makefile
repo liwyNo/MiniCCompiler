@@ -1,0 +1,8 @@
+all:
+	tar xf autograde.tar
+	cp handin.tar riscv-handout/
+	mkdir -p riscv-handout/handin
+	(cd riscv-handout; ./driver.sh)
+
+clean:
+	rm -rf *~ eeyore-handout
